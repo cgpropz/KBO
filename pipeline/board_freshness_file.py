@@ -14,7 +14,7 @@ from __future__ import annotations
 import json
 import subprocess
 import sys
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
@@ -146,20 +146,35 @@ def record_sport(
     return document
 
 
-def _instant(value: Any) -> datetime | None:
+# A clock further ahead of now than this is treated as missing, so a bad
+# future-dated entry loses to a real publish and self-heals.
+FUTURE_SKEW = timedelta(minutes=5)
+
+
+def _now_utc(now: datetime | None = None) -> datetime:
+    moment = now or datetime.now(timezone.utc)
+    return moment if moment.tzinfo else moment.replace(tzinfo=timezone.utc)
+
+
+def _instant(value: Any, now: datetime | None = None) -> datetime | None:
     if not isinstance(value, str) or not value.strip():
         return None
     try:
         parsed = datetime.fromisoformat(value.strip().replace("Z", "+00:00"))
     except ValueError:
         return None
-    return parsed if parsed.tzinfo else parsed.replace(tzinfo=timezone.utc)
+    parsed = parsed if parsed.tzinfo else parsed.replace(tzinfo=timezone.utc)
+    if parsed > _now_utc(now) + FUTURE_SKEW:
+        return None
+    return parsed
 
 
-def _newer(local: Any, remote: Any) -> bool:
+def _newer(local: Any, remote: Any, now: datetime | None = None) -> bool:
     """True when the local value is at least as new as the remote one. A
-    readable clock beats a missing one; two missing clocks keep local."""
-    mine, theirs = _instant(local), _instant(remote)
+    readable clock beats a missing one; two missing clocks keep local. A clock
+    more than FUTURE_SKEW ahead of now counts as missing."""
+    moment = _now_utc(now)
+    mine, theirs = _instant(local, moment), _instant(remote, moment)
     if theirs is None:
         return True
     if mine is None:
@@ -167,10 +182,12 @@ def _newer(local: Any, remote: Any) -> bool:
     return mine >= theirs
 
 
-def merge_freshness(local: dict, remote: dict) -> dict:
+def merge_freshness(local: dict, remote: dict, now: datetime | None = None) -> dict:
     """Newest entry per board wins, by generated_at. A copy taken from an older
     checkout can never replace a board another job published since. Boards on
-    only one side are kept."""
+    only one side are kept. A future-dated clock (beyond FUTURE_SKEW) counts
+    as missing."""
+    moment = _now_utc(now)
     local_boards = local.get("boards") or {}
     remote_boards = remote.get("boards") or {}
     boards = {}
@@ -179,8 +196,10 @@ def merge_freshness(local: dict, remote: dict) -> dict:
         if mine is None or theirs is None:
             boards[sport] = mine if theirs is None else theirs
             continue
-        boards[sport] = mine if _newer((mine or {}).get("generated_at"), (theirs or {}).get("generated_at")) else theirs
-    local_first = _newer(local.get("checked_at"), remote.get("checked_at"))
+        boards[sport] = mine if _newer(
+            (mine or {}).get("generated_at"), (theirs or {}).get("generated_at"), moment,
+        ) else theirs
+    local_first = _newer(local.get("checked_at"), remote.get("checked_at"), moment)
     first, second = (local, remote) if local_first else (remote, local)
     warnings = first.get("cheatsheet_warnings")
     if not isinstance(warnings, list):
@@ -233,12 +252,12 @@ def load_warning_file(path: Path) -> dict:
     return payload if isinstance(payload, dict) else {}
 
 
-def merge_warning_files(local: dict, remote: dict) -> dict:
+def merge_warning_files(local: dict, remote: dict, now: datetime | None = None) -> dict:
     """The cheat-sheet age file from whichever side checked more recently.
     A readable checked_at beats a missing one; a tie keeps local."""
     local = local if isinstance(local, dict) else {}
     remote = remote if isinstance(remote, dict) else {}
-    chosen = local if _newer(local.get("checked_at"), remote.get("checked_at")) else remote
+    chosen = local if _newer(local.get("checked_at"), remote.get("checked_at"), now) else remote
     warnings = chosen.get("warnings")
     return {"checked_at": chosen.get("checked_at"), "warnings": warnings if isinstance(warnings, list) else []}
 

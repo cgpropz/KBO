@@ -340,6 +340,71 @@ class PublishBoardStatusTests(unittest.TestCase):
         self.assertEqual(session.posts, [])
 
 
+class FutureClockTests(unittest.TestCase):
+    """A clock more than five minutes ahead of now counts as missing, so a bad
+    future-dated entry loses to a real publish instead of pinning the board."""
+
+    def setUp(self):
+        from datetime import datetime, timezone
+
+        # 9:00 AM ET on 2026-10-23.
+        self.now = datetime(2026, 10, 23, 13, 0, tzinfo=timezone.utc)
+        self.future = status_entry("nba", "2027-01-01T00:00:00-05:00", 12)
+        self.real = status_entry("nba", "2026-10-23T08:55:00-04:00", 350)
+
+    def test_status_future_live_entry_loses_to_real_publish_either_way_round(self):
+        from pipeline.board_status import prefer_fresher
+
+        for local, remote in (([self.real], [self.future]), ([self.future], [self.real])):
+            chosen = by_sport(prefer_fresher(local, remote, self.now))["nba"]
+            self.assertEqual(chosen["prop_count"], 350)
+            self.assertEqual(chosen["board_updated_at"], "2026-10-23T08:55:00-04:00")
+
+    def test_status_clock_within_five_minutes_still_counts(self):
+        from pipeline.board_status import prefer_fresher
+
+        slightly_ahead = status_entry("nba", "2026-10-23T09:04:00-04:00", 351)
+        chosen = by_sport(prefer_fresher([self.real], [slightly_ahead], self.now))["nba"]
+        self.assertEqual(chosen["prop_count"], 351)
+        too_far = status_entry("nba", "2026-10-23T09:06:00-04:00", 352)
+        chosen = by_sport(prefer_fresher([self.real], [too_far], self.now))["nba"]
+        self.assertEqual(chosen["prop_count"], 350)
+
+    def test_publish_board_status_replaces_future_live_entry(self):
+        import publish_supabase
+
+        with tempfile.TemporaryDirectory() as tmp:
+            old_base = publish_supabase.BASE
+            publish_supabase.BASE = tmp
+            try:
+                write(Path(tmp) / STATUS_REL, {"boards": [self.real]})
+                session = FakeSession(FakeResponse(200, [{"data": {"boards": [self.future]}}]))
+                publish_supabase.publish_board_status(session, {}, "2026-10-23T12:55:00+00:00", now=self.now)
+            finally:
+                publish_supabase.BASE = old_base
+        uploaded = by_sport(session.posts[0][1]["json"]["data"])["nba"]
+        self.assertEqual(uploaded["prop_count"], 350)
+
+    def test_freshness_future_entry_loses_either_way_round(self):
+        future = {"checked_at": "2027-01-01T05:00:00Z", "boards": {
+            "nba": {"generated_at": "2027-01-01T05:00:00+00:00", "prop_count": 12, "started_removed": 0},
+        }, "cheatsheet_warnings": [{"sport": "nba"}]}
+        real = {"checked_at": "2026-10-23T12:55:00Z", "boards": {
+            "nba": {"generated_at": "2026-10-23T12:55:00+00:00", "prop_count": 350, "started_removed": 0},
+        }, "cheatsheet_warnings": []}
+        for local, remote in ((real, future), (future, real)):
+            merged = merge_freshness(local, remote, now=self.now)
+            self.assertEqual(merged["boards"]["nba"]["prop_count"], 350)
+            self.assertEqual(merged["checked_at"], "2026-10-23T12:55:00Z")
+            self.assertEqual(merged["cheatsheet_warnings"], [])
+
+    def test_warning_file_future_check_loses(self):
+        future = {"checked_at": "2027-01-01T05:00:00Z", "warnings": [{"sport": "nba"}]}
+        real = {"checked_at": "2026-10-23T12:55:00Z", "warnings": []}
+        self.assertEqual(merge_warning_files(future, real, now=self.now), real)
+        self.assertEqual(merge_warning_files(real, future, now=self.now), real)
+
+
 class WorkflowWiringTests(unittest.TestCase):
     def test_conflict_paths_merge_every_board_clock_file_and_fail_on_error(self):
         clock_files = "shared/board_freshness.json kbo-props-ui/public/status.json kbo-props-ui/public/cheatsheet_warnings.json"
