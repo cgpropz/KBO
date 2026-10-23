@@ -24,7 +24,7 @@ function phone(name, browserName, width, userAgent) {
 
 export default defineConfig({
   testDir: './e2e',
-  testMatch: 'phone-card-fit.spec.js',
+  testMatch: ['phone-card-fit.spec.js', 'player-insights-member.spec.js', 'nfl-player-parity-member.spec.js'],
   timeout: 90_000,
   expect: { timeout: 20_000 },
   fullyParallel: false,

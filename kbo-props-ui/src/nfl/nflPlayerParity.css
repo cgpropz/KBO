@@ -1,0 +1,74 @@
+/* NFL player page: header pick card, game filters, Snaps & Usage.
+   Display only. The range slider markup is the shared NbaRangeSlider, whose
+   rules live in nba.css (not loaded on NFL pages), so they are scoped here. */
+
+.nfl-headshot { position: relative; flex: 0 0 auto; }
+.nfl-headshot-team { position: absolute; right: -4px; bottom: -2px; width: 26px; height: 26px; padding: 2px; object-fit: contain; border: 1px solid #1a3c36; border-radius: 50%; background: #0a1614; }
+.nfl-matchup { display: flex; align-items: center; gap: 5px; margin: 6px 0 0; color: #a7bdb7; font: 700 12px monospace; letter-spacing: .04em; }
+.nfl-matchup i { color: #6b8781; font-style: normal; }
+.nfl-matchup-logo { width: 18px; height: 18px; object-fit: contain; }
+
+.nfl-pick { display: flex; flex: 0 1 auto; align-items: stretch; gap: 0; border: 1px solid #1e3f38; border-radius: 10px; background: linear-gradient(180deg, #0c1a17, #0a1614); }
+.nfl-pick > span { display: flex; flex: 1 1 0; min-width: 0; flex-direction: column; justify-content: center; gap: 3px; padding: 8px 14px; text-align: center; }
+.nfl-pick > span + span { border-left: 1px solid #142a25; }
+.nfl-pick small { color: #6b8781; font: 700 9px monospace; letter-spacing: .08em; text-transform: uppercase; }
+.nfl-pick b { color: #f4f4f5; font-size: 17px; font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.nfl-pick b.is-over { color: #7efc6a; }
+.nfl-pick b.is-under { color: #ff7b79; }
+.nfl-pick b.is-pending, .nfl-player-summary strong.nfl-pending { color: #a1a1aa; font-size: 13px; font-weight: 700; }
+.nfl-pick em { overflow: hidden; color: #a7bdb7; font: normal 10px monospace; text-overflow: ellipsis; white-space: nowrap; }
+
+.nfl-filters-panel { margin: 4px 0 14px; padding: 12px 14px; border: 1px solid #142a25; border-radius: 10px; background: #081513; }
+.nfl-filters-panel.is-narrowed { border-color: #2f6b45; box-shadow: inset 0 0 0 1px rgba(74, 222, 128, .18); }
+.nfl-filters-head { display: flex; align-items: center; gap: 10px; }
+.nfl-filters-head > span, .nfl-filter-label > span { color: #8b9a96; font-size: 12px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; white-space: nowrap; }
+.nfl-filters-head > b { flex: 1 1 auto; color: #d4d4d8; font-size: 12px; font-weight: 700; text-align: right; white-space: nowrap; }
+.nfl-filters-panel.is-narrowed .nfl-filters-head > b { color: #4ade80; }
+.nfl-filters-head > button { min-width: 64px; min-height: 36px; padding: 6px 12px; border: 1px solid #2f3a38; border-radius: 999px; background: transparent; color: #f4f4f5; font: inherit; font-size: 12px; font-weight: 800; cursor: pointer; }
+.nfl-filters-head > button:disabled { opacity: .4; cursor: default; }
+.nfl-filter { margin-top: 10px; }
+.nfl-filter-label { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.nfl-filter-label > b { color: #f4f4f5; font-size: 13px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.nfl-filters-note { display: block; margin-top: 4px; color: #6b8781; font-size: 11px; }
+.nfl-filters-panel .nba-range { position: relative; height: 44px; margin: 2px 16px 0; touch-action: none; user-select: none; -webkit-user-select: none; cursor: pointer; }
+.nfl-filters-panel .nba-range-rail, .nfl-filters-panel .nba-range-fill { position: absolute; top: 50%; height: 4px; border-radius: 999px; transform: translateY(-50%); pointer-events: none; }
+.nfl-filters-panel .nba-range-rail { left: 0; right: 0; background: #1a3c36; }
+.nfl-filters-panel .nba-range-fill { background: #4ade80; box-shadow: 0 0 10px rgba(74, 222, 128, .35); }
+.nfl-filters-panel .nba-range-thumb { position: absolute; top: 50%; width: 32px; height: 32px; margin: 0; padding: 0; border: 2px solid #4ade80; border-radius: 50%; background: radial-gradient(circle at center, #4ade80 0 4px, #0c1a17 5px); box-shadow: 0 0 0 4px rgba(74, 222, 128, .12); transform: translate(-50%, -50%); touch-action: none; cursor: grab; }
+.nfl-filters-panel .nba-range-thumb:active { background: #4ade80; cursor: grabbing; }
+.nfl-filters-panel .nba-range-thumb:focus-visible { outline: 2px solid #4ade80; outline-offset: 3px; }
+.nfl-filters-panel .nba-range-thumb:disabled { opacity: .45; cursor: default; }
+
+.nfl-su { margin: 16px 0; padding: 14px 16px; border: 1px solid #142a25; border-radius: 10px; background: #081513; }
+.nfl-su-title { margin: 0; color: #8b9a96; font-size: 12px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
+.nfl-su-metric + .nfl-su-metric { margin-top: 14px; padding-top: 12px; border-top: 1px solid #142a25; }
+.nfl-su-head { display: flex; align-items: baseline; gap: 6px; margin: 6px 0 8px; font-variant-numeric: tabular-nums; }
+.nfl-su-label { color: #f4f4f5; font-size: 13px; font-weight: 700; white-space: nowrap; }
+.nfl-su-trend { font-size: 15px; line-height: 1; }
+.nfl-su-avgs { display: flex; gap: 10px; margin-left: auto; color: #e4e4e7; font-size: 12px; font-weight: 700; white-space: nowrap; }
+.nfl-su-avgs em { margin-right: 3px; color: #71717a; font-style: normal; font-weight: 600; }
+.nfl-su-bars { display: flex; align-items: flex-end; gap: 4px; box-sizing: content-box; height: 64px; margin: 14px 0 6px; padding-top: 8px; }
+.nfl-su-col { display: flex; flex: 1 1 0; align-items: flex-end; justify-content: center; min-width: 0; height: 100%; }
+.nfl-su-bar { position: relative; width: 100%; border-radius: 3px 3px 0 0; background: #38bdf8; }
+.nfl-su-touches .nfl-su-bar, .nfl-su-passAtt .nfl-su-bar { background: #a78bfa; }
+.nfl-su-targets .nfl-su-bar, .nfl-su-carries .nfl-su-bar { background: #f59e0b; }
+.nfl-su-receptions .nfl-su-bar { background: #54e0bf; }
+.nfl-su-bar i { position: absolute; bottom: calc(100% + 2px); left: 50%; color: #d4d4d8; font: 700 9px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; transform: translateX(-50%); white-space: nowrap; }
+.nfl-su-none { color: #52525b; font-size: 10px; }
+.nfl-su-dates { display: flex; gap: 4px; }
+.nfl-su-dates > span { display: flex; flex: 1 1 0; min-width: 0; justify-content: center; overflow: hidden; color: #78918a; font: 9px monospace; }
+.nfl-su-col.is-dimmed, .nfl-su-dates > span.is-dimmed { opacity: .25; }
+.nfl-su-empty, .nfl-su-note { margin: 6px 0 0; color: #71717a; font-size: 12px; }
+
+@media (max-width: 760px) {
+  .nfl-pick { flex: 1 0 100%; }
+  .nfl-pick > span { padding: 8px 6px; }
+  .nfl-su-avgs { gap: 7px; font-size: 11px; }
+}
+
+.nfl-filter-hidden {
+  display: block;
+  margin-top: 2px;
+  font-size: 11px;
+  color: var(--text-muted, #8a9a94);
+}

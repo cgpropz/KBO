@@ -1,0 +1,54 @@
+/* Player-page Splits + Advanced stats, stacked under the hit-rate card. Phone first. */
+.pi-card { background: #0d0d0f; border: 1px solid #1f1f23; border-radius: 14px; padding: 12px; margin: 12px 0; box-sizing: border-box; max-width: 100%; overflow: hidden; }
+.pi-card-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+.pi-card-head h3 { margin: 0; font-size: 15px; color: #fafafa; }
+.pi-card-head span { font-size: 12px; color: #a1a1aa; }
+.pi-sub { margin: 0 0 6px; font-size: 12px; color: #a1a1aa; }
+.pi-early { margin: 4px 0 8px; padding: 6px 8px; border-radius: 8px; background: #422006; color: #fbbf24; font-size: 12px; }
+.pi-skipped { margin: 8px 0 0; font-size: 11px; color: #71717a; }
+.pi-split-group h4 { margin: 10px 0 4px; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: #71717a; }
+.pi-split-group ul { list-style: none; margin: 0; padding: 0; }
+.pi-split { display: grid; grid-template-columns: minmax(0, 1.8fr) minmax(0, 0.7fr) 3.9em 4.4em 3.4em; align-items: center; gap: 6px; padding: 6px 0; border-bottom: 1px solid #18181b; font-size: 13px; color: #e4e4e7; }
+.pi-split.is-empty { color: #52525b; }
+.pi-split-label { line-height: 1.25; overflow-wrap: anywhere; }
+.pi-split-bar { height: 6px; border-radius: 3px; background: #1f1f23; overflow: hidden; }
+.pi-split-bar i { display: block; height: 100%; border-radius: 3px; }
+.pi-split-rate { text-align: right; white-space: nowrap; }
+.pi-split-avg { text-align: right; color: #d4d4d8; }
+.pi-split-avg small { color: #71717a; }
+.pi-split-n, .pi-window span { text-align: right; font-size: 11px; color: #71717a; }
+.pi-split-n.is-small, .pi-window span.is-small { color: #f59e0b; }
+.pi-split-n { display: flex; flex-direction: column; align-items: flex-end; line-height: 1.2; }
+.pi-split-push { font-size: 9px; color: #71717a; white-space: nowrap; }
+.pi-picker { position: relative; margin-bottom: 10px; }
+.pi-picker-button { width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; border-radius: 10px; border: 1px solid #3f3f46; background: #18181b; color: #fafafa; font-size: 14px; font-weight: 700; }
+.pi-picker-list { list-style: none; margin: 6px 0 0; padding: 4px; border-radius: 10px; border: 1px solid #3f3f46; background: #111113; display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+.pi-picker-list button { width: 100%; text-align: left; padding: 8px; border-radius: 8px; border: 0; background: transparent; color: #d4d4d8; font-size: 13px; }
+.pi-picker-list button.active { background: #14532d55; color: #4ade80; }
+.pi-windows { display: grid; grid-template-columns: repeat(auto-fit, minmax(64px, 1fr)); gap: 6px; }
+.pi-window { display: flex; flex-direction: column; align-items: center; padding: 8px 4px; border-radius: 10px; background: #18181b; }
+.pi-window small { font-size: 11px; color: #a1a1aa; text-align: center; line-height: 1.2; }
+.pi-window b { font-size: 17px; color: #fafafa; margin: 2px 0; }
+.pi-window span { text-align: center; }
+.pi-series-cap { margin: 12px 0 0; font-size: 11px; color: #71717a; }
+.pi-series { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; letter-spacing: -0.2px; display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 3px; height: 92px; margin-top: 4px; align-items: end; }
+.pi-series-col { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; min-width: 0; }
+.pi-series-col i { display: block; width: 70%; border-radius: 3px 3px 0 0; background: #22c55e99; }
+.pi-series-col b, .pi-series-col small { white-space: nowrap; font-size: 9px; text-align: center; }
+.pi-series.is-vertical { height: 108px; }
+.pi-series.is-vertical .pi-series-col b { writing-mode: vertical-rl; transform: rotate(180deg); margin-bottom: 2px; }
+.pi-series-col b { order: -1; color: #d4d4d8; }
+.pi-series-col small { color: #71717a; }
+.pi-note { margin: 10px 0 0; font-size: 11px; color: #71717a; }
+.pi-empty { margin: 0; font-size: 13px; color: #a1a1aa; }
+.pi-unavailable { margin-top: 8px; font-size: 11px; color: #71717a; }
+.pi-unavailable summary { cursor: pointer; }
+.pi-unavailable ul { margin: 4px 0 0; padding-left: 16px; }
+.pi-scale-note { font-size: 11px; color: #a1a1aa; }
+.pi-cue { font-style: normal; font-size: 0.75em; margin-right: 2px; vertical-align: 1px; }
+.pi-window.is-baseline { box-shadow: inset 0 0 0 1px #3f3f46; }
+.pi-window.tone-strong { box-shadow: inset 0 -2px 0 #4ade80; }
+.pi-window.tone-good { box-shadow: inset 0 -2px 0 #a3e63599; }
+.pi-window.tone-soft { box-shadow: inset 0 -2px 0 #fdba7499; }
+.pi-window.tone-weak { box-shadow: inset 0 -2px 0 #f87171; }
+.pi-advanced .pi-scale-note { margin: 8px 0 0; }
