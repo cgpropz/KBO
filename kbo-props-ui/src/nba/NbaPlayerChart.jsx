@@ -12,6 +12,8 @@ import NbaRangeSlider from './NbaRangeSlider'
 import { GAME_FILTERS, filterGames, formatMetric, isFiltered, metricBounds, newestSeasonLogs, resolveRange } from './nbaGameFilters'
 import NbaMinutesUsage from './NbaMinutesUsage'
 import { PENDING, pickText, seasonShortLabel, todayPick } from './nbaTodayPick'
+import PlayerInsights from '../playerInsights/PlayerInsights'
+import { nbaInsights } from '../playerInsights/insightsSports'
 
 const RANGES = [
   { id: 'l5', label: 'L5', count: 5 },
@@ -157,6 +159,16 @@ export default function NbaPlayerChart({ player, projection }) {
     resetKey: `${player?.athleteId || player?.name || ''}|${current?.stat || ''}`,
   })
 
+  // Splits + Advanced stats, from the same game logs as the chart. NBA player
+  // logs only reach full-access viewers (server gate), so there is no extra
+  // client check here.
+  const insightsModel = useMemo(() => (current && allLogs.length
+    ? nbaInsights(allLogs, {
+      valueOf: (game) => statValue(game, current.stat),
+      opponent: String(current.rows.find((prop) => prop?.opponent)?.opponent || '').trim().toUpperCase() || null,
+    })
+    : null), [allLogs, current])
+
   // Minutes & Usage: the same window over every logged game (newest first);
   // games the sliders filter out stay in place, dimmed.
   const muOption = RANGES.find((option) => option.id === range) || RANGES[1]
@@ -196,8 +208,7 @@ export default function NbaPlayerChart({ player, projection }) {
   const chartHit = slider.rate || { hits: 0, games: 0, rate: null }
   const hitColor = rateTextColor(chartHit.rate, chartHit.games)
 
-  return (
-    <>
+  const chartCard = (
     <section className="nba-player-chart-card card" aria-label="Hit rate chart">
       <div className="nba-player-chart-head">
         <div>
@@ -287,7 +298,13 @@ export default function NbaPlayerChart({ player, projection }) {
       </div>
       <AltLinesRow slider={slider} />
     </section>
-    {minutesUsage}
+  )
+  return (
+    <>
+      <PlayerInsights model={insightsModel} line={chartLine} statLabel={current.stat}>
+        {chartCard}
+      </PlayerInsights>
+      {minutesUsage}
     </>
   )
 }

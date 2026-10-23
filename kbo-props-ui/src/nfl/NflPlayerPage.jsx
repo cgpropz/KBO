@@ -9,7 +9,7 @@ import { teamLogoUrl } from './nflTeams'
 import { fitImage } from '../fitImage.js'
 import { lineResult, nflCurrentSeason, overHitRate } from '../hitRateStrip'
 import { formatLineValue, offeredLinesForStat, rateTextColor } from '../lineSlider'
-import { cgSide, lineMatchesStat } from '../cgScore'
+import { lineMatchesStat } from '../cgScore'
 import { nflCgScore } from './nflLineFloors'
 import { buildCgScoreExplainer } from '../cgScoreExplainer'
 import { CgScoreNote } from '../CgScoreExplainer'
@@ -18,6 +18,18 @@ import { AdjMatchupStat } from './MatchupDefense'
 import { useNflMatchupDefense } from './useNflMatchupDefense'
 import { nflSeasonAverage } from './seasonAverage'
 import GameDateLogo from '../GameDateLogo'
+import PlayerInsights from '../playerInsights/PlayerInsights'
+import { useAuth } from '../AuthContext'
+import { sportAccess } from '../entitlements'
+import { nflInsights } from '../playerInsights/insightsSports'
+import NbaRangeSlider from '../nba/NbaRangeSlider'
+import { formatMetric } from '../nba/nbaGameFilters'
+import NflSnapsUsage from './NflSnapsUsage'
+import {
+  PENDING, gamePassesRanges, hiddenForMissing, nflBoardDvpRank, nflGameFilters, nflGameLog, nflTodayPick, nflTrendMetrics, pickText, rangesActive,
+  resolveFilterRanges,
+} from './nflPlayerGames.js'
+import './nflPlayerParity.css'
 
 // This season's per-game average, or '—' (src/nfl/seasonAverage.js).
 function seasonAvgText(row) {
@@ -65,35 +77,6 @@ function initials(name) {
   return name.split(' ').map((part) => part[0]).join('').slice(0, 2)
 }
 
-function ordinal(rank) {
-  const remainder = rank % 100
-  if (remainder >= 11 && remainder <= 13) return `${rank}th`
-  switch (rank % 10) {
-    case 1: return `${rank}st`
-    case 2: return `${rank}nd`
-    case 3: return `${rank}rd`
-    default: return `${rank}th`
-  }
-}
-
-const DVP_RED = [255, 123, 121]
-const DVP_NEUTRAL = [120, 145, 138]
-const DVP_GREEN = [127, 255, 104]
-
-function mixColor(a, b, t) {
-  return a.map((channel, index) => Math.round(channel + (b[index] - channel) * t))
-}
-
-// 1 = toughest matchup (red) -> 15 = neutral -> 32 = easiest matchup (green)
-function dvpColor(rank) {
-  if (!rank) return null
-  const value = Math.max(1, Math.min(32, rank))
-  const [r, g, b] = value <= 15
-    ? mixColor(DVP_RED, DVP_NEUTRAL, (value - 1) / 14)
-    : mixColor(DVP_NEUTRAL, DVP_GREEN, (value - 15) / 17)
-  return `rgb(${r}, ${g}, ${b})`
-}
-
 // Hide the mark if it fails to load, so its alt text never shows as a broken image.
 function TeamLogo({ team, className }) {
   const url = teamLogoUrl(team)
@@ -114,10 +97,6 @@ function sortProps(rows) {
   })
 }
 
-function average(values) {
-  return values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : null
-}
-
 function TeammateToggle({ teammate, mode, onChange }) {
   return (
     <div className={`nfl-teammate${mode ? ` is-${mode}` : ''}`}>
@@ -130,15 +109,49 @@ function TeammateToggle({ teammate, mode, onChange }) {
   )
 }
 
-function ChartFilterChip({ label, valueLabel, valueColor, open, onToggle, children }) {
+// Today's board projection and CG Score beside the PrizePicks line. Both
+// show Pending until the board has a projection and a line for this stat.
+function TodayPick({ row, pick }) {
+  const projection = pickText(pick.projection)
+  const cg = pickText(pick.cg)
+  const sideClass = pick.side === 'OVER' ? 'is-over' : pick.side === 'UNDER' ? 'is-under' : ''
   return (
-    <div className={`nfl-chart-filter-chip${open ? ' open' : ''}`}>
-      <button type="button" onClick={onToggle}>
-        <span>{label}</span>
-        <b style={valueColor ? { color: valueColor } : undefined}>{valueLabel}</b>
-      </button>
-      {open && <div className="nfl-chart-filter-popover">{children}</div>}
+    <div className="nfl-pick" data-testid="nfl-player-pick">
+      <span className="nfl-pick-line">
+        <small>PrizePicks</small>
+        <b data-testid="nfl-player-line">{row.line != null ? formatValue(row.line) : PENDING}</b>
+        <em>{row.prop}</em>
+      </span>
+      <span>
+        <small>Projection</small>
+        <b data-testid="nfl-player-projection" className={projection ? '' : 'is-pending'}>{projection || PENDING}</b>
+      </span>
+      <span>
+        <small>CG Score</small>
+        <b data-testid="nfl-player-cg" className={cg ? sideClass : 'is-pending'}>{cg ? `${pick.side ? `${pick.side} ` : ''}${cg}` : (projection ? '—' : PENDING)}</b>
+      </span>
     </div>
+  )
+}
+
+function MatchupLine({ row }) {
+  const away = row.awayTeam || null
+  const home = row.homeTeam || null
+  if (away && home && (row.team === away || row.team === home)) {
+    return (
+      <p className="nfl-matchup" data-testid="nfl-player-matchup">
+        <TeamLogo team={away} className="nfl-matchup-logo" /><span>{away}</span>
+        <i>@</i>
+        <TeamLogo team={home} className="nfl-matchup-logo" /><span>{home}</span>
+      </p>
+    )
+  }
+  return (
+    <p className="nfl-matchup" data-testid="nfl-player-matchup">
+      <TeamLogo team={row.team} className="nfl-matchup-logo" /><span>{row.team}</span>
+      <i>vs</i>
+      <TeamLogo team={row.opponent} className="nfl-matchup-logo" /><span>{row.opponent}</span>
+    </p>
   )
 }
 
@@ -149,11 +162,8 @@ export default function NflPlayerPage({ player, prop, onBack }) {
   const [loaded, setLoaded] = useState(false)
   const [selectedProp, setSelectedProp] = useState(prop)
   const [selectedRange, setSelectedRange] = useState('l10')
-  const [dvpThreshold, setDvpThreshold] = useState(null)
-  const [snapThreshold, setSnapThreshold] = useState(null)
-  const [usageThreshold, setUsageThreshold] = useState(null)
+  const [filterSelections, setFilterSelections] = useState({})
   const [teammateModes, setTeammateModes] = useState({})
-  const [openFilter, setOpenFilter] = useState(null)
   const [oddsRecords, setOddsRecords] = useState(null)
   const [oddsError, setOddsError] = useState(false)
 
@@ -175,7 +185,7 @@ export default function NflPlayerPage({ player, prop, onBack }) {
 
   const playerRows = useMemo(() => sortProps(projections
     .filter((item) => item.player === player && lineMatchesStat(item.prop, item.line))
-    .map((item) => ({ ...item, score: nflCgScore(item.projection, item.line, item.prop) ?? 0 }))), [projections, player])
+    .map((item) => ({ ...item, score: nflCgScore(item.projection, item.line, item.prop) }))), [projections, player])
 
   const currentRow = useMemo(() => playerRows.find((item) => item.prop === selectedProp) || playerRows[0], [playerRows, selectedProp])
   const oddsRows = useMemo(
@@ -188,36 +198,35 @@ export default function NflPlayerPage({ player, prop, onBack }) {
   const [seededRowId, setSeededRowId] = useState(null)
   if (currentRow && currentRow.id !== seededRowId) {
     setSeededRowId(currentRow.id)
-    setDvpThreshold(null)
-    setSnapThreshold(null)
-    setUsageThreshold(null)
+    setFilterSelections({})
     setTeammateModes({})
-    setOpenFilter(null)
   }
+
+  const rowSeason = currentRow ? nflCurrentSeason(currentRow) : null
+  const games = useMemo(() => (currentRow ? nflGameLog(currentRow, playerRows, { currentSeason: rowSeason }) : []), [currentRow, playerRows, rowSeason])
+  const gameFilters = useMemo(() => nflGameFilters(currentRow, games, { currentSeason: rowSeason }), [currentRow, games, rowSeason])
+  const filterRanges = useMemo(() => resolveFilterRanges(gameFilters, filterSelections), [gameFilters, filterSelections])
 
   const chartInput = useMemo(() => {
     if (!currentRow) {
-      return { posted: null, values: [], chartIndices: [], chartValues: [], chartDates: [], chartOpponents: [], windows: [], baseCount: 0, offered: null }
+      return { posted: null, values: [], windowIndices: [], chartIndices: [], chartValues: [], chartDates: [], chartOpponents: [], windows: [], baseCount: 0, offered: null }
     }
     const recent = Array.isArray(currentRow.recent) ? currentRow.recent : []
     const gameDates = Array.isArray(currentRow.gameDates) ? currentRow.gameDates : []
     const gameOpponents = Array.isArray(currentRow.gameOpponents) ? currentRow.gameOpponents : []
-    const recentDvpRanks = Array.isArray(currentRow.recentDvpRanks) ? currentRow.recentDvpRanks : []
-    const recentSnapPercents = Array.isArray(currentRow.recentSnapPercents) ? currentRow.recentSnapPercents : []
-    const recentUsage = Array.isArray(currentRow.recentUsage) ? currentRow.recentUsage : []
     const teammateOn = Array.isArray(currentRow.teammateOn) ? currentRow.teammateOn : []
-    const passes = (index) => {
-      const passesDvp = dvpThreshold == null || (recentDvpRanks[index] != null && recentDvpRanks[index] <= dvpThreshold)
-      const passesSnap = snapThreshold == null || (recentSnapPercents[index] != null && recentSnapPercents[index] >= snapThreshold)
-      const passesUsage = usageThreshold == null || (recentUsage[index] != null && recentUsage[index] >= usageThreshold)
-      return passesDvp && passesSnap && passesUsage && gameMatchesTeammates(teammateOn[index], teammateModes)
-    }
+    const passes = (index) => (
+      (!games[index] || gamePassesRanges(games[index], gameFilters, filterRanges))
+      && gameMatchesTeammates(teammateOn[index], teammateModes)
+    )
     const windows = NFL_RANGES.map((option) => {
       const base = nflIndices(currentRow, option.id, recent.length)
       return { id: option.id, values: base.filter(passes).map((index) => recent[index]), baseCount: base.length }
     })
-    const chartIndices = nflIndices(currentRow, selectedRange, recent.length).filter(passes)
+    const windowIndices = nflIndices(currentRow, selectedRange, recent.length)
+    const chartIndices = windowIndices.filter(passes)
     return {
+      windowIndices,
       posted: currentRow.line,
       values: chartIndices.map((index) => recent[index]),
       chartIndices,
@@ -225,10 +234,10 @@ export default function NflPlayerPage({ player, prop, onBack }) {
       chartDates: chartIndices.map((index) => gameDates[index]),
       chartOpponents: chartIndices.map((index) => gameOpponents[index]),
       windows,
-      baseCount: nflIndices(currentRow, selectedRange, recent.length).length,
+      baseCount: windowIndices.length,
       offered: offeredLinesForStat([{ prop: currentRow.prop, line: currentRow.line, altLines: currentRow.altLines || currentRow.alt_lines }], currentRow.prop),
     }
-  }, [currentRow, selectedRange, dvpThreshold, snapThreshold, usageThreshold, teammateModes])
+  }, [currentRow, selectedRange, games, gameFilters, filterRanges, teammateModes])
 
   const slider = useChartLine({
     postedLine: chartInput.posted,
@@ -236,6 +245,12 @@ export default function NflPlayerPage({ player, prop, onBack }) {
     offeredLines: chartInput.offered,
     resetKey: currentRow?.id || '',
   })
+  // Splits + Advanced stats: NFL members only.
+  const { tier } = useAuth()
+  const insightsAllowed = sportAccess(tier).nfl
+  const insightsModel = useMemo(() => (insightsAllowed && currentRow
+    ? nflInsights(currentRow, playerRows, { currentSeason: nflCurrentSeason(currentRow) })
+    : null), [insightsAllowed, currentRow, playerRows])
 
   if (error) return <div className="nfl-notice">Unable to load player data: {error}</div>
   if (!loaded) return <div className="nfl-notice">Loading player data for {player}.</div>
@@ -248,19 +263,10 @@ export default function NflPlayerPage({ player, prop, onBack }) {
     )
   }
 
-  const recentSnapPercents = Array.isArray(currentRow.recentSnapPercents) ? currentRow.recentSnapPercents : []
-  const recentUsage = Array.isArray(currentRow.recentUsage) ? currentRow.recentUsage : []
   const teammates = (Array.isArray(currentRow.teammates) ? currentRow.teammates : []).filter((item) => item && item.id && item.name)
-  const usageLabel = currentRow.usageLabel || 'Usage'
-  const validSnaps = recentSnapPercents.filter((value) => value != null)
-  const validUsage = recentUsage.filter((value) => value != null)
-  const defaultDvpThreshold = currentRow.dvpRank ?? 32
-  const defaultSnapThreshold = validSnaps.length ? Math.round(average(validSnaps) * 10) / 10 : 0
-  const defaultUsageThreshold = validUsage.length ? Math.round(average(validUsage) * 10) / 10 : 0
-  // Side from the CG Score, same as the Edge Board: exactly 50 is no pick.
-  const side = cgSide(currentRow.score)
-  const sideClass = side === 'OVER' ? 'over' : side === 'UNDER' ? 'under' : 'neutral'
-  const modelDelta = currentRow.projection - currentRow.line
+  // Projection and CG Score: the board row's own values (Pending when blank).
+  const pick = nflTodayPick(currentRow)
+  const modelDelta = pick.projection != null ? pick.projection - currentRow.line : null
   const currentSeason = nflCurrentSeason(currentRow) ?? new Date().getFullYear()
   const rangeLabels = {
     season: String(currentSeason),
@@ -280,8 +286,9 @@ export default function NflPlayerPage({ player, prop, onBack }) {
   const chartLine = slider.line ?? currentRow.line
   const chartHit = slider.rate || { hits: 0, games: 0, rate: null }
 
-  const toggleFilter = (id) => setOpenFilter((current) => (current === id ? null : id))
-  const clearFilters = () => { setDvpThreshold(null); setSnapThreshold(null); setUsageThreshold(null); setTeammateModes({}); setOpenFilter(null) }
+  const slidersNarrowed = rangesActive(filterRanges)
+  const hiddenNotes = hiddenForMissing(chartInput.windowIndices.map((index) => games[index]), gameFilters, filterRanges)
+  const clearFilters = () => { setFilterSelections({}); setTeammateModes({}) }
   const setTeammateMode = (id, mode) => {
     setTeammateModes((current) => {
       const next = { ...current }
@@ -292,7 +299,9 @@ export default function NflPlayerPage({ player, prop, onBack }) {
   }
   const filterLabel = teammateFilterLabel(teammates, teammateModes)
   const rangeLabel = rangeOptions.find((option) => option.id === selectedRange)?.label || 'Games'
-  const filtersActive = Boolean(filterLabel) || dvpThreshold != null || snapThreshold != null || usageThreshold != null
+  const filtersActive = Boolean(filterLabel) || slidersNarrowed
+  const keptGames = filtersActive ? new Set(chartIndices) : null
+  const trendMetrics = insightsAllowed ? nflTrendMetrics(currentRow, games) : []
   const sampleShrunk = chartValues.length !== baseCount
   const smallSample = filtersActive && chartHit.games > 0 && chartHit.games < 5
   const hitColor = rateTextColor(chartHit.rate, chartHit.games)
@@ -301,15 +310,14 @@ export default function NflPlayerPage({ player, prop, onBack }) {
     <section className="nfl-player-page">
       <button className="nfl-player-back" onClick={onBack}>&larr; Back</button>
       <div className="nfl-player-header">
-        <div className="nfl-player-avatar">
-          {currentRow.imageUrl ? <img className="nfl-player-avatar-photo" src={fitImage(currentRow.imageUrl, 72)} alt={player} width={72} height={72} /> : initials(player)}
+        <div className="nfl-headshot" data-testid="nfl-player-headshot">
+          <div className="nfl-player-avatar">
+            {currentRow.imageUrl ? <img className="nfl-player-avatar-photo" src={fitImage(currentRow.imageUrl, 72)} alt={player} width={72} height={72} /> : initials(player)}
+          </div>
+          <TeamLogo team={currentRow.team} className="nfl-headshot-team" />
         </div>
-        <div className="nfl-player-title"><h1>{player}<span>{currentRow.position}</span></h1><p>{currentRow.team} vs {currentRow.opponent}</p></div>
-        <div className="nfl-player-prop-pill">
-          <TeamLogo team={currentRow.opponent} className="nfl-player-prop-icon" />
-          <span>{formatValue(currentRow.line)} {currentRow.prop}</span>
-          <b className={sideClass}>{side ? `${side} ` : ''}{currentRow.score.toFixed(1)}</b>
-        </div>
+        <div className="nfl-player-title"><h1>{player}<span>{currentRow.position}</span></h1><MatchupLine row={currentRow} /></div>
+        <TodayPick row={currentRow} pick={pick} />
       </div>
 
       <div className="nfl-player-tabs">
@@ -321,9 +329,9 @@ export default function NflPlayerPage({ player, prop, onBack }) {
       <div className="nfl-player-summary">
         <div className="nfl-player-hitrate" aria-live="polite"><small>HIT RATE</small><strong style={hitColor ? { color: hitColor } : undefined}>{chartHit.rate == null ? '—' : `${chartHit.rate}%`}</strong><span>{chartHit.games ? `(${chartHit.hits}/${chartHit.games}${slider.moved ? ` over ${formatLineValue(slider.line)}` : ''})` : ''}</span></div>
         <div><small>LINE</small><strong>{formatValue(currentRow.line)}</strong></div>
-        <div><small>MODEL</small><strong>{formatValue(currentRow.projection)}</strong><span className={modelDelta >= 0 ? 'over' : 'under'}>{formatDelta(modelDelta)}</span></div>
+        <div><small>MODEL</small>{modelDelta == null ? <strong className="nfl-pending">{PENDING}</strong> : <><strong>{formatValue(pick.projection)}</strong><span className={modelDelta >= 0 ? 'over' : 'under'}>{formatDelta(modelDelta)}</span></>}</div>
         <div><small>SEASON AVG</small><strong>{seasonAvgText(currentRow)}</strong></div>
-        <div><small>DVP RANK</small><strong className={currentRow.dvpRatio >= 1 ? 'over' : 'under'}>{currentRow.dvpRank}<i> /32</i></strong></div>
+        <div><small>DVP RANK</small>{nflBoardDvpRank(currentRow) == null ? <strong className="neutral" data-testid="nfl-player-dvp">—</strong> : <strong className={currentRow.dvpRatio >= 1 ? 'over' : 'under'} data-testid="nfl-player-dvp">{currentRow.dvpRank}<i> /32</i></strong>}</div>
         <AdjMatchupStat payload={matchupDefense} prop={currentRow.prop} position={currentRow.position} opponent={currentRow.opponent} />
         <div><small>SNAPS</small><strong>{currentRow.snapCount > 0 ? `${currentRow.snapCount}%` : 'N/A'}</strong></div>
         {(currentRow.position === 'WR' || currentRow.position === 'TE') && currentRow.targetsPerGame != null && (
@@ -331,6 +339,7 @@ export default function NflPlayerPage({ player, prop, onBack }) {
         )}
       </div>
 
+      <PlayerInsights model={insightsModel} line={chartLine} statLabel={currentRow.prop}>
       <div className="nfl-player-range-strip">
         {rangeOptions.map((option) => (
           <button
@@ -345,39 +354,40 @@ export default function NflPlayerPage({ player, prop, onBack }) {
         ))}
       </div>
 
-      <div className="nfl-chart-filters">
-        <span className="nfl-chart-filters-label">Chart Filters</span>
-        <button className="nfl-chart-filter-clear" onClick={clearFilters}>Clear all</button>
-        <ChartFilterChip
-          label="Def Rank"
-          valueLabel={dvpThreshold == null ? 'All' : ordinal(dvpThreshold)}
-          valueColor={dvpThreshold == null ? null : dvpColor(dvpThreshold)}
-          open={openFilter === 'dvp'}
-          onToggle={() => toggleFilter('dvp')}
-        >
-          <input type="range" min={1} max={32} step={1} value={dvpThreshold ?? defaultDvpThreshold} onChange={(event) => setDvpThreshold(Number(event.target.value))} />
-          <small>Show games vs. defenses ranked {dvpThreshold ?? defaultDvpThreshold} or tougher</small>
-        </ChartFilterChip>
-        <ChartFilterChip
-          label="Snap %"
-          valueLabel={snapThreshold == null ? 'All' : `${snapThreshold}`}
-          open={openFilter === 'snap'}
-          onToggle={() => toggleFilter('snap')}
-        >
-          <input type="range" min={0} max={100} step={0.5} value={snapThreshold ?? defaultSnapThreshold} onChange={(event) => setSnapThreshold(Number(event.target.value))} />
-          <small>Show games with snap share &ge; {snapThreshold ?? defaultSnapThreshold}%</small>
-        </ChartFilterChip>
-        <ChartFilterChip
-          label={usageLabel}
-          valueLabel={usageThreshold == null ? 'All' : `${usageThreshold}`}
-          open={openFilter === 'usage'}
-          onToggle={() => toggleFilter('usage')}
-        >
-          <input type="range" min={0} max={Math.max(1, Math.ceil(Math.max(...recentUsage, 1)))} step={0.5} value={usageThreshold ?? defaultUsageThreshold} onChange={(event) => setUsageThreshold(Number(event.target.value))} />
-          <small>Show games with {usageLabel.toLowerCase()} &ge; {usageThreshold ?? defaultUsageThreshold}</small>
-        </ChartFilterChip>
-        <button className="nfl-chart-filter-more" title="More filters coming soon" disabled>More</button>
-      </div>
+      {gameFilters.length > 0 && (
+        <div className={`nfl-filters-panel${slidersNarrowed ? ' is-narrowed' : ''}`} aria-label="Game filters" data-testid="nfl-game-filters">
+          <div className="nfl-filters-head">
+            <span>Filters</span>
+            <b>{slidersNarrowed ? `filtered: ${chartIndices.length} of ${baseCount} games` : `all ${baseCount} games`}</b>
+            <button type="button" onClick={clearFilters} disabled={!filtersActive}>Reset</button>
+          </div>
+          {gameFilters.map((filter) => {
+            const range = filterRanges[filter.id]
+            const hidden = hiddenNotes.find((item) => item.id === filter.id)
+            const unitText = filter.unit === '%' ? '%' : filter.unit ? ` ${filter.unit}` : ''
+            return (
+              <div className="nfl-filter" key={filter.id} data-testid={`nfl-filter-${filter.id}`}>
+                <div className="nfl-filter-label">
+                  <span>{filter.label}</span>
+                  <b>{formatMetric(range.low, filter.step)}–{formatMetric(range.high, filter.step)}{unitText}</b>
+                </div>
+                <NbaRangeSlider
+                  label={filter.label.toLowerCase()}
+                  unit={filter.unit}
+                  step={filter.step}
+                  min={filter.bounds.min}
+                  max={filter.bounds.max}
+                  low={range.low}
+                  high={range.high}
+                  onChange={(low, high) => setFilterSelections((prev) => ({ ...prev, [filter.id]: { low, high } }))}
+                />
+                {hidden && <small className="nfl-filter-hidden" data-testid={`nfl-filter-hidden-${filter.id}`}>{hidden.text}</small>}
+              </div>
+            )
+          })}
+          {gameFilters.some((filter) => filter.id === 'dvp') && <small className="nfl-filters-note">Def rank: this season's rank vs this position, 1 = toughest, 32 = easiest. Earlier seasons have no rank.</small>}
+        </div>
+      )}
 
       {teammates.length > 0 && (
         <div className="nfl-teammates">
@@ -430,17 +440,21 @@ export default function NflPlayerPage({ player, prop, onBack }) {
           </span>
         ))}
       </div>
-      <div className="cg-score-open">
-        <CgScoreNote note={buildCgScoreExplainer({
-          player,
-          projection: currentRow.projection,
-          line: currentRow.line,
-          stat: currentRow.prop,
-          score: currentRow.score,
-          recentValues: currentRow.recent,
-        })} />
-      </div>
+      {pick.cg != null && (
+        <div className="cg-score-open">
+          <CgScoreNote note={buildCgScoreExplainer({
+            player,
+            projection: pick.projection,
+            line: currentRow.line,
+            stat: currentRow.prop,
+            score: pick.cg,
+            recentValues: currentRow.recent,
+          })} />
+        </div>
+      )}
       <AltLinesRow slider={slider} />
+      <NflSnapsUsage games={games} windowIndices={chartInput.windowIndices} kept={keptGames} metrics={trendMetrics} currentSeason={currentSeason} />
+      </PlayerInsights>
       <PlayerOddsTable key={currentRow.prop} propLabel={currentRow.prop} rows={oddsRows} status={oddsStatus} />
     </section>
   )
