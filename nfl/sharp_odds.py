@@ -1218,10 +1218,10 @@ def main(argv=None):
     try:
         payload = run(args.projections, provider_name=args.provider, quotes_path=args.quotes_output)
     except ProviderError as exc:
-        print(f"NFL sharp odds skipped: {exc}")
+        print(f"NFL sharp odds skipped: {type(exc).__name__}: {exc}")
         return 0
     except Exception as exc:
-        print(f"NFL sharp odds failed softly and left the previous snapshot in place: {exc}")
+        print(f"NFL sharp odds failed softly and left the previous snapshot in place: {type(exc).__name__}: {exc}")
         return 0
     if payload is None:
         return 0

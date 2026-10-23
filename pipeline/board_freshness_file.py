@@ -189,27 +189,110 @@ def merge_freshness(local: dict, remote: dict) -> dict:
     return clean_document({"checked_at": checked, "boards": boards, "cheatsheet_warnings": warnings})
 
 
-def _git_stage(stage: int, rel: str, cwd: Path) -> dict:
-    """One side of a conflicted file from the index (2 = ours, 3 = theirs)."""
+FRESHNESS_REL = "shared/board_freshness.json"
+STATUS_REL = "kbo-props-ui/public/status.json"
+WARNINGS_REL = "kbo-props-ui/public/cheatsheet_warnings.json"
+
+
+class StageError(RuntimeError):
+    """One side of a conflicted board clock file could not be read. The caller
+    must fail rather than take the other side whole."""
+
+
+def _git_stage_payload(stage: int, rel: str, cwd: Path) -> dict:
+    """One side of a conflicted file from the index (2 = ours, 3 = theirs).
+    Raises StageError when the side is missing, unreadable or not an object."""
     result = subprocess.run(
         ["git", "show", f":{stage}:{rel}"], cwd=cwd, capture_output=True, text=True, check=False,
     )
     if result.returncode != 0:
-        return _empty()
+        raise StageError(f"stage {stage} of {rel} is missing from the index")
     try:
         payload = json.loads(result.stdout)
-    except ValueError:
-        return _empty()
-    return clean_document(payload) if isinstance(payload, dict) else _empty()
+    except ValueError as exc:
+        raise StageError(f"stage {stage} of {rel} is not valid JSON") from exc
+    if not isinstance(payload, dict):
+        raise StageError(f"stage {stage} of {rel} is not a JSON object")
+    return payload
 
 
-def resolve_conflict(rel: str = "shared/board_freshness.json", cwd: Path | None = None) -> dict:
-    """Resolve a rebase or merge conflict in the freshness file by merging both
-    sides with merge_freshness, never by taking one side whole."""
-    cwd = Path.cwd() if cwd is None else Path(cwd)
+def _git_stage(stage: int, rel: str, cwd: Path) -> dict:
+    """A freshness document from one side of the conflict. Raises StageError."""
+    payload = _git_stage_payload(stage, rel, cwd)
+    if not isinstance(payload.get("boards"), dict):
+        raise StageError(f"stage {stage} of {rel} has no boards object")
+    return clean_document(payload)
+
+
+def load_warning_file(path: Path) -> dict:
+    """The cheat-sheet age file, or {} when it is missing or unreadable."""
+    try:
+        payload = json.loads(Path(path).read_text(encoding="utf-8"))
+    except (OSError, ValueError, TypeError):
+        return {}
+    return payload if isinstance(payload, dict) else {}
+
+
+def merge_warning_files(local: dict, remote: dict) -> dict:
+    """The cheat-sheet age file from whichever side checked more recently.
+    A readable checked_at beats a missing one; a tie keeps local."""
+    local = local if isinstance(local, dict) else {}
+    remote = remote if isinstance(remote, dict) else {}
+    chosen = local if _newer(local.get("checked_at"), remote.get("checked_at")) else remote
+    warnings = chosen.get("warnings")
+    return {"checked_at": chosen.get("checked_at"), "warnings": warnings if isinstance(warnings, list) else []}
+
+
+def _resolve_freshness(rel: str, cwd: Path) -> dict:
     merged = merge_freshness(_git_stage(3, rel, cwd), _git_stage(2, rel, cwd))
     write_freshness(merged, cwd / rel)
     return merged
+
+
+def _status_rows(stage: int, rel: str, cwd: Path) -> list:
+    payload = _git_stage_payload(stage, rel, cwd)
+    rows = payload.get("boards")
+    if not isinstance(rows, list):
+        raise StageError(f"stage {stage} of {rel} has no boards list")
+    return rows
+
+
+def _resolve_status(rel: str, cwd: Path) -> dict:
+    from pipeline.board_status import SPORTS, prefer_fresher, write_status
+
+    def keep(rows: list) -> list:
+        return [row for row in rows if isinstance(row, dict) and row.get("sport") in SPORTS]
+
+    merged = prefer_fresher(
+        keep(_status_rows(3, rel, cwd)), keep(_status_rows(2, rel, cwd)), datetime.now(timezone.utc),
+    )
+    write_status(merged, cwd / rel)
+    return merged
+
+
+def _resolve_warnings(rel: str, cwd: Path) -> dict:
+    merged = merge_warning_files(_git_stage_payload(3, rel, cwd), _git_stage_payload(2, rel, cwd))
+    write_json(merged, cwd / rel)
+    return merged
+
+
+def resolve_conflict(rel: str = FRESHNESS_REL, cwd: Path | None = None) -> dict:
+    """Resolve a rebase or merge conflict in a board clock file by merging both
+    sides (newest entry per board wins), never by taking one side whole.
+
+    Handles shared/board_freshness.json, public/status.json and
+    public/cheatsheet_warnings.json. Raises StageError when either side is
+    missing or unreadable, or for any other path."""
+    cwd = Path.cwd() if cwd is None else Path(cwd)
+    resolvers = {
+        FRESHNESS_REL: _resolve_freshness,
+        STATUS_REL: _resolve_status,
+        WARNINGS_REL: _resolve_warnings,
+    }
+    resolver = resolvers.get(rel)
+    if resolver is None:
+        raise StageError(f"no board clock merge for {rel}")
+    return resolver(rel, cwd)
 
 
 def write_json(document: dict, path: Path) -> None:
@@ -228,9 +311,16 @@ def write_warning_file(warnings: list, checked_at: str, path: Path = WARNINGS_PA
 def main(argv: list[str] | None = None) -> int:
     args = list(sys.argv[1:] if argv is None else argv)
     if args[:1] == ["resolve-conflict"]:
-        rel = args[1] if len(args) > 1 else "shared/board_freshness.json"
-        merged = resolve_conflict(rel)
-        print("freshness conflict merged:", ",".join(sorted(merged.get("boards") or {})))
+        rel = args[1] if len(args) > 1 else FRESHNESS_REL
+        try:
+            merged = resolve_conflict(rel)
+        except (StageError, OSError, ValueError) as exc:
+            print(f"::error::board clock conflict not resolved for {rel}: {type(exc).__name__}: {exc}")
+            return 1
+        boards = merged.get("boards") or {}
+        if isinstance(boards, list):
+            boards = {row.get("sport"): row for row in boards if isinstance(row, dict)}
+        print(f"board clock conflict merged for {rel}:", ",".join(sorted(str(key) for key in boards)))
         return 0
     print("usage: python -m pipeline.board_freshness_file resolve-conflict [path]")
     return 2
