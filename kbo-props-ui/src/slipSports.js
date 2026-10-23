@@ -203,8 +203,14 @@ function basketRows(players, { source = '', sport = '' } = {}) {
       const key = `${name}|${stat}|${line}|${oddsTypeOf(lineRow)}`
       if (seen.has(key)) continue
       seen.add(key)
-      const projection = num(prop?.projection)
-      const edge = projection == null ? 0 : Math.round((projection - line) * 100) / 100
+      // A pending row (null or '' projection) has no model number: skip it
+      // before num(), which would turn null into PROJ 0 / CG 0 / LESS. Same
+      // rule as the KBO rows above.
+      const rawProjection = prop?.projection
+      if (rawProjection == null || (typeof rawProjection === 'string' && rawProjection.trim() === '')) continue
+      const projection = num(rawProjection)
+      if (projection == null) continue
+      const edge = Math.round((projection - line) * 100) / 100
       const built = slipFields(lineRow, {
         name,
         team,

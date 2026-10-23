@@ -25,6 +25,8 @@ const isStandard = (type) => type == null || String(type).toLowerCase() === 'sta
 function sideFor(projection, line, rec) {
   const r = String(rec || '').toUpperCase()
   if (r === 'OVER' || r === 'UNDER') return r
+  // A pending row has no projection: no side (Number(null) would read as 0).
+  if (projection == null || (typeof projection === 'string' && projection.trim() === '')) return null
   const p = num(projection)
   const l = num(line)
   if (!Number.isFinite(p) || !Number.isFinite(l)) return null
