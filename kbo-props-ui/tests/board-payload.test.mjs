@@ -304,3 +304,12 @@ test('nhlApiLog leaves the server only with NHL_API_SECTIONS_SERVER=1', () => {
   const board = presentBoardPayload('', { data: full }, full, { env: { NHL_API_SECTIONS_SERVER: '1' } })
   assert.ok(board.every((row) => !('nhlApiLog' in row)))
 })
+
+test('withoutNhlApiLog handles a row object as well as an array', async () => {
+  const { withoutNhlApiLog } = await import('../api/_boardPayload.js')
+  assert.deepEqual(withoutNhlApiLog({ player: 'Test Skater', nhlApiLog: { v: 1 } }), { player: 'Test Skater' })
+  assert.deepEqual(withoutNhlApiLog([{ player: 'A', nhlApiLog: {} }, { player: 'B' }]), [{ player: 'A' }, { player: 'B' }])
+  const plain = { player: 'C' }
+  assert.equal(withoutNhlApiLog(plain), plain)
+  assert.equal(withoutNhlApiLog(null), null)
+})

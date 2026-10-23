@@ -21,6 +21,8 @@ import {
 
 // Season labels come from today's date (nhlSeasons), never hard-coded.
 const SEASONS = nhlSeasons()
+const API_DUPLICATES = new Set(['toi', 'ppToi', 'pts60', 'sog60', 'shPct'])
+
 const RANGES = [
   { id: 'season', label: SEASONS.current, rate: 'seasonHitRate', games: 'seasonGames' },
   { id: 'prior', label: SEASONS.prior, rate: 'priorSeasonHitRate', games: 'priorSeasonGames' },
@@ -433,7 +435,9 @@ export default function NhlPlayerPage({ item: initialItem, onBack }) {
   // With the NHL API sections on, ice time comes only from the NHL API
   // (Ice time & usage), so the profile table drops its own TOI and PP TOI
   // rather than show a second, differently sourced number.
-  const keys = statKeys(position, item.prop).filter((key) => !useApi || (key !== 'toi' && key !== 'ppToi'))
+  // With the NHL API sections on, drop profile rows that NHL API Advanced
+  // already shows (one number per stat on the page).
+  const keys = statKeys(position, item.prop).filter((key) => !useApi || !API_DUPLICATES.has(key))
   const stat = dvpStat(position, item.prop)
   const seasonDvp = dvpLookup(dvp, 'blend', stat, item.opponent)
   const l10Dvp = dvpLookup(dvp, 'l10', stat, item.opponent)

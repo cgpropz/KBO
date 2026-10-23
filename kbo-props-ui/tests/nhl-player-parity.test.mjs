@@ -212,7 +212,7 @@ test('NHL stat directions and position baselines for the shared scale', async ()
   assert.equal(nhlBaseline('foPct', 'D'), nhlBaseline('foPct', 'F'))
   assert.equal(nhlBaseline('nope', 'F'), null)
   const model = nhlApiInsights({ prop: 'Shots On Goal', position: 'D' }, GAMES, { seasons: SEASONS })
-  assert.equal(model.better, 'higher')
+  assert.equal(model.better, undefined) // splits color by over rate, no prop direction
   assert.equal(model.baselineGroup, 'D')
   const shPct = model.metrics.find((metric) => metric.id === 'shPct')
   assert.equal(shPct.better, 'higher')

@@ -169,6 +169,12 @@ test('preview: sliders, trends, splits and advanced fit the phone', async ({ pag
   await expect(page.getByTestId('pi-advanced-card')).toContainText('45.5%')
   await expect(page.getByTestId('pi-advanced-card')).toContainText('MoneyPuck only')
   await expectFits(page, 'nhl advanced', expect)
+
+  // Neutral stat: values shown, no color, no arrows.
+  await page.getByTestId('pi-adv-toggle').click()
+  await options.filter({ hasText: 'Shifts / game' }).click()
+  await expect(page.getByTestId('pi-adv-baseline')).toContainText('Not colored')
+  await expect(page.getByTestId('pi-advanced-card')).not.toContainText(/[▲▼]/)
 })
 
 test('dev server without the preview param keeps the sections off', async ({ page }) => {

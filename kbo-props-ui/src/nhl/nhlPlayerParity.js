@@ -446,15 +446,18 @@ export function nhlApiInsights(item, games, { seasons = nhlSeasons() } = {}) {
   const kind = list[0]?.kind === 'goalie' || item?.prop === 'Goalie Saves' ? 'goalie' : 'skater'
   const faceoffs = list.some((game) => game.fot > 0)
   const group = kind === 'goalie' ? 'G' : nhlBaselineGroup(item)
-  // `better` and `baseline` are for the shared strength-weakness scale.
+  // Direction ('higher' | 'lower' | 'neutral') and baseline for the shared
+  // strength scale (Advanced only). Neutral stats show uncolored.
   const metrics = (kind === 'goalie' ? GOALIE_METRICS : SKATER_METRICS)
     .filter((metric) => !metric.faceoffs || faceoffs)
     .map((metric) => {
       const value = nhlBaseline(metric.id, group)
+      const direction = nhlStatDirection(metric.id)
       return {
         ...metric,
-        better: nhlStatDirection(metric.id),
-        lowerIsBetter: nhlStatDirection(metric.id) === 'lower',
+        better: direction,
+        neutral: direction === 'neutral',
+        lowerIsBetter: direction === 'lower',
         baseline: value == null ? null : { value, group: metric.id === 'foPct' ? 'C' : group, source: NHL_BASELINE_SOURCE },
       }
     })
@@ -478,8 +481,8 @@ export function nhlApiInsights(item, games, { seasons = nhlSeasons() } = {}) {
     priorSeason: seasons.prior,
     seasonLabel: (season) => String(season ?? ''),
     earlySeasonGames: SPLITS_EARLY_SEASON.nhl,
-    // Splits compare with the player's own overall average; every NHL prop is higher-is-better.
-    better: nhlStatDirection(PROP_FIELD[item?.prop] || 'sog'),
+    // Split rows color by over rate vs the player's overall rate (shared
+    // scale, no direction flip), so the model carries no prop direction.
     baselineGroup: group,
     // ui_game_logs.py ships the newest NHL_API_LOG_CAP games per player, so a
     // full log starts part-way through last season.

@@ -57,6 +57,7 @@ export function nhlBaseline(id, group) {
 
 // Wire NHL into the shared scale (src/playerInsights/strengthScale.js).
 // Lower-is-better stats by id and by label.
+const NHL_NEUTRAL_LABELS = /\bsh toi\b|shifts|shots against/i
 const NHL_LOWER_LABELS = /\bgaa\b|goals against|giveaways?|\bpim\b|penalty min|opp(onent)?\.? def(ense)? rank/i
 
 export function nhlBaselineLabel(group) {
@@ -76,7 +77,9 @@ export function nhlBaselineProvider(metric, model) {
 export function registerNhlStrengthScale({ registerStatDirection, registerBaselineProvider }) {
   for (const [id, direction] of Object.entries(NHL_STAT_DIRECTIONS)) {
     if (direction === 'lower') registerStatDirection('nhl', id, { lowerIsBetter: true })
+    if (direction === 'neutral') registerStatDirection('nhl', id, { neutral: true })
   }
+  registerStatDirection('nhl', NHL_NEUTRAL_LABELS, { neutral: true })
   registerStatDirection('nhl', NHL_LOWER_LABELS, { lowerIsBetter: true })
   registerBaselineProvider('nhl', nhlBaselineProvider)
 }

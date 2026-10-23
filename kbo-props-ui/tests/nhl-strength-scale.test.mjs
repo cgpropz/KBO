@@ -42,3 +42,36 @@ test('a metric with no published baseline falls back to the player season', () =
   const base = baselineFor({ id: 'unknownStat' }, skater, [{ id: 'season', label: '2026-27', n: 5, value: 1 }])
   assert.equal(base.source, 'season')
 })
+
+test('SH TOI, shifts and shots against are neutral: shown, never colored', async () => {
+  const { isNeutralStat } = await import('../src/playerInsights/strengthScale.js')
+  for (const id of ['shToi', 'shifts', 'sa']) assert.equal(isNeutralStat('nhl', id), true, id)
+  for (const label of ['SH TOI / game (min)', 'Shifts / game', 'Shots against']) assert.equal(isNeutralStat('nhl', label), true, label)
+  const skater = nhlApiInsights({ prop: 'Points' }, [], { seasons: SEASONS })
+  const shifts = skater.metrics.find((metric) => metric.id === 'shifts')
+  assert.equal(shifts.neutral, true)
+  const rated = rateWindows([{ id: 'l5', label: 'L5', n: 5, value: 40 }, { id: 'season', label: 'Season', n: 9, value: 10 }], shifts, skater)
+  assert.equal(rated.neutral, true)
+  assert.ok(rated.windows.every((window) => window.strength.tone === 'unrated' && window.strength.cue === ''))
+  const goalie = nhlApiInsights({ prop: 'Goalie Saves' }, [], { seasons: SEASONS })
+  const sa = goalie.metrics.find((metric) => metric.id === 'sa')
+  assert.equal(rateWindows([{ id: 'l5', label: 'L5', n: 5, value: 40 }], sa, goalie).neutral, true)
+  assert.equal(goalie.metrics.find((metric) => metric.id === 'gaa').neutral, false)
+})
+
+test('NHL split rows color by over rate with no direction flip', async () => {
+  const { buildSplits } = await import('../src/playerInsights/insightsCore.js')
+  const games = []
+  for (let index = 0; index < 12; index += 1) {
+    const home = index % 2 === 0
+    games.push({ d: `2026-10-${String(22 - index).padStart(2, '0')}`, s: '2026-27', opp: 'TST', h: home ? 1 : 0, res: 'W', sv: home ? 30 : 15, sa: 32, ga: 2, toi: 60 })
+  }
+  const { decodeNhlApiLog } = await import('../src/nhl/nhlPlayerParity.js')
+  const decoded = decodeNhlApiLog({ kind: 'goalie', cols: ['d', 's', 'opp', 'h', 'res', 'sa', 'sv', 'ga', 'toi'], games: games.map((game) => [game.d, game.s, game.opp, game.h, game.res, game.sa, game.sv, game.ga, game.toi * 60]) })
+  const model = nhlApiInsights({ prop: 'Goalie Saves' }, decoded, { seasons: SEASONS })
+  assert.equal(model.better, undefined)
+  const splits = buildSplits(model.games, { ...model, line: 20.5, today: model.games[0].day })
+  const byId = Object.fromEntries(splits.rows.map((row) => [row.id, row]))
+  assert.ok(byId.home.strength.level > 0) // overs at home: green
+  assert.ok(byId.away.strength.level < 0) // unders away: red
+})

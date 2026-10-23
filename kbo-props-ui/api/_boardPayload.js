@@ -171,13 +171,16 @@ export function nhlApiLogsServed(env = process.env) {
   return String(env?.NHL_API_SECTIONS_SERVER || '').trim() === '1'
 }
 
-function withoutNhlApiLog(data) {
-  if (!Array.isArray(data) || !data.some((row) => row && typeof row === 'object' && 'nhlApiLog' in row)) return data
-  return data.map((row) => {
-    if (!row || typeof row !== 'object' || !('nhlApiLog' in row)) return row
-    const { nhlApiLog: _dropped, ...rest } = row
-    return rest
-  })
+function dropNhlApiLog(row) {
+  if (!row || typeof row !== 'object' || Array.isArray(row) || !('nhlApiLog' in row)) return row
+  const { nhlApiLog: _dropped, ...rest } = row
+  return rest
+}
+
+// Works on a row array or a single row object.
+export function withoutNhlApiLog(data) {
+  if (Array.isArray(data)) return data.some((row) => row && typeof row === 'object' && 'nhlApiLog' in row) ? data.map(dropNhlApiLog) : data
+  return dropNhlApiLog(data)
 }
 
 export function presentBoardPayload(player, shaped, fullData, { env = process.env } = {}) {
