@@ -3,18 +3,990 @@
   "slate_date": "10/22/2026",
   "slate_date_iso": "2026-10-22",
   "timezone_basis": "ET",
-  "status": "partial",
-  "props_total": 151,
-  "props_graded": 38,
-  "hits": 0,
-  "misses": 0,
-  "pushes": 0,
+  "status": "complete",
+  "props_total": 174,
+  "props_graded": 174,
+  "hits": 54,
+  "misses": 43,
+  "pushes": 13,
   "dnps": 0,
-  "voids": 38,
+  "voids": 64,
   "missing": 0,
-  "hit_rate": null,
-  "hit_rate_pct": null,
-  "props_hit": [],
-  "props_miss": [],
-  "updated_at": "2026-10-22T15:56:44.651304+00:00"
+  "hit_rate": 0.556701,
+  "hit_rate_pct": 55.7,
+  "props_hit": [
+    {
+      "player": "Alex DeBrincat",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 3.5,
+      "actual": 4.0,
+      "side": "OVER",
+      "model_result": "HIT",
+      "team": "DET"
+    },
+    {
+      "player": "Alex Laferriere",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 2.5,
+      "actual": 2.0,
+      "side": "UNDER",
+      "model_result": "HIT",
+      "team": "LAK"
+    },
+    {
+      "player": "Anders Lee",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 2.0,
+      "actual": 1.0,
+      "side": "UNDER",
+      "model_result": "HIT",
+      "team": "UTA"
+    },
+    {
+      "player": "Arseny Gritsyuk",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 2.0,
+      "actual": 4.0,
+      "side": "OVER",
+      "model_result": "HIT",
+      "team": "NJD"
+    },
+    {
+      "player": "Barrett Hayton",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 1.5,
+      "actual": 3.0,
+      "side": "OVER",
+      "model_result": "HIT",
+      "team": "UTA"
+    },
+    {
+      "player": "Beckett Sennecke",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 2.5,
+      "actual": 1.0,
+      "side": "UNDER",
+      "model_result": "HIT",
+      "team": "ANA"
+    },
+    {
+      "player": "Brandon Bussi",
+      "stat": "Goalie Saves",
+      "odds_type": "standard",
+      "line": 23.5,
+      "actual": 16.0,
+      "side": "UNDER",
+      "model_result": "HIT",
+      "team": "CAR"
+    },
+    {
+      "player": "Brayden Schenn",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 1.5,
+      "actual": 3.0,
+      "side": "OVER",
+      "model_result": "HIT",
+      "team": "NYI"
+    },
+    {
+      "player": "Brock Boeser",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 2.0,
+      "actual": 1.0,
+      "side": "UNDER",
+      "model_result": "HIT",
+      "team": "VAN"
+    },
+    {
+      "player": "Darcy Kuemper",
+      "stat": "Goalie Saves",
+      "odds_type": "standard",
+      "line": 23.5,
+      "actual": 41.0,
+      "side": "OVER",
+      "model_result": "HIT",
+      "team": "LAK"
+    },
+    {
+      "player": "Dawson Mercer",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 1.5,
+      "actual": 1.0,
+      "side": "UNDER",
+      "model_result": "HIT",
+      "team": "NJD"
+    },
+    {
+      "player": "Devon Levi",
+      "stat": "Goalie Saves",
+      "odds_type": "standard",
+      "line": 26.5,
+      "actual": 22.0,
+      "side": "UNDER",
+      "model_result": "HIT",
+      "team": "EDM"
+    },
+    {
+      "player": "Drake Batherson",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 2.0,
+      "actual": 3.0,
+      "side": "OVER",
+      "model_result": "HIT",
+      "team": "OTT"
+    },
+    {
+      "player": "Drew O'Connor",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 1.5,
+      "actual": 1.0,
+      "side": "UNDER",
+      "model_result": "HIT",
+      "team": "VAN"
+    },
+    {
+      "player": "Dylan Holloway",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 2.0,
+      "actual": 3.0,
+      "side": "OVER",
+      "model_result": "HIT",
+      "team": "STL"
+    },
+    {
+      "player": "Easton Cowan",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 1.5,
+      "actual": 4.0,
+      "side": "OVER",
+      "model_result": "HIT",
+      "team": "TOR"
+    },
+    {
+      "player": "Eeli Tolvanen",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 1.5,
+      "actual": 0.0,
+      "side": "UNDER",
+      "model_result": "HIT",
+      "team": "NYR"
+    },
+    {
+      "player": "Emil Heineman",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 1.5,
+      "actual": 6.0,
+      "side": "OVER",
+      "model_result": "HIT",
+      "team": "NYI"
+    },
+    {
+      "player": "Erik Haula",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 1.5,
+      "actual": 1.0,
+      "side": "UNDER",
+      "model_result": "HIT",
+      "team": "LAK"
+    },
+    {
+      "player": "Evan Rodrigues",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 2.0,
+      "actual": 0.0,
+      "side": "UNDER",
+      "model_result": "HIT",
+      "team": "NJD"
+    },
+    {
+      "player": "Evgeni Malkin",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 2.0,
+      "actual": 1.0,
+      "side": "UNDER",
+      "model_result": "HIT",
+      "team": "PIT"
+    },
+    {
+      "player": "Fabian Zetterlund",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 1.5,
+      "actual": 9.0,
+      "side": "OVER",
+      "model_result": "HIT",
+      "team": "OTT"
+    },
+    {
+      "player": "Filip Chytil",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 2.0,
+      "actual": 1.0,
+      "side": "UNDER",
+      "model_result": "HIT",
+      "team": "VAN"
+    },
+    {
+      "player": "Jack Eichel",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 2.5,
+      "actual": 4.0,
+      "side": "OVER",
+      "model_result": "HIT",
+      "team": "VGK"
+    },
+    {
+      "player": "Jared McCann",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 2.0,
+      "actual": 1.0,
+      "side": "UNDER",
+      "model_result": "HIT",
+      "team": "SEA"
+    },
+    {
+      "player": "Jason Robertson",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 3.0,
+      "actual": 4.0,
+      "side": "OVER",
+      "model_result": "HIT",
+      "team": "DAL"
+    },
+    {
+      "player": "Joel Farabee",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 2.0,
+      "actual": 1.0,
+      "side": "UNDER",
+      "model_result": "HIT",
+      "team": "CGY"
+    },
+    {
+      "player": "John Gibson",
+      "stat": "Goalie Saves",
+      "odds_type": "standard",
+      "line": 23.5,
+      "actual": 4.0,
+      "side": "UNDER",
+      "model_result": "HIT",
+      "team": "DET"
+    },
+    {
+      "player": "Jonathan Marchessault",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 2.0,
+      "actual": 3.0,
+      "side": "OVER",
+      "model_result": "HIT",
+      "team": "NSH"
+    },
+    {
+      "player": "Jordan Eberle",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 1.5,
+      "actual": 5.0,
+      "side": "OVER",
+      "model_result": "HIT",
+      "team": "SEA"
+    },
+    {
+      "player": "Justus Annunen",
+      "stat": "Goalie Saves",
+      "odds_type": "standard",
+      "line": 24.5,
+      "actual": 25.0,
+      "side": "OVER",
+      "model_result": "HIT",
+      "team": "NSH"
+    },
+    {
+      "player": "Karel Vejmelka",
+      "stat": "Goalie Saves",
+      "odds_type": "standard",
+      "line": 23.5,
+      "actual": 18.0,
+      "side": "UNDER",
+      "model_result": "HIT",
+      "team": "UTA"
+    },
+    {
+      "player": "Kevin Lankinen",
+      "stat": "Goalie Saves",
+      "odds_type": "standard",
+      "line": 25.5,
+      "actual": 26.0,
+      "side": "OVER",
+      "model_result": "HIT",
+      "team": "VAN"
+    },
+    {
+      "player": "Kiefer Sherwood",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 1.5,
+      "actual": 3.0,
+      "side": "OVER",
+      "model_result": "HIT",
+      "team": "SJS"
+    },
+    {
+      "player": "Kirill Marchenko",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 2.5,
+      "actual": 4.0,
+      "side": "OVER",
+      "model_result": "HIT",
+      "team": "TOR"
+    },
+    {
+      "player": "Lawson Crouse",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 1.5,
+      "actual": 2.0,
+      "side": "OVER",
+      "model_result": "HIT",
+      "team": "UTA"
+    },
+    {
+      "player": "Mackie Samoskevich",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 1.5,
+      "actual": 3.0,
+      "side": "OVER",
+      "model_result": "HIT",
+      "team": "SEA"
+    },
+    {
+      "player": "Mason Marchment",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 1.5,
+      "actual": 1.0,
+      "side": "UNDER",
+      "model_result": "HIT",
+      "team": "SJS"
+    },
+    {
+      "player": "Matthew Tkachuk",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 2.5,
+      "actual": 1.0,
+      "side": "UNDER",
+      "model_result": "HIT",
+      "team": "FLA"
+    },
+    {
+      "player": "Neal Pionk",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 1.5,
+      "actual": 2.0,
+      "side": "OVER",
+      "model_result": "HIT",
+      "team": "WPG"
+    },
+    {
+      "player": "Pavel Zacha",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 2.0,
+      "actual": 1.0,
+      "side": "UNDER",
+      "model_result": "HIT",
+      "team": "BOS"
+    },
+    {
+      "player": "Ridly Greig",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 1.5,
+      "actual": 2.0,
+      "side": "OVER",
+      "model_result": "HIT",
+      "team": "OTT"
+    },
+    {
+      "player": "Roope Hintz",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 2.0,
+      "actual": 5.0,
+      "side": "OVER",
+      "model_result": "HIT",
+      "team": "DAL"
+    },
+    {
+      "player": "Ross Colton",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 1.5,
+      "actual": 2.0,
+      "side": "OVER",
+      "model_result": "HIT",
+      "team": "NSH"
+    },
+    {
+      "player": "Ryan Nugent-Hopkins",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 1.5,
+      "actual": 4.0,
+      "side": "OVER",
+      "model_result": "HIT",
+      "team": "EDM"
+    },
+    {
+      "player": "Samuel Ersson",
+      "stat": "Goalie Saves",
+      "odds_type": "standard",
+      "line": 23.0,
+      "actual": 22.0,
+      "side": "UNDER",
+      "model_result": "HIT",
+      "team": "OTT"
+    },
+    {
+      "player": "Shea Theodore",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 1.5,
+      "actual": 3.0,
+      "side": "OVER",
+      "model_result": "HIT",
+      "team": "VGK"
+    },
+    {
+      "player": "Simon Holmstrom",
+      "stat": "Points",
+      "odds_type": "standard",
+      "line": 0.5,
+      "actual": 0.0,
+      "side": "UNDER",
+      "model_result": "HIT",
+      "team": "NYI"
+    },
+    {
+      "player": "Tyler Toffoli",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 1.5,
+      "actual": 1.0,
+      "side": "UNDER",
+      "model_result": "HIT",
+      "team": "SJS"
+    },
+    {
+      "player": "Ville Husso",
+      "stat": "Goalie Saves",
+      "odds_type": "standard",
+      "line": 27.5,
+      "actual": 24.0,
+      "side": "UNDER",
+      "model_result": "HIT",
+      "team": "ANA"
+    },
+    {
+      "player": "Vince Dunn",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 2.0,
+      "actual": 1.0,
+      "side": "UNDER",
+      "model_result": "HIT",
+      "team": "SEA"
+    },
+    {
+      "player": "Warren Foegele",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 1.5,
+      "actual": 1.0,
+      "side": "UNDER",
+      "model_result": "HIT",
+      "team": "OTT"
+    },
+    {
+      "player": "William Nylander",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 2.5,
+      "actual": 1.0,
+      "side": "UNDER",
+      "model_result": "HIT",
+      "team": "TOR"
+    },
+    {
+      "player": "Yaroslav Askarov",
+      "stat": "Goalie Saves",
+      "odds_type": "standard",
+      "line": 24.5,
+      "actual": 41.0,
+      "side": "OVER",
+      "model_result": "HIT",
+      "team": "SJS"
+    }
+  ],
+  "props_miss": [
+    {
+      "player": "Adam Fox",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 1.5,
+      "actual": 0.0,
+      "side": "OVER",
+      "model_result": "MISS",
+      "team": "NYR"
+    },
+    {
+      "player": "Adin Hill",
+      "stat": "Goalie Saves",
+      "odds_type": "standard",
+      "line": 22.5,
+      "actual": 25.0,
+      "side": "UNDER",
+      "model_result": "MISS",
+      "team": "VGK"
+    },
+    {
+      "player": "Adrian Kempe",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 2.5,
+      "actual": 5.0,
+      "side": "UNDER",
+      "model_result": "MISS",
+      "team": "LAK"
+    },
+    {
+      "player": "Andrei Svechnikov",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 2.5,
+      "actual": 1.0,
+      "side": "OVER",
+      "model_result": "MISS",
+      "team": "CAR"
+    },
+    {
+      "player": "Arturs Silovs",
+      "stat": "Goalie Saves",
+      "odds_type": "standard",
+      "line": 24.5,
+      "actual": 26.0,
+      "side": "UNDER",
+      "model_result": "MISS",
+      "team": "PIT"
+    },
+    {
+      "player": "Connor McDavid",
+      "stat": "Points",
+      "odds_type": "standard",
+      "line": 1.5,
+      "actual": 5.0,
+      "side": "UNDER",
+      "model_result": "MISS",
+      "team": "EDM"
+    },
+    {
+      "player": "Devin Cooley",
+      "stat": "Goalie Saves",
+      "odds_type": "standard",
+      "line": 27.5,
+      "actual": 36.0,
+      "side": "UNDER",
+      "model_result": "MISS",
+      "team": "CGY"
+    },
+    {
+      "player": "Dylan Cozens",
+      "stat": "Points",
+      "odds_type": "standard",
+      "line": 0.5,
+      "actual": 0.0,
+      "side": "OVER",
+      "model_result": "MISS",
+      "team": "OTT"
+    },
+    {
+      "player": "Dylan Garand",
+      "stat": "Goalie Saves",
+      "odds_type": "standard",
+      "line": 24.5,
+      "actual": 30.0,
+      "side": "UNDER",
+      "model_result": "MISS",
+      "team": "NYR"
+    },
+    {
+      "player": "Dylan Larkin",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 2.5,
+      "actual": 2.0,
+      "side": "OVER",
+      "model_result": "MISS",
+      "team": "DET"
+    },
+    {
+      "player": "Filip Hronek",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 1.5,
+      "actual": 0.0,
+      "side": "OVER",
+      "model_result": "MISS",
+      "team": "VAN"
+    },
+    {
+      "player": "Gavin McKenna",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 1.5,
+      "actual": 1.0,
+      "side": "OVER",
+      "model_result": "MISS",
+      "team": "TOR"
+    },
+    {
+      "player": "Ivar Stenberg",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 1.5,
+      "actual": 1.0,
+      "side": "OVER",
+      "model_result": "MISS",
+      "team": "SJS"
+    },
+    {
+      "player": "J.T. Miller",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 2.0,
+      "actual": 1.0,
+      "side": "OVER",
+      "model_result": "MISS",
+      "team": "NYR"
+    },
+    {
+      "player": "Jack Roslovic",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 2.0,
+      "actual": 3.0,
+      "side": "UNDER",
+      "model_result": "MISS",
+      "team": "TOR"
+    },
+    {
+      "player": "Jacob Trouba",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 1.5,
+      "actual": 1.0,
+      "side": "OVER",
+      "model_result": "MISS",
+      "team": "SJS"
+    },
+    {
+      "player": "Jake Oettinger",
+      "stat": "Goalie Saves",
+      "odds_type": "standard",
+      "line": 20.5,
+      "actual": 17.0,
+      "side": "OVER",
+      "model_result": "MISS",
+      "team": "DAL"
+    },
+    {
+      "player": "Jesper Wallstedt",
+      "stat": "Goalie Saves",
+      "odds_type": "standard",
+      "line": 23.5,
+      "actual": 20.0,
+      "side": "OVER",
+      "model_result": "MISS",
+      "team": "MIN"
+    },
+    {
+      "player": "JJ Peterka",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 2.0,
+      "actual": 3.0,
+      "side": "UNDER",
+      "model_result": "MISS",
+      "team": "BOS"
+    },
+    {
+      "player": "Joel Farabee",
+      "stat": "Points",
+      "odds_type": "standard",
+      "line": 0.5,
+      "actual": 1.0,
+      "side": "UNDER",
+      "model_result": "MISS",
+      "team": "CGY"
+    },
+    {
+      "player": "Joel Hofer",
+      "stat": "Goalie Saves",
+      "odds_type": "standard",
+      "line": 25.5,
+      "actual": 27.0,
+      "side": "UNDER",
+      "model_result": "MISS",
+      "team": "STL"
+    },
+    {
+      "player": "Kyle Palmieri",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 2.0,
+      "actual": 1.0,
+      "side": "OVER",
+      "model_result": "MISS",
+      "team": "NYI"
+    },
+    {
+      "player": "Linus Karlsson",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 1.5,
+      "actual": 0.0,
+      "side": "OVER",
+      "model_result": "MISS",
+      "team": "VAN"
+    },
+    {
+      "player": "MacKenzie Weegar",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 2.0,
+      "actual": 6.0,
+      "side": "UNDER",
+      "model_result": "MISS",
+      "team": "UTA"
+    },
+    {
+      "player": "Mats Zuccarello",
+      "stat": "Points",
+      "odds_type": "standard",
+      "line": 0.5,
+      "actual": 0.0,
+      "side": "OVER",
+      "model_result": "MISS",
+      "team": "LAK"
+    },
+    {
+      "player": "Mats Zuccarello",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 1.5,
+      "actual": 0.0,
+      "side": "OVER",
+      "model_result": "MISS",
+      "team": "LAK"
+    },
+    {
+      "player": "Matt Boldy",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 3.5,
+      "actual": 7.0,
+      "side": "UNDER",
+      "model_result": "MISS",
+      "team": "MIN"
+    },
+    {
+      "player": "Mikael Granlund",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 1.5,
+      "actual": 1.0,
+      "side": "OVER",
+      "model_result": "MISS",
+      "team": "ANA"
+    },
+    {
+      "player": "Mikko Rantanen",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 2.0,
+      "actual": 1.0,
+      "side": "OVER",
+      "model_result": "MISS",
+      "team": "DAL"
+    },
+    {
+      "player": "Moritz Seider",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 2.0,
+      "actual": 0.0,
+      "side": "OVER",
+      "model_result": "MISS",
+      "team": "DET"
+    },
+    {
+      "player": "Nick Robertson",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 1.5,
+      "actual": 2.0,
+      "side": "UNDER",
+      "model_result": "MISS",
+      "team": "PIT"
+    },
+    {
+      "player": "Nico Daws",
+      "stat": "Goalie Saves",
+      "odds_type": "standard",
+      "line": 23.5,
+      "actual": 15.0,
+      "side": "OVER",
+      "model_result": "MISS",
+      "team": "NJD"
+    },
+    {
+      "player": "Pavel Buchnevich",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 1.5,
+      "actual": 3.0,
+      "side": "UNDER",
+      "model_result": "MISS",
+      "team": "STL"
+    },
+    {
+      "player": "Quinn Hughes",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 2.5,
+      "actual": 3.0,
+      "side": "UNDER",
+      "model_result": "MISS",
+      "team": "MIN"
+    },
+    {
+      "player": "Sergei Bobrovsky",
+      "stat": "Goalie Saves",
+      "odds_type": "standard",
+      "line": 24.5,
+      "actual": 21.0,
+      "side": "OVER",
+      "model_result": "MISS",
+      "team": "TOR"
+    },
+    {
+      "player": "Shane Pinto",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 2.0,
+      "actual": 4.0,
+      "side": "UNDER",
+      "model_result": "MISS",
+      "team": "OTT"
+    },
+    {
+      "player": "Stephen Halliday",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 1.5,
+      "actual": 1.0,
+      "side": "OVER",
+      "model_result": "MISS",
+      "team": "OTT"
+    },
+    {
+      "player": "Stuart Skinner",
+      "stat": "Goalie Saves",
+      "odds_type": "standard",
+      "line": 23.5,
+      "actual": 35.0,
+      "side": "UNDER",
+      "model_result": "MISS",
+      "team": "WPG"
+    },
+    {
+      "player": "Trevor Connelly",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 1.5,
+      "actual": 0.0,
+      "side": "OVER",
+      "model_result": "MISS",
+      "team": "VGK"
+    },
+    {
+      "player": "Tyler Seguin",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 1.5,
+      "actual": 3.0,
+      "side": "UNDER",
+      "model_result": "MISS",
+      "team": "DAL"
+    },
+    {
+      "player": "Vasily Podkolzin",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 2.0,
+      "actual": 3.0,
+      "side": "UNDER",
+      "model_result": "MISS",
+      "team": "EDM"
+    },
+    {
+      "player": "Viktor Arvidsson",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 2.5,
+      "actual": 2.0,
+      "side": "OVER",
+      "model_result": "MISS",
+      "team": "DET"
+    },
+    {
+      "player": "Zach Hyman",
+      "stat": "Points",
+      "odds_type": "standard",
+      "line": 0.5,
+      "actual": 0.0,
+      "side": "OVER",
+      "model_result": "MISS",
+      "team": "EDM"
+    }
+  ],
+  "updated_at": "2026-10-23T15:48:31.597960+00:00"
 }
