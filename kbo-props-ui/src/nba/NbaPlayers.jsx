@@ -2,6 +2,9 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { NBA_DVP_POSITIONS } from './positions'
 import { fetchNbaData, fetchNbaSnapshot } from './nbaData'
 import NbaPlayerChart from './NbaPlayerChart'
+import { nbaLogoUrl } from './nbaPropLines'
+import { CardTeamLogo } from '../CardTeamLogo'
+import { fitImage } from '../fitImage.js'
 
 const FILTERS = ['All', ...NBA_DVP_POSITIONS.map((position) => position.id), 'Unset']
 
@@ -11,6 +14,25 @@ function statText(value) {
 
 function positionColor(position) {
   return NBA_DVP_POSITIONS.find((slot) => slot.id === position)?.color || '#9ca3af'
+}
+
+function initials(name) {
+  return String(name || '').split(' ').map((word) => word[0]).join('').slice(0, 2).toUpperCase() || '?'
+}
+
+// ESPN headshot from the roster, as on the dashboard and Edge cards. Initials
+// stand in when there is no image or it fails to load.
+function PlayerHeadshot({ player }) {
+  const src = player?.image ? fitImage(player.image, 128) : ''
+  const [failedSrc, setFailedSrc] = useState('')
+  const color = player?.teamColor || '#1f3f3d'
+  return (
+    <div className="nba-profile-headshot" style={{ borderColor: color }}>
+      {src && src !== failedSrc
+        ? <img src={src} alt={player.name} onError={() => setFailedSrc(src)} />
+        : <span>{initials(player?.name)}</span>}
+    </div>
+  )
 }
 
 function projectionFor(board, player) {
@@ -105,12 +127,18 @@ export default function NbaPlayers({ initialName = '' }) {
     return (
       <div className="fade-in">
         <button className="btn-ghost" onClick={() => setSelectedId(null)}>← Players</button>
-        <div style={{ margin: '16px 0 20px' }}>
-          <h1 style={{ margin: '0 0 6px', fontSize: 28, fontWeight: 800, color: 'white' }}>{selected.name}</h1>
-          <p style={{ margin: 0, color, fontSize: 13, fontWeight: 700 }}>
-            {selected.teamFull || selected.team}
-            {selected.position ? ` · ${selected.position}` : ' · Position unset'}
-          </p>
+        <div className="nba-profile-head">
+          <PlayerHeadshot player={selected} />
+          <div className="nba-profile-id">
+            <h1>{selected.name}</h1>
+            <p style={{ color }}>
+              <CardTeamLogo team={selected.team} src={nbaLogoUrl(selected.team) ? fitImage(nbaLogoUrl(selected.team), 40) : ''} />
+              <span>
+                {selected.teamFull || selected.team}
+                {selected.position ? ` · ${selected.position}` : ' · Position unset'}
+              </span>
+            </p>
+          </div>
         </div>
         <div className="card" style={{ padding: 16, marginBottom: 16 }}>
           <p className="stat-label">2025-26 regular season</p>
@@ -120,7 +148,7 @@ export default function NbaPlayers({ initialName = '' }) {
         </div>
         <NbaPlayerChart player={selected} projection={projectionFor(board, selected)} />
         {logs.length === 0 ? (
-          <p style={{ color: '#6b7280' }}>No 2025-26 game log.</p>
+          <p style={{ color: '#6b7280' }}>No game log yet.</p>
         ) : (
           <div className="card" style={{ padding: 16, overflowX: 'auto' }}>
             {logs.slice(0, 12).map((game) => (
