@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { lineResult, overHitRate } from '../hitRateStrip'
 import { lineMatchesStat } from '../cgScore'
 import { compareNflScores, nflCgScore, nflRawScore } from './nflLineFloors'
+import { nflBoardDvpRank, nflTodayPick } from './nflPlayerGames.js'
 import { compareSymmetric, displayScoreText, symmetricRankOn } from '../sideRank'
 import { cgSide } from '../cgScore'
 import { fetchNflProjections } from './nflData'
@@ -59,12 +60,17 @@ function ProjectionCard({ item, onSelectPlayer }) {
   const recent = bars.map((bar) => bar.value)
   const maxValue = Math.max(item.line, ...recent, 1)
   // Side comes from the score: exactly 50 is no pick (no side, no color).
-  const side = cgSide(item.score)
+  // No CG Score (blank projection or line) shows Pending, never 0 and no side.
+  // `score` keeps its old value for sorting; this is display only.
+  const pending = item.cgScore == null
+  const side = pending ? null : cgSide(item.cgScore)
   const sideClass = side === 'OVER' ? 'over' : side === 'UNDER' ? 'under' : 'neutral'
   // NFL admin pilot: an under shows its same-side strength. Score unchanged.
-  const shownScore = symmetricRankOn('nfl') && side ? displayScoreText(item.score, side) : item.score.toFixed(1)
+  const shownScore = pending ? 'Pending' : symmetricRankOn('nfl') && side ? displayScoreText(item.cgScore, side) : item.cgScore.toFixed(1)
   const l10 = overHitRate(recent.slice(-10), item.line)
   const shown = overHitRate(recent, item.line)
+  // '—' for an unranked opponent; display only (sort keeps the builder value).
+  const shownDvp = nflBoardDvpRank(item)
 
   return (
     <article className="nfl-edge-card">
@@ -74,7 +80,7 @@ function ProjectionCard({ item, onSelectPlayer }) {
         <div><h2 className="nfl-player-link" onClick={() => onSelectPlayer(item.player, item.prop)}>{item.player}</h2><p><b>{item.position}</b><CardTeamLogo team={item.team} src={teamLogoUrl(item.team) ? fitImage(teamLogoUrl(item.team), 16) : ''} /><span>{item.team}</span>{item.opponent ? <em>{opponentLabel(item.opponent)}</em> : null}</p></div>
       </div>
       <div className="nfl-card-prop">{item.prop}</div>
-      <div className="nfl-card-metrics"><div><small>LINE</small><strong>{formatValue(item.line)}</strong></div><div><small>MODEL</small><strong>{formatValue(item.projection)}</strong></div><div><small>SCORE</small><strong className={sideClass}>{shownScore}</strong></div><div><small>DVP RANK</small><strong className={item.dvpRatio >= 1 ? 'over' : 'under'}>{item.dvpRank}<i> /32</i></strong></div></div>
+      <div className="nfl-card-metrics"><div><small>LINE</small><strong>{formatValue(item.line)}</strong></div><div><small>MODEL</small><strong>{formatValue(item.projection)}</strong></div><div><small>SCORE</small><strong className={sideClass}>{shownScore}</strong></div><div><small>DVP RANK</small>{shownDvp == null ? <strong className="neutral" data-testid="nfl-card-dvp">—</strong> : <strong className={item.dvpRatio >= 1 ? 'over' : 'under'} data-testid="nfl-card-dvp">{shownDvp}<i> /32</i></strong>}</div></div>
       <div className="nfl-card-meta"><div><small>SEASON AVG</small><strong>{seasonAvgText(item)}</strong></div><div><small>HIT RATE</small><strong>{l10?.rate == null ? '—' : `${l10.rate}%`}</strong></div><div><small>GAMES</small><strong>{l10?.games ?? 0}</strong></div></div>
       <div className="nfl-history-label"><span>LAST {recent.length} GAMES</span><span>{shown?.rate == null ? '—' : `${shown.rate}% OVER LINE`}</span></div>
       <div className="nfl-history-bars" aria-label={`Last ${recent.length} games for ${item.player}`}>
@@ -145,7 +151,7 @@ export default function NflProjections({ onSelectPlayer }) {
   const matchups = useMemo(() => ['All matchups', ...new Set(projections.map(matchupKey))].sort((a, b) => a === 'All matchups' ? -1 : a.localeCompare(b)), [projections])
   const rows = useMemo(() => projections
     .filter((item) => lineMatchesStat(item.prop, item.line))
-    .map((item) => ({ ...item, score: nflCgScore(item.projection, item.line, item.prop) ?? 0, rawScore: nflRawScore(item.projection, item.line, item.prop) }))
+    .map((item) => { const cgScore = nflTodayPick(item).cg; return { ...item, cgScore, score: nflCgScore(item.projection, item.line, item.prop) ?? 0, rawScore: nflRawScore(item.projection, item.line, item.prop) } })
     .filter((item) => position === 'ALL' || item.position === position)
     .filter((item) => prop === 'All props' || item.prop === prop)
     .filter((item) => matchup === 'All matchups' || matchupKey(item) === matchup)
