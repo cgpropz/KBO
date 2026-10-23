@@ -165,6 +165,7 @@ export function buildSplits(games, {
   hideEmptyRest = false,
   scopeSeasons = null,
   oppKey = (team) => String(team).toUpperCase(),
+  extraSplits = [],
 } = {}) {
   const logged = Array.isArray(games) ? games : []
   const truncatedSeason = truncatedSeasonOf(logged, logCap)
@@ -224,6 +225,15 @@ export function buildSplits(games, {
       out.push(row(ctx('Pitcher'), 'vsrhp', 'vs RHP', pool.filter((game) => game.oppHand === 'R'), line))
     } else skipped.push('vs LHP/RHP (no starter hand in logs)')
   }
+  // Sport-specific splits ({ group, id, label, test(game), ownScope }); a
+  // split with no matching games is left out. They follow the context scope
+  // unless the split picks its own games (ownScope: its test already limits
+  // the season, so it reads every played game and gets no scope tag).
+  ;(Array.isArray(extraSplits) ? extraSplits : []).forEach((split) => {
+    const source = split.ownScope ? list : pool
+    const matched = source.filter((game) => split.test(game))
+    if (matched.length) out.push(row(split.ownScope ? split.group : ctx(split.group), split.id, split.label, matched, line))
+  })
   // Strength colors: each row's over rate against the player's overall over
   // rate in the same scope (average when there is no line). Higher = green,
   // whatever the prop: it matches the board's hit-rate colors, so no

@@ -315,6 +315,31 @@ def dvp_for(position, stat, opponent, ratings):
     return int(rank), round(float(ratio), 2)
 
 
+def dvp_is_ranked(position, stat, opponent, ratings):
+    """True when dvp_for found a real rank (not its neutral 16, 1.0 default).
+
+    Display only (dvpRanked): the boards show '—' for an unranked opponent.
+    dvp_for, dvpRank and dvpRatio are unchanged, so the grade, sort, sharp
+    odds and the memory slate keep the neutral default.
+    """
+    ranks, ratios = ratings.get((position, stat), ({}, {}))
+    opponent = canonical_team(opponent)
+    return ranks.get(opponent) is not None and ratios.get(opponent) is not None
+
+
+def recent_dvp_rank(position, stat, opponent, ratings):
+    """Rank for one past opponent on the player page's per-game chart filter.
+
+    Display only (recentDvpRanks). Unlike dvp_for, an opponent with no rank is
+    None, not the neutral 16, so the page can leave that game out of rank
+    filters and defense splits instead of showing a made-up rank. dvp_for and
+    today's dvpRank/dvpRatio are unchanged.
+    """
+    ranks, _ratios = ratings.get((position, stat), ({}, {}))
+    rank = ranks.get(canonical_team(opponent))
+    return None if rank is None else int(rank)
+
+
 def load_history():
     stats = pd.concat([
         pd.read_csv(STATS_URL.format(season=season), low_memory=False)
@@ -350,7 +375,7 @@ def load_player_directory():
 
 # PrizePicks stat_type values for the NFL board. Pass TDs is the Players-board
 # passing-touchdown chip (not Anytime TDs, Rush TDs, or Pass+Rush+Rec TDs).
-# Other props stay on the standard full-game line only.
+# Every prop is published on its standard full-game line only.
 SUPPORTED_PROPS = {
     'Pass Yards', 'Pass Attempts', 'Pass Completions', 'Pass TDs', 'Pass+Rush Yds',
     'Rush Yards', 'Rush Attempts', 'Rush+Rec Yds',
@@ -417,28 +442,21 @@ def line_matches_stat(prop, line):
 
 
 def choose_published_line(candidates):
-    """One full-game card per player and prop.
+    """One full-game card per player and prop: the standard PrizePicks line.
 
-    The standard line is the card when PrizePicks posted one. A 0.5 yardage
-    standard is not that card: it does not match the stat, and the demon
-    ladder is not substituted for it. Pass TDs is the market the Players
-    board still shows when a quarterback has no standard line: the primary
-    demon (lowest demon line that has a pick count), which is the 1.5 card
-    for Jones, Mariota, Bagent, and Geno. Higher demon alts and goblin alts
-    stay off. Other props do not get that fallback.
+    Every board publishes standard PrizePicks lines only. When PrizePicks
+    posted no standard line for a player and prop, nothing is published for
+    it: a demon or goblin card (for example the 1.5 Pass TDs demon shown when
+    a quarterback has no standard line) is never promoted in its place. A 0.5
+    yardage standard is not that card either: it does not match the stat.
     """
-    matched = [row for row in candidates if line_matches_stat(row['prop'], row['line'])]
-    standards = [row for row in matched if row['odds_type'] == 'standard']
-    if standards:
-        return max(standards, key=lambda row: (row['trending'] or 0, -row['line']))
-    if not matched or matched[0]['prop'] != 'Pass TDs':
+    standards = [
+        row for row in candidates
+        if row['odds_type'] == 'standard' and line_matches_stat(row['prop'], row['line'])
+    ]
+    if not standards:
         return None
-    demons = [row for row in matched if row['odds_type'] == 'demon']
-    featured = [row for row in demons if row['trending'] is not None]
-    pool = featured or demons
-    if not pool:
-        return None
-    return min(pool, key=lambda row: (row['line'], -(row['trending'] or 0)))
+    return max(standards, key=lambda row: (row['trending'] or 0, -row['line']))
 
 
 def slate_records(payload):
@@ -781,9 +799,10 @@ def make_record(row, history, directory, dvp_ratings, snap_counts, snap_games, p
     position = text_or_empty(player.get('position')) or default_position
     rated_position = dvp_position(position, row.prop)
     dvp_rank, dvp_ratio = dvp_for(rated_position, row.prop, row.opponent, dvp_ratings)
+    dvp_ranked = dvp_is_ranked(rated_position, row.prop, row.opponent, dvp_ratings)
 
     # Per-game context for the player page's chart filters: matchup toughness, snap share, and usage volume.
-    recent_dvp_ranks = [dvp_for(rated_position, row.prop, opponent, dvp_ratings)[0] for opponent in recent_opponents]
+    recent_dvp_ranks = [recent_dvp_rank(rated_position, row.prop, opponent, dvp_ratings) for opponent in recent_opponents]
     recent_snap_pcts = []
     for season_value, week_value in zip(recent_seasons, recent_weeks):
         try:
@@ -821,7 +840,7 @@ def make_record(row, history, directory, dvp_ratings, snap_counts, snap_games, p
         'gameday': text_or_empty(getattr(row, 'gameday', '')), 'gametime': text_or_empty(getattr(row, 'gametime', '')),
         'start_time': text_or_empty(getattr(row, 'start_time', '')),
         'prop': row.prop, 'line': row.line, 'projection': round(float(projection), 1),
-        # PrizePicks odds_type of the published card: standard, demon (Pass TDs fallback), or goblin.
+        # PrizePicks odds_type of the published card (standard; choose_published_line publishes no other).
         'line_type': text_or_empty(getattr(row, 'odds_type', '')),
         'baseline_projection': round(float(baseline), 1),
         'baseline_recommendation': 'OVER' if float(baseline) >= float(row.line) else 'UNDER',
@@ -844,7 +863,7 @@ def make_record(row, history, directory, dvp_ratings, snap_counts, snap_games, p
         'gameDates': recent_dates, 'gameOpponents': recent_opponents, 'gameSeasons': recent_seasons,
         'hitRate': l10_rate,
         'gamesPlayed': l10_games, 'snapCount': round(float(snap_counts.get(key, 0)), 1),
-        'dvpRank': dvp_rank, 'dvpRatio': dvp_ratio, 'trend': 'up' if projection >= row.line else 'down',
+        'dvpRank': dvp_rank, 'dvpRatio': dvp_ratio, 'dvpRanked': dvp_ranked, 'trend': 'up' if projection >= row.line else 'down',
         'seasonHitRate': season_hit_rate, 'seasonGames': season_games,
         'priorSeasonHitRate': prior_season_hit_rate, 'priorSeasonGames': prior_season_games, 'priorSeasonLabel': CURRENT_SEASON - 1,
         'h2hHitRate': h2h_hit_rate, 'h2hGames': h2h_games,

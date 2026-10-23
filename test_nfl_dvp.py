@@ -101,9 +101,10 @@ class DvpRankTests(unittest.TestCase):
             ('Joe Burrow', 'Pass Yards', 250.5, 'JAX'),
         })
 
-    def test_pass_td_board_keeps_the_featured_line_when_standard_is_missing(self):
-        # 9:37 ET Players board: Jones, Mariota, Bagent, and Geno are 1.5 cards
-        # with no standard line. The higher demon and the goblin are alts.
+    def test_pass_td_with_no_standard_line_is_dropped_not_replaced_by_a_demon(self):
+        # Standard PrizePicks lines only, on every board. Jones and Bagent have
+        # only the 1.5 Pass TDs demon (plus alts): no Pass TDs row for them.
+        # Stroud's standard 1.5 stays.
         payload = {
             'included': [
                 {'id': '1', 'attributes': {'name': 'Daniel Jones', 'team': 'IND', 'league': 'NFL'}},
@@ -126,12 +127,23 @@ class DvpRankTests(unittest.TestCase):
                 _pp('3', 'Pass Yards', 'demon', 199.5, 'NYJ', trending=4000),
             ],
         }
-        rows = {(row['player'], row['prop'], row['line'], row['opponent']) for row in nfl.slate_records(payload)}
+        records = nfl.slate_records(payload)
+        rows = {(row['player'], row['prop'], row['line'], row['opponent']) for row in records}
         self.assertEqual(rows, {
-            ('Daniel Jones', 'Pass TDs', 1.5, 'WAS'),
             ('C.J. Stroud', 'Pass TDs', 1.5, 'DAL'),
-            ('Tyson Bagent', 'Pass TDs', 1.5, 'NYJ'),
         })
+        self.assertEqual({row['odds_type'] for row in records}, {'standard'})
+
+    def test_choose_published_line_returns_only_a_standard_line(self):
+        def card(odds_type, line, trending=None, prop='Pass TDs'):
+            return {'prop': prop, 'line': line, 'odds_type': odds_type, 'trending': trending}
+
+        self.assertIsNone(nfl.choose_published_line([card('demon', 1.5, 2542), card('goblin', 0.5, 5687)]))
+        self.assertIsNone(nfl.choose_published_line([card('demon', 1.5)]))
+        self.assertIsNone(nfl.choose_published_line([card('goblin', 0.5, 10, prop='Receptions')]))
+        self.assertIsNone(nfl.choose_published_line([card('standard', 0.5, 900, prop='Rush Yards'), card('demon', 4.5, prop='Rush Yards')]))
+        chosen = nfl.choose_published_line([card('demon', 1.5, 2542), card('standard', 2.5, 10), card('goblin', 0.5, 5687)])
+        self.assertEqual((chosen['odds_type'], chosen['line']), ('standard', 2.5))
 
     def test_yardage_floor_is_dropped_and_not_replaced_by_a_demon(self):
         # PrizePicks labels the 0.5 any-yards card odds_type=standard on the
@@ -339,6 +351,22 @@ class DvpRankTests(unittest.TestCase):
 
     def test_missing_defense_stays_neutral(self):
         self.assertEqual(nfl.dvp_for('WR', 'Receiving Yards', 'JAC', {}), (16, 1.0))
+
+    def test_past_game_rank_is_none_for_an_unranked_opponent(self):
+        ratings = {('WR', 'Receiving Yards'): ({'SEA': 1, 'JAX': 7}, {'SEA': 0.8, 'JAX': 1.0})}
+        self.assertEqual(nfl.recent_dvp_rank('WR', 'Receiving Yards', 'JAC', ratings), 7)
+        self.assertEqual(nfl.recent_dvp_rank('WR', 'Receiving Yards', 'SEA', ratings), 1)
+        self.assertIsNone(nfl.recent_dvp_rank('WR', 'Receiving Yards', 'XXX', ratings))
+        self.assertIsNone(nfl.recent_dvp_rank('WR', 'Receiving Yards', 'SEA', {}))
+        self.assertEqual(nfl.dvp_for('WR', 'Receiving Yards', 'XXX', ratings), (16, 1.0))
+
+    def test_dvp_is_ranked_flags_the_neutral_default_only(self):
+        ratings = {('WR', 'Receiving Yards'): ({'DAL': 3}, {'DAL': 1.12})}
+        self.assertTrue(nfl.dvp_is_ranked('WR', 'Receiving Yards', 'DAL', ratings))
+        self.assertFalse(nfl.dvp_is_ranked('WR', 'Receiving Yards', 'XYZ', ratings))
+        self.assertFalse(nfl.dvp_is_ranked('TE', 'Receiving Yards', 'DAL', ratings))
+        # dvp_for keeps its neutral default for the model, grade and sort.
+        self.assertEqual(nfl.dvp_for('WR', 'Receiving Yards', 'XYZ', ratings), (16, 1.0))
 
     def test_non_skill_positions_use_the_prop_table(self):
         self.assertEqual(nfl.dvp_position('WR', 'Receiving Yards'), 'WR')
