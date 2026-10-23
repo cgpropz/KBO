@@ -42,37 +42,22 @@ export function trendDirection(recent, season, threshold = TREND_THRESHOLD) {
   return 'flat'
 }
 
-// Games this season before the arrow compares against this season. Below it
-// the arrow compares L5 against last season, and needs this many games there.
+// Games this season before there is a trend arrow. Below it: no arrow.
 export const EARLY_SEASON_GAMES = 5
-
-// "2026" (the 2025-26 season) -> "'25-26".
-export function seasonLabel(season) {
-  const year = Number(season)
-  if (!Number.isInteger(year) || year < 1000) return null
-  return `'${String(year - 1).slice(-2)}-${String(year).slice(-2)}`
-}
 
 function valuedCount(games, field) {
   return games.filter((game) => metricValue(game, field) != null).length
 }
 
-// What the arrow compares L5 against. With EARLY_SEASON_GAMES or more games
-// this season: this season (label null). Fewer: last season's average,
-// labeled "'25-26", when last season has that many games. Neither: null.
+// What the arrow compares L5 against: this season's average, once there are
+// EARLY_SEASON_GAMES or more games with a value this season. Fewer: null, so
+// there is no arrow (last season is not used).
 export function trendBaseline(logs, field) {
   const games = Array.isArray(logs) ? logs : []
   const current = games[0]?.season
   const thisSeason = newestSeasonLogs(games, current)
-  if (valuedCount(thisSeason, field) >= EARLY_SEASON_GAMES) {
-    return { value: averageMetric(thisSeason, field), season: current ?? null, label: null }
-  }
-  const year = Number(current)
-  if (current == null || !Number.isInteger(year)) return null
-  const prior = String(year - 1)
-  const lastSeason = games.filter((game) => game?.season != null && String(game.season) === prior)
-  if (valuedCount(lastSeason, field) < EARLY_SEASON_GAMES) return null
-  return { value: averageMetric(lastSeason, field), season: prior, label: seasonLabel(prior) }
+  if (valuedCount(thisSeason, field) < EARLY_SEASON_GAMES) return null
+  return { value: averageMetric(thisSeason, field), season: current ?? null }
 }
 
 // L5 / L10 count the newest logged games (as the hit-rate chips do). Season is
@@ -88,7 +73,6 @@ export function metricSummary(logs, field) {
     l10,
     season,
     baseline: baseline ? baseline.value : null,
-    baselineLabel: baseline ? baseline.label : null,
     trend: baseline ? trendDirection(l5, baseline.value) : null,
     games: valuedCount(games, field),
   }
@@ -114,8 +98,7 @@ export function formatTrendValue(value, unit) {
 }
 
 // "MIN ↑ 31.2" / "USG ↓ 22%" for a list card. Null when the player has no
-// value for that metric. baselineLabel is "'25-26" when the arrow is against
-// last season.
+// value for that metric. No arrow under EARLY_SEASON_GAMES games this season.
 export function cardTrend(player, metric) {
   const summary = metricSummary(player?.gameLogs, metric.field)
   if (summary.l5 == null) return null
@@ -127,6 +110,5 @@ export function cardTrend(player, metric) {
     arrow: trend ? TREND_ARROWS[trend] : '',
     color: trend ? TREND_COLORS[trend] : TREND_COLORS.flat,
     text: formatTrendValue(summary.l5, metric.unit),
-    baselineLabel: trend ? summary.baselineLabel : null,
   }
 }

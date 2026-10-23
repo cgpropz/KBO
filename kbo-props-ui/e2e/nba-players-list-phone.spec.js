@@ -104,12 +104,13 @@ test('NBA Players list fits 390px, filters, sorts, and opens a profile', async (
   await expect(trends).toContainText('MIN↑30.0')
   await expect(trends).toContainText('USG→21%')
   await expect(cards.nth(1)).toContainText('BOS')
-  // 2 games this season: the arrow is against last season and says so.
-  // L5 30.0 vs '25-26 26.5: MIN ↑; usage 20.8 vs 21.0: flat.
+  // 2 games this season: L5 averages, but no arrow and no last-season label.
   const early = cards.nth(1).getByTestId('nba-card-trends')
-  await expect(early).toContainText('MIN↑30.0')
-  await expect(early).toContainText('USG→21%')
-  await expect(early).toContainText("vs '25-26")
+  await expect(early).toContainText('MIN30.0')
+  await expect(early).toContainText('USG21%')
+  await expect(early.locator('b')).toHaveCount(0)
+  await expect(early).not.toContainText('vs')
+  await expect(early).not.toContainText("'25-26")
   await expect(trends).not.toContainText('vs')
   // The long prop name does not clip the line on any card.
   await expect(cards.nth(1)).toContainText('Free Throws Attempted')
@@ -156,11 +157,13 @@ test('NBA Players list fits 390px, filters, sorts, and opens a profile', async (
   await expect(section.getByTestId('nba-mu-min').locator('.nba-mu-col')).toHaveCount(10)
   await expect(section.getByTestId('nba-mu-usg').locator('.nba-mu-col')).toHaveCount(10)
   await expect(section.getByTestId('nba-mu-min')).toContainText('L5')
-  await expect(section.getByTestId('nba-mu-min-base')).toContainText("L5 vs '25-26 (26.5)")
+  // 2 games this season: no arrow and no early-season label on the profile.
+  await expect(section.locator('.nba-mu-trend')).toHaveCount(0)
+  await expect(section).not.toContainText("'25-26")
   // Header text (label, arrow, L5 / L10 / Season) stays inside each chart.
   const headClipped = await page.evaluate(() => [...document.querySelectorAll('.nba-mu-metric')].flatMap((metric) => {
     const box = metric.getBoundingClientRect()
-    return [...metric.querySelectorAll('.nba-mu-head > *, .nba-mu-avgs > span, .nba-mu-base')]
+    return [...metric.querySelectorAll('.nba-mu-head > *, .nba-mu-avgs > span')]
       .filter((el) => { const r = el.getBoundingClientRect(); return r.left < box.left - 0.5 || r.right > box.right + 0.5 })
       .map((el) => el.textContent)
   }))

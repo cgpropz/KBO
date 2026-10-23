@@ -7,7 +7,7 @@ import { expect, test } from '@playwright/test'
 function logs(points) {
   return points.map((pts, index) => ({
     date: `10/${21 - index}/2026`, team: 'DEN', matchup: 'DEN vs. LAL', season: '2027',
-    min: 32 - index, pts, reb: 6 + (index % 3), ast: 4, stl: 1, blk: 1, tov: 2, fg3m: 2,
+    min: 32 - index, usg: 20 + (index % 3), pts, reb: 6 + (index % 3), ast: 4, stl: 1, blk: 1, tov: 2, fg3m: 2,
   }))
 }
 
@@ -87,7 +87,8 @@ test('profile header shows projection and CG Score for the selected stat at 390p
   await expect(guardCard.getByTestId('nba-plist-prop-pick')).toHaveText(/^\s*25\.0\s*CG\s*61\.0\s*$/)
   await expect(cards.filter({ hasText: 'Synth Rookie' }).getByTestId('nba-plist-prop-pick')).toHaveCount(0)
   const heights = await cards.evaluateAll((els) => els.map((el) => el.getBoundingClientRect().height))
-  for (const height of heights) expect(height).toBeLessThan(90)
+  // Same row cap as the Players list spec (MIN / USG row included).
+  for (const height of heights) expect(height).toBeLessThan(125)
   await noOverflow(page)
 
   await openProfile(page, 'Synth Guard')
@@ -137,6 +138,12 @@ test('blank projection and no line show Pending, never 0 or NaN', async ({ page 
   await openProfile(page, 'Synth Bench')
   chart = page.locator('.nba-player-chart-card')
   await expect(chart).toContainText('No line today')
+  // No line today keeps both: the header card and Minutes & Usage.
+  await expect(page.locator('section[aria-label="Today\'s line"]')).toBeVisible()
+  const mu = page.getByTestId('nba-minutes-usage')
+  await expect(mu).toBeVisible()
+  await expect(mu.getByTestId('nba-mu-min').locator('.nba-mu-col')).toHaveCount(3)
+  await expect(mu.getByTestId('nba-mu-usg').locator('.nba-mu-col')).toHaveCount(3)
   await expect(chart.getByTestId('nba-player-projection')).toHaveText('Pending')
   await expect(chart.getByTestId('nba-player-cg')).toHaveText('Pending')
   await expect(chart).not.toContainText(/NaN|\b0\.0\b/)

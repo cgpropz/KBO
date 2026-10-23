@@ -115,12 +115,10 @@ function TopPropPill({ top }) {
 
 // "MIN ↑ 31.2 · USG ↓ 22%": L5 average and the L5 vs season arrow.
 // Its own full-width row under the name / prop area, so the prop pill never
-// clips it. One "vs '25-26" tag when the arrows use last season.
+// clips it. No arrow until 5 games this season.
 function CardTrends({ player }) {
   const trends = TREND_METRICS.map((metric) => cardTrend(player, metric)).filter(Boolean)
   if (!trends.length) return null
-  const labels = [...new Set(trends.map((item) => item.baselineLabel).filter(Boolean))]
-  const shared = labels.length === 1 && trends.every((item) => !item.trend || item.baselineLabel === labels[0]) ? labels[0] : null
   return (
     <span className="nba-plist-trends" data-testid="nba-card-trends">
       {trends.map((item) => (
@@ -128,10 +126,8 @@ function CardTrends({ player }) {
           <em>{item.short}</em>
           {item.arrow && <b style={{ color: item.color }}>{item.arrow}</b>}
           {item.text}
-          {!shared && item.baselineLabel && <small className="nba-plist-trend-base"> vs {item.baselineLabel}</small>}
         </span>
       ))}
-      {shared && <small className="nba-plist-trend-base">vs {shared}</small>}
     </span>
   )
 }
