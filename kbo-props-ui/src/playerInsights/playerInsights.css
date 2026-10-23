@@ -8,12 +8,12 @@
 .pi-skipped { margin: 8px 0 0; font-size: 11px; color: #71717a; }
 .pi-split-group h4 { margin: 10px 0 4px; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: #71717a; }
 .pi-split-group ul { list-style: none; margin: 0; padding: 0; }
-.pi-split { display: grid; grid-template-columns: minmax(0, 1.8fr) minmax(0, 0.8fr) 3.2em 4.4em 3.4em; align-items: center; gap: 6px; padding: 6px 0; border-bottom: 1px solid #18181b; font-size: 13px; color: #e4e4e7; }
+.pi-split { display: grid; grid-template-columns: minmax(0, 1.8fr) minmax(0, 0.7fr) 3.9em 4.4em 3.4em; align-items: center; gap: 6px; padding: 6px 0; border-bottom: 1px solid #18181b; font-size: 13px; color: #e4e4e7; }
 .pi-split.is-empty { color: #52525b; }
 .pi-split-label { line-height: 1.25; overflow-wrap: anywhere; }
 .pi-split-bar { height: 6px; border-radius: 3px; background: #1f1f23; overflow: hidden; }
 .pi-split-bar i { display: block; height: 100%; border-radius: 3px; }
-.pi-split-rate { text-align: right; }
+.pi-split-rate { text-align: right; white-space: nowrap; }
 .pi-split-avg { text-align: right; color: #d4d4d8; }
 .pi-split-avg small { color: #71717a; }
 .pi-split-n, .pi-window span { text-align: right; font-size: 11px; color: #71717a; }
@@ -44,3 +44,11 @@
 .pi-unavailable { margin-top: 8px; font-size: 11px; color: #71717a; }
 .pi-unavailable summary { cursor: pointer; }
 .pi-unavailable ul { margin: 4px 0 0; padding-left: 16px; }
+.pi-scale-note { font-size: 11px; color: #a1a1aa; }
+.pi-cue { font-style: normal; font-size: 0.75em; margin-right: 2px; vertical-align: 1px; }
+.pi-window.is-baseline { box-shadow: inset 0 0 0 1px #3f3f46; }
+.pi-window.tone-strong { box-shadow: inset 0 -2px 0 #4ade80; }
+.pi-window.tone-good { box-shadow: inset 0 -2px 0 #a3e63599; }
+.pi-window.tone-soft { box-shadow: inset 0 -2px 0 #fdba7499; }
+.pi-window.tone-weak { box-shadow: inset 0 -2px 0 #f87171; }
+.pi-advanced .pi-scale-note { margin: 8px 0 0; }

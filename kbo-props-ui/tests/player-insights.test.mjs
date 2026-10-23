@@ -252,3 +252,73 @@ test('bar labels stay short enough for a 320px strip', () => {
   assert.equal(seriesLabelsVertical(['34', '4.5', '100']), false)
   assert.equal(seriesLabelsVertical(['.500', '.250']), true)
 })
+
+test('strength scale: bands, muted tiny samples and lowerIsBetter', async () => {
+  const { strengthTone, isLowerBetter, registerStatDirection, STRENGTH_MIN_GAMES } = await import('../src/playerInsights/strengthScale.js')
+  assert.equal(STRENGTH_MIN_GAMES, 3)
+  assert.equal(strengthTone(70, 50, { kind: 'rate', n: 10 }).tone, 'strong')
+  assert.equal(strengthTone(58, 50, { kind: 'rate', n: 10 }).tone, 'good')
+  assert.equal(strengthTone(53, 50, { kind: 'rate', n: 10 }).tone, 'neutral')
+  assert.equal(strengthTone(42, 50, { kind: 'rate', n: 10 }).tone, 'soft')
+  assert.equal(strengthTone(30, 50, { kind: 'rate', n: 10 }).tone, 'weak')
+  assert.equal(strengthTone(12, 10, { n: 5 }).tone, 'strong')
+  assert.equal(strengthTone(10.3, 10, { n: 5 }).tone, 'neutral')
+  assert.equal(strengthTone(90, 10, { n: 2 }).tone, 'muted')
+  assert.equal(strengthTone(90, 10, { n: 2 }).cue, '')
+  assert.equal(strengthTone(12, 10, { n: 5 }).cue, '▲')
+  assert.equal(strengthTone(2.0, 4.0, { n: 6, lowerIsBetter: true }).tone, 'strong')
+  assert.equal(strengthTone(6.0, 4.0, { n: 6, lowerIsBetter: true }).tone, 'weak')
+  assert.equal(isLowerBetter('nba', 'Turnovers'), true)
+  assert.equal(isLowerBetter('kbo', 'Hits Allowed'), true)
+  assert.equal(isLowerBetter('nfl', 'Pass Interceptions'), true)
+  assert.equal(isLowerBetter('kbo', 'Pitcher Strikeouts'), false)
+  assert.equal(isLowerBetter('kbo', null, { id: 'era' }), true)
+  assert.equal(isLowerBetter('kbo', null, { id: 'k9', lowerIsBetter: false }), false)
+  registerStatDirection('testsport', 'Saves Allowed', { lowerIsBetter: true })
+  assert.equal(isLowerBetter('testsport', 'saves allowed'), true)
+  assert.equal(isLowerBetter('othersport', 'saves allowed'), false)
+})
+
+test('splits color each row vs the overall hit rate; lowerIsBetter flips it', () => {
+  const values = [30, 30, 30, 30, 10, 10, 10, 10, 10, 10]
+  const logs = values.map((pts, i) => ({ date: `10/${String(20 - i).padStart(2, '0')}/2026`, matchup: i < 4 ? 'ATL vs. NY' : 'ATL @ NY', opponent: 'NY', pts, min: 30 }))
+  const model = wnbaInsights(logs, { valueOf: (game) => game.pts, opponent: 'NYL' })
+  const splits = buildSplits(model.games, { ...model, line: 20.5, today: parseGameDay('10/21/2026') })
+  assert.equal(splits.baseline.kind, 'rate')
+  assert.equal(splits.baseline.value, 40)
+  const home = splits.rows.find((r) => r.id === 'home')
+  const away = splits.rows.find((r) => r.id === 'away')
+  assert.equal(home.strength.tone, 'strong')
+  assert.equal(away.strength.tone, 'weak')
+  const flipped = buildSplits(model.games, { ...model, line: 20.5, lowerIsBetter: true, today: parseGameDay('10/21/2026') })
+  assert.equal(flipped.rows.find((r) => r.id === 'home').strength.tone, 'weak')
+  const rest0 = splits.rows.find((r) => r.id === 'rest0')
+  assert.ok(rest0.n === 0 || rest0.strength.tone === 'muted' || rest0.shown >= 3)
+  const tiny = buildSplits(model.games.slice(0, 2), { ...model, line: 20.5 })
+  assert.ok(tiny.rows.every((r) => r.strength.tone === 'muted'))
+  const noLine = buildSplits(model.games, { ...model, line: null })
+  assert.equal(noLine.baseline.kind, 'ratio')
+  assert.equal(noLine.rows.find((r) => r.id === 'home').strength.tone, 'strong')
+})
+
+test('advanced windows: published baseline wins, else own season; ERA lower is better', async () => {
+  const { rateWindows } = await import('../src/playerInsights/insightsCore.js')
+  const { registerBaselineProvider } = await import('../src/playerInsights/strengthScale.js')
+  const era = { id: 'era', lowerIsBetter: true }
+  const windows = [
+    { id: 'l5', label: 'L5', n: 5, value: 2.0 },
+    { id: 'l10', label: 'L10', n: 2, value: 9.0 },
+    { id: 'season', label: '2026', n: 20, value: 4.0 },
+  ]
+  const own = rateWindows(windows, era, { sport: 'kbo' })
+  assert.equal(own.baseline.source, 'season')
+  assert.equal(own.windows[0].strength.tone, 'strong')
+  assert.equal(own.windows[1].strength.tone, 'muted')
+  assert.equal(own.windows[2].isBaseline, true)
+  registerBaselineProvider('kbo', (metric) => (metric.id === 'era' ? { value: 2.1, label: 'KBO league average' } : null))
+  const league = rateWindows(windows, era, { sport: 'kbo' })
+  assert.equal(league.baseline.source, 'published')
+  assert.equal(league.windows[2].strength.tone, 'weak')
+  registerBaselineProvider('kbo', null)
+  assert.equal(rateWindows(windows, era, { sport: 'kbo' }).baseline.source, 'season')
+})
