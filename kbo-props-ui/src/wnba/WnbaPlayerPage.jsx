@@ -19,6 +19,8 @@ import { buildCgScoreExplainer } from '../cgScoreExplainer'
 import { CgScoreNote } from '../CgScoreExplainer'
 import { fitImage } from '../fitImage.js'
 import { pickSide, sideClass } from '../pickSide.js'
+import GameDateLogo from '../GameDateLogo'
+import { wnbaLogoUrl } from '../slipBoardModel.js'
 
 const PROP_PRIORITY = [
   'Points', 'Rebounds', 'Assists', '3-PT Made', 'Pts+Rebs+Asts', 'Pts+Rebs', 'Pts+Asts', 'Rebs+Asts',
@@ -507,9 +509,13 @@ export default function WnbaPlayerPage({ playerName, onBack }) {
         <div className="wnba-player-dates">
           {filteredGames.map((g, index) => (
             <span key={`date-${g.date}-${index}`}>
-              <b className="wnba-player-date-team" style={{ color: teamColorLookup[g.opponent] || '#78918a' }}>{g.opponent || '—'}</b>
-              {fmtDate(g.date)}
-              {g.postseason && <em className="wnba-player-date-po" title="Playoff game">PO</em>}
+              <GameDateLogo
+                date={g.date}
+                team={g.opponent}
+                logo={wnbaLogoUrl(g.opponent)}
+                color={teamColorLookup[g.opponent]}
+                extra={g.postseason ? <em className="wnba-player-date-po" title="Playoff game">PO</em> : null}
+              />
             </span>
           ))}
         </div>

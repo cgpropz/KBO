@@ -3,7 +3,8 @@ import { AltLinesRow, LinePlot } from '../LineSlider'
 import { useChartLine } from '../useChartLine'
 import { lineResult, overHitRate } from '../hitRateStrip'
 import { formatLineValue, offeredLinesForStat, rateTextColor } from '../lineSlider'
-import { logsSupport, opponentFromMatchup, statValue, storedL10Values } from './nbaPropLines'
+import { logsSupport, nbaLogoUrl, opponentFromMatchup, statValue, storedL10Values } from './nbaPropLines'
+import GameDateLogo from '../GameDateLogo'
 import { boundCg, cgScore } from '../cgScore'
 import { buildCgScoreExplainer } from '../cgScoreExplainer'
 import { CgScoreNote } from '../CgScoreExplainer'
@@ -53,11 +54,8 @@ function windowLogs(logs, count) {
   return slice.reverse()
 }
 
-function shortDate(value) {
-  const text = String(value || '')
-  const match = text.match(/(\d{4})-(\d{2})-(\d{2})/)
-  if (match) return `${Number(match[2])}/${Number(match[3])}`
-  return text.slice(0, 8) || '—'
+function gameOpponent(game) {
+  return opponentFromMatchup(game?.matchup || game?.opponent)
 }
 
 function formatBar(value) {
@@ -172,8 +170,7 @@ export default function NbaPlayerChart({ player, projection }) {
       <div className="nba-player-dates">
         {chartInput.games.map((game, index) => (
           <span key={`date-${game.date || index}-${index}`}>
-            <b>{opponentFromMatchup(game.matchup || game.opponent) || '—'}</b>
-            {shortDate(game.date || game.gameDate)}
+            <GameDateLogo date={game.date || game.gameDate} team={gameOpponent(game)} logo={nbaLogoUrl(gameOpponent(game))} />
           </span>
         ))}
       </div>

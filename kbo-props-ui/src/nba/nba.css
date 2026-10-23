@@ -264,7 +264,7 @@
   gap: 4px;
 }
 
-.nba-player-dates span {
+.nba-player-dates > span {
   display: flex;
   flex: 1 1 0;
   flex-direction: column;
@@ -275,10 +275,7 @@
   text-align: center;
 }
 
-.nba-player-dates b {
-  color: #a1a1aa;
-  font-size: 10px;
-}
+.nba-player-dates .hr-game-abbr { color: #a1a1aa; }
 
 @media (max-width: 720px) {
   .nba-root .nba-dvp-grid {

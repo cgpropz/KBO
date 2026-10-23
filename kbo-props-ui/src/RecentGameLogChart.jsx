@@ -1,5 +1,7 @@
 import React from 'react';
 import { lineResult, overHitRate } from './hitRateStrip';
+import GameDateLogo from './GameDateLogo';
+import { kboLogoUrl } from './slipBoardModel';
 import './RecentGameLogChart.css';
 
 function entryResult(entry, line) {
@@ -44,7 +46,11 @@ function RecentGameLogChart({ name, prop, line, entries = [], hitRate }) {
               <div className="rgl-bar-item" key={`${entry.date || index}-${index}`} title={`${entry.date || `Game ${index + 1}`}: ${value}`}>
                 <span className={`rgl-value${kind === 'push' ? ' is-push' : ''}`}>{Number.isInteger(value) ? value : value.toFixed(1)}</span>
                 <div className={`rgl-bar rgl-${kind}`} style={{ height: `${height}%` }} />
-                <span className="rgl-date">{entry.date ? String(entry.date).slice(0, 5) : `G${index + 1}`}</span>
+                <span className="rgl-date">
+                  {entry.date
+                    ? <GameDateLogo date={entry.date} team={entry.opponent} logo={kboLogoUrl(entry.opponent)} />
+                    : `G${index + 1}`}
+                </span>
               </div>
             );
           })}

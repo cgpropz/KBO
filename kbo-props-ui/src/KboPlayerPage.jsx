@@ -16,12 +16,8 @@ import BreakEvenMeter from './BreakEvenMeter'
 import { kboBreakEvenWindows } from './prizepicksBreakeven'
 import { useAuth } from './AuthContext'
 import { sportAccess } from './entitlements'
-
-const TEAM_COLORS = {
-  Doosan: '#9595d3', Hanwha: '#ff8c00', Kia: '#ff4444', Kiwoom: '#d4a76a',
-  KT: '#e0e0e0', LG: '#e8557a', Lotte: '#ff6666', NC: '#5b9bd5',
-  Samsung: '#60a5fa', SSG: '#ff5555',
-}
+import GameDateLogo from './GameDateLogo'
+import { kboLogoUrl } from './slipBoardModel'
 
 // Logos live under kbo-props-ui/public/team-logos/ (shared with LandingPage/MatchupDeepDive).
 const TEAM_LOGOS = {
@@ -73,13 +69,6 @@ function formatDelta(value) {
 function formatAvg(value) {
   if (value == null || Number.isNaN(value)) return '—'
   return value.toFixed(3).replace(/^0\./, '.')
-}
-
-// Pitcher dates ship as MM/DD/YYYY; batter dates ship as YYYY-MM-DD. Always render M/D.
-function fmtDate(dateStr) {
-  const text = String(dateStr || '')
-  const [m, d] = text.includes('-') ? text.split('-').slice(1) : text.split('/')
-  return m && d ? `${Number(m)}/${Number(d)}` : text
 }
 
 function initials(name) {
@@ -436,9 +425,7 @@ export default function KboPlayerPage({ playerName, onBack }) {
         <div className="kbo-player-dates">
           {filteredGames.map((g, index) => (
             <span key={`date-${g.date}-${index}`}>
-              {TEAM_LOGOS[g.opp] && <img className="kbo-player-date-logo" src={TEAM_LOGOS[g.opp]} alt={g.opp} loading="lazy" />}
-              <b className="kbo-player-date-team" style={{ color: TEAM_COLORS[g.opp] || '#78918a' }}>{g.opp || '—'}</b>
-              {fmtDate(g.date)}
+              <GameDateLogo date={g.date} team={g.opp} logo={TEAM_LOGOS[g.opp] || kboLogoUrl(g.opp)} />
             </span>
           ))}
         </div>

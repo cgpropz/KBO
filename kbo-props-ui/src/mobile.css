@@ -201,6 +201,16 @@
     font-size: 14px !important;
   }
 
+  /* Hit-rate bar labels: ten game dates (10/20) and opponent abbreviations
+     share one phone-wide row at the 12px floor, so they use the narrower
+     Inter digits and a tighter track instead of a smaller size. */
+  body .hr-game :is(.hr-game-date, .hr-game-abbr) {
+    font-family: Inter, system-ui, sans-serif !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    letter-spacing: -0.05em;
+  }
+
   body :is(button, a, summary, [role="button"], [role="tab"]) {
     min-height: 44px;
     min-width: 44px;

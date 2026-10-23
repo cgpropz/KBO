@@ -337,7 +337,7 @@
   border-radius: 12px;
   background: #050506;
 }
-.nhl-chart-dates span {
+.nhl-chart-dates > span {
   flex: 0 0 var(--nhl-bar);
   width: var(--nhl-bar);
   color: #e4e4e7;
@@ -346,12 +346,17 @@
   line-height: 1.2;
   text-align: center;
 }
-.nhl-chart-dates small {
-  display: block;
-  color: #d4d4d8;
-  font-size: 10px;
-  font-weight: 700;
+/* Up to ten bars share the card width instead of scrolling. */
+.nhl-chart-plot.is-fit { width: 100%; }
+.nhl-chart-plot.is-fit .nhl-chart-bars,
+.nhl-chart-plot.is-fit .nhl-chart-dates { width: 100%; }
+.nhl-chart-plot.is-fit .nhl-chart-col,
+.nhl-chart-plot.is-fit .nhl-chart-dates > span {
+  flex: 1 1 0;
+  width: auto;
+  min-width: 0;
 }
+.nhl-chart-dates > span { display: flex; justify-content: center; color: #d4d4d8; }
 .nhl-chart-empty {
   margin: 8px 0 0;
   color: #d4d4d8;
@@ -524,7 +529,7 @@
   .nhl-chart-bars,
   .nhl-chart-dates { width: 100%; }
   .nhl-chart-col,
-  .nhl-chart-dates span {
+  .nhl-chart-dates > span {
     flex: 1 1 0;
     width: auto;
     min-width: var(--nhl-bar);
@@ -534,6 +539,8 @@
   .nhl-chart-card,
   .nhl-profile { padding: 14px 12px; }
   .nhl-chart-plot { --nhl-bar: 36px; --nhl-gap: 6px; }
+  .nhl-chart-plot.is-fit { --nhl-gap: 4px; }
+  .nhl-chart-bar b { font-size: 11px; }
   .nhl-player-sub { font-size: 13px; }
   .nhl-profile-table td { font-size: 12px; }
   .nhl-stat-value { font-size: 12px; }

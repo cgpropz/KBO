@@ -10,6 +10,7 @@ import { fetchApiDataset } from '../apiData'
 import { fetchNhlDvp } from './nhlData'
 import { nhlHeadshotUrl, teamLogoUrl } from './nhlTeams'
 import { fitImage } from '../fitImage.js'
+import GameDateLogo from '../GameDateLogo'
 
 const RANGES = [
   { id: 'season', label: '2026-27', rate: 'seasonHitRate', games: 'seasonGames' },
@@ -449,7 +450,7 @@ export default function NhlPlayerPage({ item: initialItem, onBack }) {
         </div>
         {bars.length ? (
           <div className="nhl-chart-scroll">
-            <div className="nhl-chart-plot">
+            <div className={`nhl-chart-plot${bars.length <= 10 ? ' is-fit' : ''}`}>
               <LinePlot className="nhl-chart-stage" slider={slider} lineClassName="nhl-chart-line">
                 <div className="nhl-chart-bars">
                   {bars.map((bar, index) => {
@@ -471,8 +472,7 @@ export default function NhlPlayerPage({ item: initialItem, onBack }) {
               <div className="nhl-chart-dates">
                 {bars.map((bar, index) => (
                   <span key={`${bar.date}-d-${index}`}>
-                    {bar.date || '—'}
-                    <small>{bar.opponent || (bar.team && bar.team !== item.team ? bar.team : '')}</small>
+                    <GameDateLogo date={bar.date} team={bar.opponent} logo={teamLogoUrl(bar.opponent)} />
                   </span>
                 ))}
               </div>
