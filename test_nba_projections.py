@@ -418,11 +418,73 @@ class EarlySeasonTests(unittest.TestCase):
             proj.build_projection_bundle(games, 30.0, {}, windows=(3, 7, 15))["base"],
         )
 
-    def test_three_games_are_unchanged(self):
-        games = [season_game("2027", 20, 20, 21 + index) for index in range(3)] + self.last_season()
-        bundle, mode = proj.project_board_player(games, {})
-        self.assertEqual(mode, "normal")
-        self.assertEqual(bundle["base"], proj.project_player(games, {})["base"])
+    def this_season(self, count, minutes=20, pts=20):
+        return [season_game("2027", minutes, pts, 1 + count - index) for index in range(count)]
+
+    def test_ramp_weight_schedule(self):
+        expected = [0.25, 0.4, 0.475, 0.55, 0.625, 0.7, 0.775, 0.85, 0.925, 1.0, 1.0, 1.0]
+        for games, weight in enumerate(expected, start=1):
+            self.assertAlmostEqual(proj.ramp_weight(games, 10), weight, msg=f"game {games}")
+            self.assertAlmostEqual(proj.ramp_weight(games, 3), weight, msg=f"game {games}")
+        # short last season ramps from its own game-2 share
+        self.assertAlmostEqual(proj.ramp_weight(2, 1), 2 / 3)
+        self.assertAlmostEqual(proj.ramp_weight(3, 1), 2 / 3 + (1 / 3) / 8)
+        self.assertEqual(proj.ramp_weight(10, 1), 1.0)
+
+    def test_ramp_is_monotonic_with_no_step_back_at_game_three(self):
+        for prior in (1, 2, 3, 40):
+            weights = [proj.ramp_weight(games, prior) for games in range(1, 12)]
+            self.assertEqual(weights, sorted(weights))
+            self.assertLess(weights[2] - weights[1], 0.2)
+
+    def test_games_three_to_ten_blend_against_the_full_last_season(self):
+        expected_pts = {3: 14.75, 6: 17.0, 9: 19.25, 10: 20.0}
+        for count, pts in expected_pts.items():
+            bundle, mode = proj.project_board_player(self.this_season(count) + self.last_season(), {})
+            self.assertEqual(mode, "blend", count)
+            # this season 20 pts in 20 min; last season 10 pts in 30 min
+            self.assertEqual(bundle["base"]["pts"], pts, count)
+            self.assertEqual(bundle["seasonWeight"], round(proj.ramp_weight(count, 10), 3))
+
+    def test_game_three_ignores_the_late_last_season_spike(self):
+        late_spike = [season_game("2026", 40, 30, 20 - index) for index in range(3)]
+        rest = [season_game("2026", 20, 10, 10 - index) for index in range(7)]
+        current = self.this_season(3)
+        bundle, _mode = proj.project_board_player(current + late_spike + rest, {})
+        expected = proj.blend_bundles(
+            proj.project_player(current, {}), proj.season_average_bundle(late_spike + rest, {}), 0.475
+        )
+        self.assertEqual(bundle["base"], expected["base"])
+
+    def test_continuity_from_game_two_to_three(self):
+        two, _ = proj.project_board_player(self.this_season(2) + self.last_season(), {})
+        three, _ = proj.project_board_player(self.this_season(3) + self.last_season(), {})
+        self.assertEqual(two["base"]["pts"], 14.0)
+        self.assertEqual(three["base"]["pts"], 14.75)
+        self.assertLess(abs(three["base"]["pts"] - two["base"]["pts"]), 1.0)
+
+    def test_continuity_from_game_ten_to_eleven(self):
+        ten, ten_mode = proj.project_board_player(self.this_season(10) + self.last_season(), {})
+        self.assertEqual(ten_mode, "blend")
+        self.assertEqual(ten["base"], proj.project_player(self.this_season(10), {})["base"])
+        games = self.this_season(11) + self.last_season()
+        eleven, eleven_mode = proj.project_board_player(games, {})
+        self.assertEqual(eleven_mode, "normal")
+        self.assertEqual(eleven["base"], proj.project_player(games, {})["base"])
+        # a steady player is level across the hand-off
+        steady_prior = [season_game("2026", 20, 20, 20 - index) for index in range(10)]
+        ten, _ = proj.project_board_player(self.this_season(10) + steady_prior, {})
+        eleven, _ = proj.project_board_player(self.this_season(11) + steady_prior, {})
+        self.assertEqual(ten["base"]["pts"], eleven["base"]["pts"])
+
+    def test_no_last_season_stays_blank_until_game_three_then_normal(self):
+        for count in (1, 2):
+            self.assertEqual(proj.project_board_player(self.this_season(count), {}), (None, "blank"))
+        for count in (3, 5, 10):
+            games = self.this_season(count)
+            bundle, mode = proj.project_board_player(games, {})
+            self.assertEqual(mode, "normal")
+            self.assertEqual(bundle["base"], proj.project_player(games, {})["base"])
 
     def test_no_games_this_season_is_unchanged(self):
         games = self.last_season()
