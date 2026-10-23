@@ -376,11 +376,11 @@ const KBO_BATTER_METRICS = [
 
 const KBO_PITCHER_METRICS = [
   { id: 'k9', label: 'K/9', format: 'two', note: 'Strikeouts per 9 innings.', has: (raw) => finite(raw.so) != null && outsOf(raw) > 0, total: (rows) => ratio(sumOf(rows, 'so'), sumOf(rows, outsOf), 27), game: (raw) => ratio(finite(raw.so), outsOf(raw), 27) },
-  { id: 'bb9', label: 'BB/9', format: 'two', note: 'Walks per 9 innings.', has: (raw) => finite(raw.bb) != null && outsOf(raw) > 0, total: (rows) => ratio(sumOf(rows, 'bb'), sumOf(rows, outsOf), 27), game: (raw) => ratio(finite(raw.bb), outsOf(raw), 27) },
-  { id: 'whip', label: 'WHIP', format: 'two', note: '(Walks + hits) per inning.', has: (raw) => finite(raw.bb) != null && finite(raw.ha) != null && outsOf(raw) > 0, total: (rows) => ratio(sumOf(rows, 'bb') + sumOf(rows, 'ha'), sumOf(rows, outsOf), 3), game: (raw) => ratio(finite(raw.bb) + finite(raw.ha), outsOf(raw), 3) },
-  { id: 'era', label: 'ERA', format: 'two', note: 'Earned runs per 9 innings.', has: (raw) => finite(raw.er) != null && outsOf(raw) > 0, total: (rows) => ratio(sumOf(rows, 'er'), sumOf(rows, outsOf), 27), game: (raw) => ratio(finite(raw.er), outsOf(raw), 27) },
+  { id: 'bb9', lowerIsBetter: true, label: 'BB/9', format: 'two', note: 'Walks per 9 innings.', has: (raw) => finite(raw.bb) != null && outsOf(raw) > 0, total: (rows) => ratio(sumOf(rows, 'bb'), sumOf(rows, outsOf), 27), game: (raw) => ratio(finite(raw.bb), outsOf(raw), 27) },
+  { id: 'whip', lowerIsBetter: true, label: 'WHIP', format: 'two', note: '(Walks + hits) per inning.', has: (raw) => finite(raw.bb) != null && finite(raw.ha) != null && outsOf(raw) > 0, total: (rows) => ratio(sumOf(rows, 'bb') + sumOf(rows, 'ha'), sumOf(rows, outsOf), 3), game: (raw) => ratio(finite(raw.bb) + finite(raw.ha), outsOf(raw), 3) },
+  { id: 'era', lowerIsBetter: true, label: 'ERA', format: 'two', note: 'Earned runs per 9 innings.', has: (raw) => finite(raw.er) != null && outsOf(raw) > 0, total: (rows) => ratio(sumOf(rows, 'er'), sumOf(rows, outsOf), 27), game: (raw) => ratio(finite(raw.er), outsOf(raw), 27) },
   { id: 'kbb', label: 'K/BB', format: 'two', note: 'Strikeouts per walk.', has: has('so', 'bb'), total: (rows) => ratio(sumOf(rows, 'so'), sumOf(rows, 'bb')), game: (raw) => ratio(finite(raw.so), finite(raw.bb)) },
-  { id: 'h9', label: 'H/9', format: 'two', note: 'Hits allowed per 9 innings.', has: (raw) => finite(raw.ha) != null && outsOf(raw) > 0, total: (rows) => ratio(sumOf(rows, 'ha'), sumOf(rows, outsOf), 27), game: (raw) => ratio(finite(raw.ha), outsOf(raw), 27) },
+  { id: 'h9', lowerIsBetter: true, label: 'H/9', format: 'two', note: 'Hits allowed per 9 innings.', has: (raw) => finite(raw.ha) != null && outsOf(raw) > 0, total: (rows) => ratio(sumOf(rows, 'ha'), sumOf(rows, outsOf), 27), game: (raw) => ratio(finite(raw.ha), outsOf(raw), 27) },
   { id: 'outs', label: 'Outs per start', format: 'one', note: 'Average outs recorded per start.', has: (raw) => outsOf(raw) != null, total: (rows) => meanOf(rows, outsOf), game: (raw) => outsOf(raw) },
 ]
 

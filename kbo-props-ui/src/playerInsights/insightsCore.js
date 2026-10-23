@@ -15,6 +15,7 @@
 // Games arrive newest first.
 
 import { overHitRate } from '../hitRateStrip.js'
+import { baselineFor, isLowerBetter, strengthTone } from './strengthScale.js'
 
 export const SMALL_SAMPLE = 5
 const DAY_MS = 86400000
@@ -153,6 +154,7 @@ export function buildSplits(games, {
   hideEmptyRest = false,
   oppKey = (team) => String(team).toUpperCase(),
   extraSplits = [],
+  lowerIsBetter = false,
 } = {}) {
   const logged = Array.isArray(games) ? games : []
   const truncatedSeason = truncatedSeasonOf(logged, logCap)
@@ -219,7 +221,21 @@ export function buildSplits(games, {
     const matched = source.filter((game) => split.test(game))
     if (matched.length) out.push(row(split.ownScope ? split.group : ctx(split.group), split.id, split.label, matched, line))
   })
-  return { rows: out, skipped, seasonGames: seasonGames.length }
+  // Strength colors: each row against the player's own overall number for
+  // this stat across every logged game (hit rate when there is a line).
+  const overall = summarize(list, line)
+  const byRate = line != null && overall.rate != null
+  const baseline = {
+    kind: byRate ? 'rate' : 'ratio',
+    value: byRate ? overall.rate : overall.avg,
+    n: overall.shown,
+    lowerIsBetter,
+  }
+  const rows = out.map((entry) => ({
+    ...entry,
+    strength: strengthTone(byRate ? entry.rate : entry.avg, baseline.value, { n: entry.shown, kind: baseline.kind, lowerIsBetter }),
+  }))
+  return { rows, skipped, seasonGames: seasonGames.length, baseline }
 }
 
 // One advanced metric over a set of games. `metric.total(games)` returns the
@@ -270,6 +286,22 @@ export function metricWindows(metric, games, {
       playoffs: window.games.some((game) => game.postseason),
     }
   })
+}
+
+// Colors each window against a baseline: a published position/league number
+// when a provider is registered for the sport, else the player's own season.
+// The window that *is* the baseline stays neutral (marked `isBaseline`).
+export function rateWindows(windows, metric, model = {}) {
+  const baseline = baselineFor(metric, model, windows)
+  const lowerIsBetter = isLowerBetter(model.sport, metric?.id, metric)
+  const rated = windows.map((window) => {
+    const isBaseline = baseline?.windowId === window.id
+    const strength = isBaseline
+      ? { level: 0, tone: 'neutral', cue: '', label: 'baseline' }
+      : strengthTone(window.value, baseline?.value, { n: window.n, kind: 'ratio', lowerIsBetter })
+    return { ...window, isBaseline, strength }
+  })
+  return { windows: rated, baseline, lowerIsBetter }
 }
 
 export function metricSeries(metric, games, count = 10) {
