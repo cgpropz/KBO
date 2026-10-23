@@ -1,0 +1,468 @@
+/* NBA Players list. Phone first: one tight row per player at 390px, a grid
+   from tablet up. Matches the player profile header (headshot, team logo). */
+
+.nba-plist {
+  --nba-plist-top: 0px;
+  --plist-bg: #050807;
+  --plist-panel: #0a1412;
+  --plist-border: #16302b;
+  --plist-text: #e8f4e6;
+  --plist-dim: #8aa39b;
+  --plist-lime: #7efc6a;
+}
+
+.nba-plist .sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.nba-plist-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0 0 8px;
+}
+
+.nba-plist-head h1 {
+  margin: 0;
+  color: white;
+  font-size: 24px;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.nba-plist-head p {
+  margin: 0;
+  color: var(--plist-dim);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* Sticky control stack. --nba-plist-top is the nav height when the nav sticks. */
+.nba-plist-controls {
+  position: sticky;
+  top: var(--nba-plist-top);
+  z-index: 15;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0 -4px 10px;
+  padding: 8px 4px;
+  background: rgba(5, 8, 7, 0.96);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--plist-border);
+}
+
+.nba-plist-search {
+  box-sizing: border-box;
+  width: 100%;
+  height: 40px;
+  padding: 0 14px;
+  border: 1px solid var(--plist-border);
+  border-radius: 12px;
+  background: var(--plist-panel);
+  color: var(--plist-text);
+  font: inherit;
+  font-size: 15px;
+  outline: none;
+}
+
+.nba-plist-search:focus { border-color: var(--plist-lime); }
+
+.nba-plist-chips {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  scroll-snap-type: x proximity;
+}
+
+.nba-plist-chips::-webkit-scrollbar { display: none; }
+
+.nba-plist-chip,
+.nba-plist-control {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 12px;
+  border: 1px solid var(--plist-border);
+  border-radius: 999px;
+  background: var(--plist-panel);
+  color: var(--plist-dim);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+  scroll-snap-align: start;
+}
+
+.nba-plist-chip.active,
+.nba-plist-control.active {
+  border-color: var(--plist-lime);
+  color: var(--plist-lime);
+  background: #0f2119;
+}
+
+.nba-plist-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.nba-plist-row .caret { font-size: 10px; opacity: 0.7; }
+
+.nba-plist-toggle .knob {
+  position: relative;
+  width: 24px;
+  height: 14px;
+  border-radius: 999px;
+  background: #23332f;
+  transition: background 0.15s ease;
+}
+
+.nba-plist-toggle .knob::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #8aa39b;
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+
+.nba-plist-toggle.active .knob { background: #1f5a2c; }
+.nba-plist-toggle.active .knob::after { transform: translateX(10px); background: var(--plist-lime); }
+
+.nba-plist-sort {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+  margin-left: auto;
+  padding: 0 0 0 4px;
+}
+
+.nba-plist-sort select {
+  width: 100%;
+  min-width: 0;
+  height: 30px;
+  padding: 0 10px;
+  border: 0;
+  background: transparent;
+  color: var(--plist-text);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  outline: none;
+  cursor: pointer;
+}
+
+.nba-plist-sort option { background: #0a1412; }
+
+/* Team picker: a logo grid that drops under the controls. */
+.nba-plist-teampick { position: relative; flex: 0 0 auto; }
+
+.nba-plist-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  border: 0;
+  background: rgba(0, 0, 0, 0.35);
+  cursor: default;
+}
+
+.nba-plist-teamgrid {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: repeat(5, 56px);
+  gap: 4px;
+  max-height: 60vh;
+  overflow-y: auto;
+  padding: 8px;
+  border: 1px solid var(--plist-border);
+  border-radius: 14px;
+  background: #07100e;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.55);
+}
+
+.nba-plist-teamgrid button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  height: 52px;
+  padding: 2px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--plist-dim);
+  font: inherit;
+  font-size: 10px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.nba-plist-teamgrid button.all { grid-column: 1 / -1; height: 32px; font-size: 12px; }
+.nba-plist-teamgrid button.active { border-color: var(--plist-lime); color: var(--plist-lime); }
+.nba-plist-teamgrid .board-team-logo { width: 28px; height: 28px; }
+
+/* Player rows. */
+.nba-plist-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 6px;
+}
+
+.nba-plist-card {
+  position: relative;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-width: 0;
+  min-height: 68px;
+  padding: 8px 10px 8px 12px;
+  overflow: hidden;
+  border: 1px solid #12241f;
+  border-radius: 14px;
+  background: #080e0c;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.12s ease, background 0.12s ease;
+}
+
+.nba-plist-card:hover,
+.nba-plist-card:focus-visible { border-color: #2a5a4e; background: #0b1512; outline: none; }
+.nba-plist-card:active { transform: scale(0.995); }
+
+.nba-plist-accent {
+  position: absolute;
+  top: 8px;
+  bottom: 8px;
+  left: 0;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+}
+
+.nba-plist-headshot {
+  flex: 0 0 auto;
+  box-sizing: border-box;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border: 2px solid #1f3f3d;
+  border-radius: 50%;
+  background: #12231f;
+  color: var(--plist-lime);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.nba-plist-headshot img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top center;
+}
+
+.nba-plist-main {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.nba-plist-name {
+  overflow: hidden;
+  color: white;
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nba-plist-meta {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--plist-dim);
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.nba-plist-team { color: #cfe1da; }
+.nba-plist-game,
+.nba-plist-min {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: #a7bdb5;
+  font-weight: 600;
+}
+
+.nba-plist-game::before,
+.nba-plist-min::before { content: '·'; margin-right: 5px; color: #4c615a; }
+
+.nba-plist-season {
+  overflow: hidden;
+  color: #b7cac3;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nba-plist-season em {
+  margin-right: 6px;
+  color: #5d756d;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 700;
+}
+
+.nba-plist-season i {
+  margin: 0 5px 0 1px;
+  color: #6f877f;
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 700;
+}
+
+/* Top prop pill: stat + line over a five-game spark and the L10 rate. */
+.nba-plist-prop {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  min-width: 62px;
+  padding: 5px 7px;
+  border: 1px solid var(--plist-border);
+  border-radius: 10px;
+  background: #0b1714;
+  font-variant-numeric: tabular-nums;
+}
+
+.nba-plist-prop-line {
+  color: #e8f4e6;
+  font-size: 11px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.nba-plist-prop-rate {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.nba-plist-prop-rate small { color: #6f877f; font-size: 9px; font-weight: 800; }
+.nba-plist-prop-rate b { font-size: 12px; font-weight: 800; white-space: nowrap; }
+.nba-plist-prop.tone-good { border-color: #1f5a2c; }
+.nba-plist-prop.tone-good b { color: #7efc6a; }
+.nba-plist-prop.tone-mid b { color: #f6c35f; }
+.nba-plist-prop.tone-bad b { color: #ff7b79; }
+.nba-plist-prop.tone-none b { color: #78918a; }
+
+.nba-plist-spark rect.hit { fill: #4ade80; }
+.nba-plist-spark rect.miss { fill: #7f3b3b; }
+.nba-plist-spark .line { stroke: #e8f4e6; stroke-width: 1; stroke-dasharray: 2 2; opacity: 0.7; }
+
+.nba-plist-empty {
+  margin: 14px 0;
+  color: var(--plist-dim);
+  font-size: 13px;
+  text-align: center;
+}
+
+.nba-plist-empty.error { color: #ef4444; }
+
+.nba-plist-empty button {
+  margin-left: 4px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--plist-lime);
+  font: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* Skeleton rows while the roster loads. */
+.nba-plist-skeleton { cursor: default; }
+.nba-plist .sk {
+  display: block;
+  border-color: transparent;
+  background: linear-gradient(90deg, #0e1916 0%, #16251f 50%, #0e1916 100%);
+  background-size: 200% 100%;
+  animation: nbaPlistShimmer 1.2s linear infinite;
+}
+
+.nba-plist .sk-line { height: 10px; border-radius: 5px; margin: 2px 0; }
+.nba-plist .sk-pill { flex: 0 0 auto; width: 78px; height: 38px; border-radius: 10px; }
+
+@keyframes nbaPlistShimmer {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nba-plist .sk { animation: none; }
+}
+
+/* The phone sheet sets every input and select to 44px / 16px. Keep the
+   control row on one line at 390px. */
+@media (max-width: 767px) {
+  .nba-plist-controls .nba-plist-chip,
+  .nba-plist-controls .nba-plist-control { min-height: 0; height: 34px; padding: 0 11px; font-size: 13px; }
+  .nba-plist-controls .nba-plist-sort { padding: 0 2px 0 6px; }
+  .nba-plist-controls .nba-plist-sort select { min-height: 0; height: 32px; padding: 0 4px; font-size: 14px !important; }
+  .nba-plist-controls .nba-plist-search { min-height: 0; height: 40px; }
+  /* The phone floor keeps every glyph at 12px or more; size the card to it. */
+  .nba-plist-card { min-height: 0; }
+  .nba-plist-card .nba-plist-name { font-size: 15px !important; }
+  .nba-plist-card :is(.nba-plist-meta, .nba-plist-season, .nba-plist-season em, .nba-plist-season i,
+    .nba-plist-prop-line, .nba-plist-prop-rate small, .nba-plist-prop-rate b) { font-size: 12px !important; }
+  .nba-plist-card .nba-plist-meta { gap: 4px; }
+  .nba-plist-card .nba-plist-season em { margin-right: 5px; }
+  .nba-plist-card .nba-plist-prop { min-width: 0; padding: 4px 6px; }
+}
+
+@media (min-width: 768px) {
+  .nba-plist-grid { grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 8px; }
+  .nba-plist-controls { flex-direction: row; flex-wrap: wrap; align-items: center; }
+  .nba-plist-search { width: 260px; }
+  .nba-plist-row { flex: 1 1 auto; }
+}
+
+/* Initials sit in the ring until the photo loads, then the photo covers them. */
+.nba-headshot-frame { position: relative; }
+.nba-headshot-frame img { position: absolute; inset: 0; opacity: 0; transition: opacity 0.15s ease; }
+.nba-headshot-frame img.is-loaded { opacity: 1; }
