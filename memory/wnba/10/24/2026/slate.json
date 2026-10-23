@@ -4,9 +4,9 @@
   "slate_date_iso": "2026-10-24",
   "timezone_basis": "ET",
   "schema_version": 2,
-  "frozen_at": "2026-10-23T01:12:44.933783+00:00",
+  "frozen_at": "2026-10-23T09:15:29.318923+00:00",
   "source": "kbo-props-ui/public/data/wnba/projections_*.json",
-  "source_commit": "4ad35970c7ec",
+  "source_commit": "4b2d29a0250f",
   "props": [
     {
       "projection": 1.89,
@@ -32,12 +32,13 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-22T09:20:05+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f",
+      "standard_line": 1.5
     },
     {
-      "projection": 1.89,
-      "edge": 1.39,
+      "projection": 2.01,
+      "edge": 1.51,
       "player": "Allisha Gray",
       "team": "ATL",
       "position": "Guard",
@@ -47,7 +48,35 @@
       "odds_type": "goblin",
       "recommendation": "OVER",
       "projection_source": "wnba/backend/index.js",
-      "rating": 189,
+      "rating": 201,
+      "game_date_iso": "2026-10-24",
+      "effective_dvp_factor": 7,
+      "avg_mins": 29.2,
+      "dvp_opponent": "GSV",
+      "spread": -4.5,
+      "formula_mode": "tuned",
+      "formula_applied": false,
+      "projection_schema": 2,
+      "start_time_utc": "2026-10-24T16:00:00+00:00",
+      "start_time_source": "fallback_wnba_noon_et",
+      "first_frozen_at": "2026-10-23T01:12:44+00:00",
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
+    },
+    {
+      "projection": 1.89,
+      "edge": 0.39,
+      "player": "Allisha Gray",
+      "team": "ATL",
+      "position": "Guard",
+      "opponent": "GSV",
+      "stat": "3-PT Made",
+      "line": 1.5,
+      "odds_type": "standard",
+      "recommendation": "OVER",
+      "projection_source": "wnba/backend/index.js",
+      "rating": 63,
+      "standard_line": 1.5,
       "game_date_iso": "2026-10-24",
       "effective_dvp_factor": 4,
       "avg_mins": 29.2,
@@ -58,9 +87,9 @@
       "projection_schema": 2,
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
-      "first_frozen_at": "2026-10-23T01:12:44+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "first_frozen_at": "2026-10-23T09:15:29+00:00",
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
       "projection": 2.5,
@@ -87,12 +116,12 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-22T09:20:05+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
-      "projection": 2.5,
-      "edge": 1.0,
+      "projection": 2.77,
+      "edge": 1.27,
       "player": "Allisha Gray",
       "team": "ATL",
       "position": "Guard",
@@ -102,9 +131,9 @@
       "odds_type": "goblin",
       "recommendation": "OVER",
       "projection_source": "wnba/backend/index.js",
-      "rating": 83.3,
+      "rating": 92.3,
       "game_date_iso": "2026-10-24",
-      "effective_dvp_factor": 2,
+      "effective_dvp_factor": 7,
       "avg_mins": 29.2,
       "dvp_opponent": "GSV",
       "spread": -4.5,
@@ -115,8 +144,8 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-23T01:12:44+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
       "projection": 16.2,
@@ -144,12 +173,12 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-22T09:20:05+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
-      "projection": 16.2,
-      "edge": 5.7,
+      "projection": 17.57,
+      "edge": 7.07,
       "player": "Allisha Gray",
       "team": "ATL",
       "position": "Guard",
@@ -159,10 +188,10 @@
       "odds_type": "goblin",
       "recommendation": "OVER",
       "projection_source": "wnba/backend/index.js",
-      "rating": 77.1,
+      "rating": 83.7,
       "standard_line": 15.5,
       "game_date_iso": "2026-10-24",
-      "effective_dvp_factor": 1,
+      "effective_dvp_factor": 7,
       "avg_mins": 29.2,
       "dvp_opponent": "GSV",
       "spread": -4.5,
@@ -173,8 +202,8 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-23T01:12:44+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
       "projection": 16.2,
@@ -202,8 +231,8 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-22T09:20:05+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
       "projection": 19.21,
@@ -231,12 +260,12 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-22T09:20:05+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
-      "projection": 19.21,
-      "edge": 4.71,
+      "projection": 20.74,
+      "edge": 6.24,
       "player": "Allisha Gray",
       "team": "ATL",
       "position": "Guard",
@@ -246,10 +275,10 @@
       "odds_type": "goblin",
       "recommendation": "OVER",
       "projection_source": "wnba/backend/index.js",
-      "rating": 66.2,
+      "rating": 71.5,
       "standard_line": 18.5,
       "game_date_iso": "2026-10-24",
-      "effective_dvp_factor": 2,
+      "effective_dvp_factor": 7,
       "avg_mins": 29.2,
       "dvp_opponent": "GSV",
       "spread": -4.5,
@@ -260,8 +289,8 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-23T01:12:44+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
       "projection": 19.21,
@@ -289,8 +318,8 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-22T09:20:05+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
       "projection": 20.39,
@@ -318,12 +347,12 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-22T09:20:05+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
-      "projection": 20.39,
-      "edge": 5.89,
+      "projection": 21.85,
+      "edge": 7.35,
       "player": "Allisha Gray",
       "team": "ATL",
       "position": "Guard",
@@ -333,10 +362,10 @@
       "odds_type": "goblin",
       "recommendation": "OVER",
       "projection_source": "wnba/backend/index.js",
-      "rating": 70.3,
+      "rating": 75.3,
       "standard_line": 19.5,
       "game_date_iso": "2026-10-24",
-      "effective_dvp_factor": 3,
+      "effective_dvp_factor": 7,
       "avg_mins": 29.2,
       "dvp_opponent": "GSV",
       "spread": -4.5,
@@ -347,8 +376,8 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-23T01:12:44+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
       "projection": 20.39,
@@ -376,8 +405,8 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-22T09:20:05+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
       "projection": 20.53,
@@ -404,12 +433,12 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-22T09:20:05+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
-      "projection": 20.53,
-      "edge": 1.03,
+      "projection": 23.5,
+      "edge": 4.0,
       "player": "Allisha Gray",
       "team": "ATL",
       "position": "Guard",
@@ -419,10 +448,10 @@
       "odds_type": "goblin",
       "recommendation": "OVER",
       "projection_source": "wnba/backend/index.js",
-      "rating": 52.6,
+      "rating": 60.3,
       "standard_line": 21.5,
       "game_date_iso": "2026-10-24",
-      "effective_dvp_factor": 3,
+      "effective_dvp_factor": 7,
       "avg_mins": 29.2,
       "dvp_opponent": "GSV",
       "spread": -4.5,
@@ -432,8 +461,8 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-23T01:12:44+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
       "projection": 20.53,
@@ -460,8 +489,8 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-22T09:20:05+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
       "projection": 3.42,
@@ -487,12 +516,12 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-22T09:20:05+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
-      "projection": 3.42,
-      "edge": 1.92,
+      "projection": 3.55,
+      "edge": 2.05,
       "player": "Allisha Gray",
       "team": "ATL",
       "position": "Guard",
@@ -502,9 +531,9 @@
       "odds_type": "goblin",
       "recommendation": "OVER",
       "projection_source": "wnba/backend/index.js",
-      "rating": 114,
+      "rating": 118.3,
       "game_date_iso": "2026-10-24",
-      "effective_dvp_factor": 5,
+      "effective_dvp_factor": 7,
       "avg_mins": 29.2,
       "dvp_opponent": "GSV",
       "spread": -4.5,
@@ -514,8 +543,8 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-23T01:12:44+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
       "projection": 6.43,
@@ -543,12 +572,12 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-22T23:53:06+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
-      "projection": 6.43,
-      "edge": 1.93,
+      "projection": 6.65,
+      "edge": 2.15,
       "player": "Allisha Gray",
       "team": "ATL",
       "position": "Guard",
@@ -558,10 +587,10 @@
       "odds_type": "goblin",
       "recommendation": "OVER",
       "projection_source": "wnba/backend/index.js",
-      "rating": 71.4,
+      "rating": 73.9,
       "standard_line": 5.5,
       "game_date_iso": "2026-10-24",
-      "effective_dvp_factor": 4,
+      "effective_dvp_factor": 7,
       "avg_mins": 29.2,
       "dvp_opponent": "GSV",
       "spread": -4.5,
@@ -572,8 +601,8 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-23T01:12:44+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
       "projection": 6.43,
@@ -601,8 +630,8 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-22T09:20:05+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
       "projection": 0.33,
@@ -628,8 +657,8 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-22T09:20:05+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
       "projection": 3.02,
@@ -656,12 +685,12 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-22T09:20:05+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
-      "projection": 3.02,
-      "edge": 1.52,
+      "projection": 3.49,
+      "edge": 1.99,
       "player": "Angel Reese",
       "team": "ATL",
       "position": "Forward",
@@ -671,9 +700,9 @@
       "odds_type": "goblin",
       "recommendation": "OVER",
       "projection_source": "wnba/backend/index.js",
-      "rating": 100.7,
+      "rating": 116.3,
       "game_date_iso": "2026-10-24",
-      "effective_dvp_factor": 2,
+      "effective_dvp_factor": 7,
       "avg_mins": 32.2,
       "dvp_opponent": "GSV",
       "spread": -4.5,
@@ -684,8 +713,8 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-23T01:12:44+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
       "projection": 16.77,
@@ -713,12 +742,12 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-22T09:20:05+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
-      "projection": 16.77,
-      "edge": 6.27,
+      "projection": 17.67,
+      "edge": 7.17,
       "player": "Angel Reese",
       "team": "ATL",
       "position": "Forward",
@@ -728,10 +757,10 @@
       "odds_type": "goblin",
       "recommendation": "OVER",
       "projection_source": "wnba/backend/index.js",
-      "rating": 79.9,
+      "rating": 84.1,
       "standard_line": 16.5,
       "game_date_iso": "2026-10-24",
-      "effective_dvp_factor": 1,
+      "effective_dvp_factor": 7,
       "avg_mins": 32.2,
       "dvp_opponent": "GSV",
       "spread": -4.5,
@@ -742,8 +771,8 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-23T01:12:44+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
       "projection": 16.77,
@@ -771,8 +800,8 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-22T09:20:05+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
       "projection": 21.39,
@@ -800,12 +829,12 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-22T09:20:05+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
-      "projection": 21.39,
-      "edge": 6.89,
+      "projection": 22.6,
+      "edge": 8.1,
       "player": "Angel Reese",
       "team": "ATL",
       "position": "Forward",
@@ -815,10 +844,10 @@
       "odds_type": "goblin",
       "recommendation": "OVER",
       "projection_source": "wnba/backend/index.js",
-      "rating": 73.8,
+      "rating": 77.9,
       "standard_line": 18.5,
       "game_date_iso": "2026-10-24",
-      "effective_dvp_factor": 2,
+      "effective_dvp_factor": 7,
       "avg_mins": 32.2,
       "dvp_opponent": "GSV",
       "spread": -4.5,
@@ -829,8 +858,8 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-23T01:12:44+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
       "projection": 21.39,
@@ -858,8 +887,8 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-22T09:20:05+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
       "projection": 30.45,
@@ -887,12 +916,12 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-22T09:20:05+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
-      "projection": 30.45,
-      "edge": 5.95,
+      "projection": 31.57,
+      "edge": 7.07,
       "player": "Angel Reese",
       "team": "ATL",
       "position": "Forward",
@@ -902,10 +931,10 @@
       "odds_type": "goblin",
       "recommendation": "OVER",
       "projection_source": "wnba/backend/index.js",
-      "rating": 62.1,
+      "rating": 64.4,
       "standard_line": 28,
       "game_date_iso": "2026-10-24",
-      "effective_dvp_factor": 3,
+      "effective_dvp_factor": 7,
       "avg_mins": 32.2,
       "dvp_opponent": "GSV",
       "spread": -4.5,
@@ -916,8 +945,8 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-23T01:12:44+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
       "projection": 30.45,
@@ -945,8 +974,8 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-22T09:20:05+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
       "projection": 31.32,
@@ -973,12 +1002,12 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-22T09:20:05+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
-      "projection": 31.32,
-      "edge": 6.82,
+      "projection": 33.93,
+      "edge": 9.43,
       "player": "Angel Reese",
       "team": "ATL",
       "position": "Forward",
@@ -988,10 +1017,10 @@
       "odds_type": "goblin",
       "recommendation": "OVER",
       "projection_source": "wnba/backend/index.js",
-      "rating": 63.9,
+      "rating": 69.2,
       "standard_line": 30.5,
       "game_date_iso": "2026-10-24",
-      "effective_dvp_factor": 3,
+      "effective_dvp_factor": 7,
       "avg_mins": 32.2,
       "dvp_opponent": "GSV",
       "spread": -4.5,
@@ -1001,8 +1030,8 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-23T01:12:44+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
       "projection": 31.32,
@@ -1029,8 +1058,8 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-22T09:20:05+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
       "projection": 11.63,
@@ -1057,12 +1086,12 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-22T09:20:05+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
-      "projection": 11.63,
-      "edge": 3.13,
+      "projection": 11.93,
+      "edge": 3.43,
       "player": "Angel Reese",
       "team": "ATL",
       "position": "Forward",
@@ -1072,9 +1101,9 @@
       "odds_type": "goblin",
       "recommendation": "OVER",
       "projection_source": "wnba/backend/index.js",
-      "rating": 68.4,
+      "rating": 70.2,
       "game_date_iso": "2026-10-24",
-      "effective_dvp_factor": 5,
+      "effective_dvp_factor": 7,
       "avg_mins": 32.2,
       "dvp_opponent": "GSV",
       "spread": -4.5,
@@ -1084,8 +1113,8 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-23T01:12:44+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
       "projection": 11.63,
@@ -1142,12 +1171,12 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-22T09:20:05+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
-      "projection": 15.57,
-      "edge": 4.07,
+      "projection": 15.95,
+      "edge": 4.45,
       "player": "Angel Reese",
       "team": "ATL",
       "position": "Forward",
@@ -1157,10 +1186,10 @@
       "odds_type": "goblin",
       "recommendation": "OVER",
       "projection_source": "wnba/backend/index.js",
-      "rating": 67.7,
+      "rating": 69.3,
       "standard_line": 14.5,
       "game_date_iso": "2026-10-24",
-      "effective_dvp_factor": 4,
+      "effective_dvp_factor": 7,
       "avg_mins": 32.2,
       "dvp_opponent": "GSV",
       "spread": -4.5,
@@ -1171,8 +1200,8 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-23T01:12:44+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
       "projection": 15.57,
@@ -1200,8 +1229,8 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-22T09:20:05+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
       "projection": 1.21,
@@ -1227,12 +1256,12 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-22T09:20:05+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
-      "projection": 1.21,
-      "edge": 0.71,
+      "projection": 1.34,
+      "edge": 0.84,
       "player": "Cecilia Zandalasini",
       "team": "GSV",
       "position": "Forward",
@@ -1242,9 +1271,9 @@
       "odds_type": "goblin",
       "recommendation": "OVER",
       "projection_source": "wnba/backend/index.js",
-      "rating": 121,
+      "rating": 134,
       "game_date_iso": "2026-10-24",
-      "effective_dvp_factor": 4,
+      "effective_dvp_factor": 7,
       "avg_mins": 19,
       "dvp_opponent": "ATL",
       "spread": 4.5,
@@ -1254,8 +1283,8 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-23T01:12:44+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
       "projection": 8.66,
@@ -1283,12 +1312,12 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-22T09:20:05+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
-      "projection": 8.66,
-      "edge": 4.16,
+      "projection": 8.83,
+      "edge": 4.33,
       "player": "Cecilia Zandalasini",
       "team": "GSV",
       "position": "Forward",
@@ -1298,7 +1327,7 @@
       "odds_type": "goblin",
       "recommendation": "OVER",
       "projection_source": "wnba/backend/index.js",
-      "rating": 96.2,
+      "rating": 98.1,
       "standard_line": 6.5,
       "game_date_iso": "2026-10-24",
       "effective_dvp_factor": 7,
@@ -1312,8 +1341,8 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-23T01:12:44+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
       "projection": 8.66,
@@ -1342,7 +1371,8 @@
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-22T09:20:05+00:00",
       "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "source_commit": "4ad35970c7ec",
+      "superseded_at": "2026-10-23T09:15:29.317417+00:00"
     },
     {
       "projection": 9.76,
@@ -1370,12 +1400,12 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-22T23:53:06+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
-      "projection": 9.76,
-      "edge": 5.26,
+      "projection": 10.28,
+      "edge": 5.78,
       "player": "DeWanna Bonner",
       "team": "ATL",
       "position": "Forward",
@@ -1385,10 +1415,10 @@
       "odds_type": "goblin",
       "recommendation": "OVER",
       "projection_source": "wnba/backend/index.js",
-      "rating": 108.4,
+      "rating": 114.2,
       "standard_line": 6.5,
       "game_date_iso": "2026-10-24",
-      "effective_dvp_factor": 1,
+      "effective_dvp_factor": 7,
       "avg_mins": 23.7,
       "dvp_opponent": "GSV",
       "spread": -4.5,
@@ -1399,8 +1429,8 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-23T01:12:44+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
       "projection": 9.76,
@@ -1428,8 +1458,8 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-22T23:53:06+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
       "projection": 15.29,
@@ -1457,12 +1487,12 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-22T23:53:06+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
-      "projection": 15.29,
-      "edge": 5.79,
+      "projection": 15.87,
+      "edge": 6.37,
       "player": "DeWanna Bonner",
       "team": "ATL",
       "position": "Forward",
@@ -1472,10 +1502,10 @@
       "odds_type": "goblin",
       "recommendation": "OVER",
       "projection_source": "wnba/backend/index.js",
-      "rating": 80.5,
+      "rating": 83.5,
       "standard_line": 10.5,
       "game_date_iso": "2026-10-24",
-      "effective_dvp_factor": 3,
+      "effective_dvp_factor": 7,
       "avg_mins": 23.7,
       "dvp_opponent": "GSV",
       "spread": -4.5,
@@ -1486,8 +1516,8 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-23T01:12:44+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
       "projection": 15.29,
@@ -1515,8 +1545,8 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-22T23:53:06+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
       "projection": 5.66,
@@ -1542,12 +1572,12 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-22T23:53:06+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
-      "projection": 5.66,
-      "edge": 3.16,
+      "projection": 5.81,
+      "edge": 3.31,
       "player": "DeWanna Bonner",
       "team": "ATL",
       "position": "Forward",
@@ -1557,9 +1587,9 @@
       "odds_type": "goblin",
       "recommendation": "OVER",
       "projection_source": "wnba/backend/index.js",
-      "rating": 113.2,
+      "rating": 116.2,
       "game_date_iso": "2026-10-24",
-      "effective_dvp_factor": 5,
+      "effective_dvp_factor": 7,
       "avg_mins": 23.7,
       "dvp_opponent": "GSV",
       "spread": -4.5,
@@ -1569,8 +1599,8 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-23T01:12:44+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
       "projection": 2.1,
@@ -1596,12 +1626,12 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-22T09:20:05+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
-      "projection": 2.1,
-      "edge": 0.6,
+      "projection": 2.31,
+      "edge": 0.81,
       "player": "Gabby Williams",
       "team": "GSV",
       "position": "Forward",
@@ -1611,9 +1641,9 @@
       "odds_type": "goblin",
       "recommendation": "OVER",
       "projection_source": "wnba/backend/index.js",
-      "rating": 70,
+      "rating": 77,
       "game_date_iso": "2026-10-24",
-      "effective_dvp_factor": 4,
+      "effective_dvp_factor": 7,
       "avg_mins": 30.2,
       "dvp_opponent": "ATL",
       "spread": 4.5,
@@ -1623,8 +1653,8 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-23T01:12:44+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
       "projection": 2.65,
@@ -1651,12 +1681,12 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-22T09:20:05+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
-      "projection": 2.65,
-      "edge": 1.15,
+      "projection": 2.81,
+      "edge": 1.31,
       "player": "Gabby Williams",
       "team": "GSV",
       "position": "Forward",
@@ -1666,9 +1696,9 @@
       "odds_type": "goblin",
       "recommendation": "OVER",
       "projection_source": "wnba/backend/index.js",
-      "rating": 88.3,
+      "rating": 93.7,
       "game_date_iso": "2026-10-24",
-      "effective_dvp_factor": 6,
+      "effective_dvp_factor": 7,
       "avg_mins": 30.2,
       "dvp_opponent": "ATL",
       "spread": 4.5,
@@ -1679,8 +1709,8 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-23T01:12:44+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
       "projection": 14.85,
@@ -1708,12 +1738,12 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-22T09:20:05+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
-      "projection": 14.85,
-      "edge": 2.35,
+      "projection": 15.14,
+      "edge": 2.64,
       "player": "Gabby Williams",
       "team": "GSV",
       "position": "Forward",
@@ -1723,7 +1753,7 @@
       "odds_type": "goblin",
       "recommendation": "OVER",
       "projection_source": "wnba/backend/index.js",
-      "rating": 59.4,
+      "rating": 60.6,
       "standard_line": 18.5,
       "game_date_iso": "2026-10-24",
       "effective_dvp_factor": 7,
@@ -1737,8 +1767,8 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-23T01:12:44+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
       "projection": 14.85,
@@ -1766,8 +1796,8 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-22T09:20:05+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
       "projection": 17.46,
@@ -1795,12 +1825,12 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-22T09:20:05+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
-      "projection": 17.46,
-      "edge": -2.04,
+      "projection": 17.83,
+      "edge": -1.67,
       "player": "Gabby Williams",
       "team": "GSV",
       "position": "Forward",
@@ -1810,7 +1840,7 @@
       "odds_type": "goblin",
       "recommendation": "UNDER",
       "projection_source": "wnba/backend/index.js",
-      "rating": 44.8,
+      "rating": 45.7,
       "standard_line": 21.5,
       "game_date_iso": "2026-10-24",
       "effective_dvp_factor": 7,
@@ -1824,8 +1854,8 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-23T01:12:44+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
       "projection": 17.46,
@@ -1853,8 +1883,8 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-22T09:20:05+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
       "projection": 18.11,
@@ -1882,12 +1912,12 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-22T09:20:05+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
-      "projection": 18.11,
-      "edge": -1.39,
+      "projection": 18.58,
+      "edge": -0.92,
       "player": "Gabby Williams",
       "team": "GSV",
       "position": "Forward",
@@ -1897,10 +1927,10 @@
       "odds_type": "goblin",
       "recommendation": "UNDER",
       "projection_source": "wnba/backend/index.js",
-      "rating": 46.4,
+      "rating": 47.6,
       "standard_line": 22.5,
       "game_date_iso": "2026-10-24",
-      "effective_dvp_factor": 4,
+      "effective_dvp_factor": 7,
       "avg_mins": 30.2,
       "dvp_opponent": "ATL",
       "spread": 4.5,
@@ -1911,8 +1941,8 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-23T01:12:44+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
       "projection": 18.11,
@@ -1940,8 +1970,8 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-22T09:20:05+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
       "projection": 21.64,
@@ -1968,12 +1998,12 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-22T09:20:05+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
-      "projection": 21.64,
-      "edge": 2.14,
+      "projection": 22.79,
+      "edge": 3.29,
       "player": "Gabby Williams",
       "team": "GSV",
       "position": "Forward",
@@ -1983,10 +2013,10 @@
       "odds_type": "goblin",
       "recommendation": "OVER",
       "projection_source": "wnba/backend/index.js",
-      "rating": 55.5,
+      "rating": 58.4,
       "standard_line": 25.5,
       "game_date_iso": "2026-10-24",
-      "effective_dvp_factor": 5,
+      "effective_dvp_factor": 7,
       "avg_mins": 30.2,
       "dvp_opponent": "ATL",
       "spread": 4.5,
@@ -1996,8 +2026,8 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-23T01:12:44+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
       "projection": 21.64,
@@ -2024,8 +2054,8 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-22T09:20:05+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
       "projection": 3.26,
@@ -2051,13 +2081,13 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-22T09:20:05+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec",
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f",
       "standard_line": 4
     },
     {
-      "projection": 3.26,
-      "edge": 0.76,
+      "projection": 3.63,
+      "edge": 1.13,
       "player": "Gabby Williams",
       "team": "GSV",
       "position": "Forward",
@@ -2067,10 +2097,10 @@
       "odds_type": "goblin",
       "recommendation": "OVER",
       "projection_source": "wnba/backend/index.js",
-      "rating": 65.2,
+      "rating": 72.6,
       "standard_line": 4,
       "game_date_iso": "2026-10-24",
-      "effective_dvp_factor": 1,
+      "effective_dvp_factor": 7,
       "avg_mins": 30.2,
       "dvp_opponent": "ATL",
       "spread": 4.5,
@@ -2080,8 +2110,8 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-23T01:12:44+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
       "projection": 3.26,
@@ -2108,8 +2138,8 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-22T23:53:06+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
       "projection": 5.9,
@@ -2136,12 +2166,12 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-22T09:20:05+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
-      "projection": 5.9,
-      "edge": 1.4,
+      "projection": 6.17,
+      "edge": 1.67,
       "player": "Gabby Williams",
       "team": "GSV",
       "position": "Forward",
@@ -2151,9 +2181,9 @@
       "odds_type": "goblin",
       "recommendation": "OVER",
       "projection_source": "wnba/backend/index.js",
-      "rating": 65.6,
+      "rating": 68.6,
       "game_date_iso": "2026-10-24",
-      "effective_dvp_factor": 4,
+      "effective_dvp_factor": 7,
       "avg_mins": 30.2,
       "dvp_opponent": "ATL",
       "spread": 4.5,
@@ -2164,8 +2194,8 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-23T01:12:44+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
       "projection": 1.36,
@@ -2191,12 +2221,12 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-22T09:20:05+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
-      "projection": 1.36,
-      "edge": 0.86,
+      "projection": 1.45,
+      "edge": 0.95,
       "player": "Jordin Canada",
       "team": "ATL",
       "position": "Guard",
@@ -2206,9 +2236,9 @@
       "odds_type": "goblin",
       "recommendation": "OVER",
       "projection_source": "wnba/backend/index.js",
-      "rating": 136,
+      "rating": 145,
       "game_date_iso": "2026-10-24",
-      "effective_dvp_factor": 4,
+      "effective_dvp_factor": 7,
       "avg_mins": 34.7,
       "dvp_opponent": "GSV",
       "spread": -4.5,
@@ -2218,8 +2248,8 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-23T01:12:44+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
       "projection": 7.45,
@@ -2246,12 +2276,12 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-22T09:20:05+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
-      "projection": 7.45,
-      "edge": 1.95,
+      "projection": 8.27,
+      "edge": 2.77,
       "player": "Jordin Canada",
       "team": "ATL",
       "position": "Guard",
@@ -2261,9 +2291,9 @@
       "odds_type": "goblin",
       "recommendation": "OVER",
       "projection_source": "wnba/backend/index.js",
-      "rating": 67.7,
+      "rating": 75.2,
       "game_date_iso": "2026-10-24",
-      "effective_dvp_factor": 2,
+      "effective_dvp_factor": 7,
       "avg_mins": 34.7,
       "dvp_opponent": "GSV",
       "spread": -4.5,
@@ -2274,8 +2304,8 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-23T01:12:44+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
       "projection": 11.99,
@@ -2303,12 +2333,12 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-22T09:20:05+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
-      "projection": 11.99,
-      "edge": 5.49,
+      "projection": 13.01,
+      "edge": 6.51,
       "player": "Jordin Canada",
       "team": "ATL",
       "position": "Guard",
@@ -2318,10 +2348,10 @@
       "odds_type": "goblin",
       "recommendation": "OVER",
       "projection_source": "wnba/backend/index.js",
-      "rating": 92.2,
+      "rating": 100.1,
       "standard_line": 10.5,
       "game_date_iso": "2026-10-24",
-      "effective_dvp_factor": 1,
+      "effective_dvp_factor": 7,
       "avg_mins": 34.7,
       "dvp_opponent": "GSV",
       "spread": -4.5,
@@ -2332,8 +2362,8 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-23T01:12:44+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
       "projection": 11.99,
@@ -2361,8 +2391,8 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-22T09:20:05+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
       "projection": 19.64,
@@ -2390,12 +2420,12 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-22T09:20:05+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
-      "projection": 19.64,
-      "edge": 5.14,
+      "projection": 21.08,
+      "edge": 6.58,
       "player": "Jordin Canada",
       "team": "ATL",
       "position": "Guard",
@@ -2405,10 +2435,10 @@
       "odds_type": "goblin",
       "recommendation": "OVER",
       "projection_source": "wnba/backend/index.js",
-      "rating": 67.7,
+      "rating": 72.7,
       "standard_line": 18.5,
       "game_date_iso": "2026-10-24",
-      "effective_dvp_factor": 2,
+      "effective_dvp_factor": 7,
       "avg_mins": 34.7,
       "dvp_opponent": "GSV",
       "spread": -4.5,
@@ -2419,8 +2449,8 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-23T01:12:44+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
       "projection": 19.64,
@@ -2448,22 +2478,22 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-22T09:20:05+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
       "projection": 15.43,
-      "edge": -0.07,
+      "edge": -4.07,
       "player": "Jordin Canada",
       "team": "ATL",
       "position": "Guard",
       "opponent": "GSV",
       "stat": "Pts+Rebs",
-      "line": 15.5,
+      "line": 19.5,
       "odds_type": "demon",
       "recommendation": "UNDER",
       "projection_source": "wnba/backend/index.js",
-      "rating": 49.8,
+      "rating": 39.6,
       "standard_line": 14.5,
       "game_date_iso": "2026-10-24",
       "effective_dvp_factor": 3,
@@ -2477,12 +2507,12 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-22T09:20:05+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
-      "projection": 15.43,
-      "edge": 5.93,
+      "projection": 16.54,
+      "edge": 7.04,
       "player": "Jordin Canada",
       "team": "ATL",
       "position": "Guard",
@@ -2492,10 +2522,10 @@
       "odds_type": "goblin",
       "recommendation": "OVER",
       "projection_source": "wnba/backend/index.js",
-      "rating": 81.2,
+      "rating": 87.1,
       "standard_line": 14.5,
       "game_date_iso": "2026-10-24",
-      "effective_dvp_factor": 3,
+      "effective_dvp_factor": 7,
       "avg_mins": 34.7,
       "dvp_opponent": "GSV",
       "spread": -4.5,
@@ -2506,8 +2536,8 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-23T01:12:44+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
       "projection": 15.43,
@@ -2535,8 +2565,8 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-22T09:20:05+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
       "projection": 23.22,
@@ -2563,12 +2593,12 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-22T09:20:05+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
-      "projection": 23.22,
-      "edge": 3.72,
+      "projection": 26.44,
+      "edge": 6.94,
       "player": "Jordin Canada",
       "team": "ATL",
       "position": "Guard",
@@ -2578,10 +2608,10 @@
       "odds_type": "goblin",
       "recommendation": "OVER",
       "projection_source": "wnba/backend/index.js",
-      "rating": 59.5,
+      "rating": 67.8,
       "standard_line": 22.5,
       "game_date_iso": "2026-10-24",
-      "effective_dvp_factor": 3,
+      "effective_dvp_factor": 7,
       "avg_mins": 34.7,
       "dvp_opponent": "GSV",
       "spread": -4.5,
@@ -2591,8 +2621,8 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-23T01:12:44+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
       "projection": 23.22,
@@ -2619,8 +2649,8 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-22T09:20:05+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
       "projection": 2.79,
@@ -2646,12 +2676,12 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-22T09:20:05+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
-      "projection": 2.79,
-      "edge": 0.29,
+      "projection": 2.9,
+      "edge": 0.4,
       "player": "Jordin Canada",
       "team": "ATL",
       "position": "Guard",
@@ -2661,9 +2691,9 @@
       "odds_type": "goblin",
       "recommendation": "OVER",
       "projection_source": "wnba/backend/index.js",
-      "rating": 55.8,
+      "rating": 58,
       "game_date_iso": "2026-10-24",
-      "effective_dvp_factor": 5,
+      "effective_dvp_factor": 7,
       "avg_mins": 34.7,
       "dvp_opponent": "GSV",
       "spread": -4.5,
@@ -2673,8 +2703,8 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-23T01:12:44+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
       "projection": 10.39,
@@ -2701,12 +2731,12 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-22T09:20:05+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
-      "projection": 10.39,
-      "edge": 0.89,
+      "projection": 10.83,
+      "edge": 1.33,
       "player": "Jordin Canada",
       "team": "ATL",
       "position": "Guard",
@@ -2716,9 +2746,9 @@
       "odds_type": "goblin",
       "recommendation": "OVER",
       "projection_source": "wnba/backend/index.js",
-      "rating": 54.7,
+      "rating": 57.0,
       "game_date_iso": "2026-10-24",
-      "effective_dvp_factor": 4,
+      "effective_dvp_factor": 7,
       "avg_mins": 34.7,
       "dvp_opponent": "GSV",
       "spread": -4.5,
@@ -2729,8 +2759,8 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-23T01:12:44+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
       "projection": 4.32,
@@ -2758,8 +2788,8 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-22T09:20:05+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
       "projection": 4.32,
@@ -2787,22 +2817,22 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-22T09:20:05+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
       "projection": 12.34,
-      "edge": -2.16,
+      "edge": 0.84,
       "player": "Kiah Stokes",
       "team": "GSV",
       "position": "Center",
       "opponent": "ATL",
       "stat": "Pts+Rebs",
-      "line": 14.5,
+      "line": 11.5,
       "odds_type": "demon",
-      "recommendation": "UNDER",
+      "recommendation": "OVER",
       "projection_source": "wnba/backend/index.js",
-      "rating": 42.6,
+      "rating": 53.7,
       "standard_line": 11.5,
       "game_date_iso": "2026-10-24",
       "effective_dvp_factor": 11,
@@ -2816,12 +2846,12 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-22T09:20:05+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
-      "projection": 12.34,
-      "edge": 2.84,
+      "projection": 12.05,
+      "edge": 2.55,
       "player": "Kiah Stokes",
       "team": "GSV",
       "position": "Center",
@@ -2831,10 +2861,10 @@
       "odds_type": "goblin",
       "recommendation": "OVER",
       "projection_source": "wnba/backend/index.js",
-      "rating": 64.9,
+      "rating": 63.4,
       "standard_line": 11.5,
       "game_date_iso": "2026-10-24",
-      "effective_dvp_factor": 11,
+      "effective_dvp_factor": 7,
       "avg_mins": 28.7,
       "dvp_opponent": "ATL",
       "spread": 4.5,
@@ -2845,8 +2875,8 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-23T01:12:44+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
       "projection": 12.34,
@@ -2875,7 +2905,8 @@
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-22T09:20:05+00:00",
       "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "source_commit": "4ad35970c7ec",
+      "superseded_at": "2026-10-23T09:15:29.317417+00:00"
     },
     {
       "projection": 10.15,
@@ -2902,12 +2933,12 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-22T09:20:05+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
-      "projection": 10.15,
-      "edge": 4.65,
+      "projection": 9.96,
+      "edge": 4.46,
       "player": "Kiah Stokes",
       "team": "GSV",
       "position": "Center",
@@ -2917,10 +2948,10 @@
       "odds_type": "goblin",
       "recommendation": "OVER",
       "projection_source": "wnba/backend/index.js",
-      "rating": 92.3,
+      "rating": 90.5,
       "standard_line": 7.5,
       "game_date_iso": "2026-10-24",
-      "effective_dvp_factor": 9,
+      "effective_dvp_factor": 7,
       "avg_mins": 28.7,
       "dvp_opponent": "ATL",
       "spread": 4.5,
@@ -2930,8 +2961,8 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-23T01:12:44+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
       "projection": 10.15,
@@ -2958,8 +2989,8 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-22T09:20:05+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
       "projection": 1.56,
@@ -2985,12 +3016,12 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-22T09:20:05+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
-      "projection": 1.56,
-      "edge": 1.06,
+      "projection": 1.77,
+      "edge": 1.27,
       "player": "Naz Hillmon",
       "team": "ATL",
       "position": "Forward",
@@ -3000,9 +3031,9 @@
       "odds_type": "goblin",
       "recommendation": "OVER",
       "projection_source": "wnba/backend/index.js",
-      "rating": 156,
+      "rating": 177,
       "game_date_iso": "2026-10-24",
-      "effective_dvp_factor": 2,
+      "effective_dvp_factor": 7,
       "avg_mins": 30.4,
       "dvp_opponent": "GSV",
       "spread": -4.5,
@@ -3012,8 +3043,8 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-23T01:12:44+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
       "projection": 9.29,
@@ -3041,12 +3072,12 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-22T09:20:05+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
-      "projection": 9.29,
-      "edge": 4.79,
+      "projection": 9.79,
+      "edge": 5.29,
       "player": "Naz Hillmon",
       "team": "ATL",
       "position": "Forward",
@@ -3056,10 +3087,10 @@
       "odds_type": "goblin",
       "recommendation": "OVER",
       "projection_source": "wnba/backend/index.js",
-      "rating": 103.2,
+      "rating": 108.8,
       "standard_line": 5.5,
       "game_date_iso": "2026-10-24",
-      "effective_dvp_factor": 1,
+      "effective_dvp_factor": 7,
       "avg_mins": 30.4,
       "dvp_opponent": "GSV",
       "spread": -4.5,
@@ -3070,8 +3101,8 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-23T01:12:44+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
       "projection": 9.29,
@@ -3099,8 +3130,8 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-22T09:20:05+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
       "projection": 14.31,
@@ -3127,8 +3158,8 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-22T09:20:05+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
       "projection": 5.14,
@@ -3154,12 +3185,12 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-22T09:20:05+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
-      "projection": 5.14,
-      "edge": 3.64,
+      "projection": 5.28,
+      "edge": 3.78,
       "player": "Naz Hillmon",
       "team": "ATL",
       "position": "Forward",
@@ -3169,9 +3200,9 @@
       "odds_type": "goblin",
       "recommendation": "OVER",
       "projection_source": "wnba/backend/index.js",
-      "rating": 171.3,
+      "rating": 176,
       "game_date_iso": "2026-10-24",
-      "effective_dvp_factor": 5,
+      "effective_dvp_factor": 7,
       "avg_mins": 30.4,
       "dvp_opponent": "GSV",
       "spread": -4.5,
@@ -3181,8 +3212,8 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-23T01:12:44+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
       "projection": 2.21,
@@ -3208,12 +3239,12 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-22T09:20:05+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
-      "projection": 2.21,
-      "edge": 0.71,
+      "projection": 2.35,
+      "edge": 0.85,
       "player": "Rhyne Howard",
       "team": "ATL",
       "position": "Guard",
@@ -3223,9 +3254,9 @@
       "odds_type": "goblin",
       "recommendation": "OVER",
       "projection_source": "wnba/backend/index.js",
-      "rating": 73.7,
+      "rating": 78.3,
       "game_date_iso": "2026-10-24",
-      "effective_dvp_factor": 4,
+      "effective_dvp_factor": 7,
       "avg_mins": 35.5,
       "dvp_opponent": "GSV",
       "spread": -4.5,
@@ -3235,8 +3266,8 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-23T01:12:44+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
       "projection": 3.61,
@@ -3263,12 +3294,12 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-22T09:20:05+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
-      "projection": 3.61,
-      "edge": 1.11,
+      "projection": 4.01,
+      "edge": 1.51,
       "player": "Rhyne Howard",
       "team": "ATL",
       "position": "Guard",
@@ -3278,9 +3309,9 @@
       "odds_type": "goblin",
       "recommendation": "OVER",
       "projection_source": "wnba/backend/index.js",
-      "rating": 72.2,
+      "rating": 80.2,
       "game_date_iso": "2026-10-24",
-      "effective_dvp_factor": 2,
+      "effective_dvp_factor": 7,
       "avg_mins": 35.5,
       "dvp_opponent": "GSV",
       "spread": -4.5,
@@ -3291,8 +3322,8 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-23T01:12:44+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
       "projection": 16.29,
@@ -3320,12 +3351,12 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-22T09:20:05+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
-      "projection": 16.29,
-      "edge": 5.79,
+      "projection": 17.67,
+      "edge": 7.17,
       "player": "Rhyne Howard",
       "team": "ATL",
       "position": "Guard",
@@ -3335,10 +3366,10 @@
       "odds_type": "goblin",
       "recommendation": "OVER",
       "projection_source": "wnba/backend/index.js",
-      "rating": 77.6,
+      "rating": 84.1,
       "standard_line": 15.5,
       "game_date_iso": "2026-10-24",
-      "effective_dvp_factor": 1,
+      "effective_dvp_factor": 7,
       "avg_mins": 35.5,
       "dvp_opponent": "GSV",
       "spread": -4.5,
@@ -3349,8 +3380,8 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-23T01:12:44+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
       "projection": 16.29,
@@ -3378,8 +3409,8 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-22T09:20:05+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
       "projection": 19.74,
@@ -3407,12 +3438,12 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-22T09:20:05+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
-      "projection": 19.74,
-      "edge": 5.24,
+      "projection": 21.29,
+      "edge": 6.79,
       "player": "Rhyne Howard",
       "team": "ATL",
       "position": "Guard",
@@ -3422,10 +3453,10 @@
       "odds_type": "goblin",
       "recommendation": "OVER",
       "projection_source": "wnba/backend/index.js",
-      "rating": 68.1,
+      "rating": 73.4,
       "standard_line": 18.5,
       "game_date_iso": "2026-10-24",
-      "effective_dvp_factor": 2,
+      "effective_dvp_factor": 7,
       "avg_mins": 35.5,
       "dvp_opponent": "GSV",
       "spread": -4.5,
@@ -3436,8 +3467,8 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-23T01:12:44+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
       "projection": 19.74,
@@ -3465,8 +3496,8 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-22T09:20:05+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
       "projection": 19.56,
@@ -3494,12 +3525,12 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-22T09:20:05+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
-      "projection": 19.56,
-      "edge": 5.06,
+      "projection": 20.97,
+      "edge": 6.47,
       "player": "Rhyne Howard",
       "team": "ATL",
       "position": "Guard",
@@ -3509,10 +3540,10 @@
       "odds_type": "goblin",
       "recommendation": "OVER",
       "projection_source": "wnba/backend/index.js",
-      "rating": 67.4,
+      "rating": 72.3,
       "standard_line": 19.5,
       "game_date_iso": "2026-10-24",
-      "effective_dvp_factor": 3,
+      "effective_dvp_factor": 7,
       "avg_mins": 35.5,
       "dvp_opponent": "GSV",
       "spread": -4.5,
@@ -3523,8 +3554,8 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-23T01:12:44+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
       "projection": 19.56,
@@ -3552,8 +3583,8 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-22T09:20:05+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
       "projection": 21.5,
@@ -3580,12 +3611,12 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-22T09:20:05+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
-      "projection": 21.5,
-      "edge": 2.0,
+      "projection": 24.48,
+      "edge": 4.98,
       "player": "Rhyne Howard",
       "team": "ATL",
       "position": "Guard",
@@ -3595,10 +3626,10 @@
       "odds_type": "goblin",
       "recommendation": "OVER",
       "projection_source": "wnba/backend/index.js",
-      "rating": 55.1,
+      "rating": 62.8,
       "standard_line": 23,
       "game_date_iso": "2026-10-24",
-      "effective_dvp_factor": 3,
+      "effective_dvp_factor": 7,
       "avg_mins": 35.5,
       "dvp_opponent": "GSV",
       "spread": -4.5,
@@ -3608,8 +3639,8 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-23T01:12:44+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
       "projection": 21.5,
@@ -3636,8 +3667,8 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-22T09:20:05+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
       "projection": 4.1,
@@ -3663,12 +3694,12 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-22T09:20:05+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
-      "projection": 4.1,
-      "edge": 1.6,
+      "projection": 4.26,
+      "edge": 1.76,
       "player": "Rhyne Howard",
       "team": "ATL",
       "position": "Guard",
@@ -3678,9 +3709,9 @@
       "odds_type": "goblin",
       "recommendation": "OVER",
       "projection_source": "wnba/backend/index.js",
-      "rating": 82,
+      "rating": 85.2,
       "game_date_iso": "2026-10-24",
-      "effective_dvp_factor": 5,
+      "effective_dvp_factor": 7,
       "avg_mins": 35.5,
       "dvp_opponent": "GSV",
       "spread": -4.5,
@@ -3690,8 +3721,8 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-23T01:12:44+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
       "projection": 7.68,
@@ -3719,12 +3750,12 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-22T09:20:05+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
-      "projection": 7.68,
-      "edge": 1.18,
+      "projection": 7.95,
+      "edge": 1.45,
       "player": "Rhyne Howard",
       "team": "ATL",
       "position": "Guard",
@@ -3734,10 +3765,10 @@
       "odds_type": "goblin",
       "recommendation": "OVER",
       "projection_source": "wnba/backend/index.js",
-      "rating": 59.1,
+      "rating": 61.2,
       "standard_line": 7.5,
       "game_date_iso": "2026-10-24",
-      "effective_dvp_factor": 4,
+      "effective_dvp_factor": 7,
       "avg_mins": 35.5,
       "dvp_opponent": "GSV",
       "spread": -4.5,
@@ -3748,8 +3779,8 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-23T01:12:44+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
       "projection": 7.68,
@@ -3777,8 +3808,8 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-22T09:20:05+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
       "projection": 0.72,
@@ -3804,12 +3835,12 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-22T09:20:05+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
-      "projection": 0.72,
-      "edge": 0.22,
+      "projection": 0.82,
+      "edge": 0.32,
       "player": "Tiffany Hayes",
       "team": "GSV",
       "position": "Guard",
@@ -3819,9 +3850,9 @@
       "odds_type": "goblin",
       "recommendation": "OVER",
       "projection_source": "wnba/backend/index.js",
-      "rating": 72,
+      "rating": 82,
       "game_date_iso": "2026-10-24",
-      "effective_dvp_factor": 2,
+      "effective_dvp_factor": 7,
       "avg_mins": 19.6,
       "dvp_opponent": "ATL",
       "spread": 4.5,
@@ -3831,8 +3862,8 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-23T01:12:44+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
       "projection": 3.01,
@@ -3859,12 +3890,12 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-22T09:20:05+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
-      "projection": 3.01,
-      "edge": 1.51,
+      "projection": 3.41,
+      "edge": 1.91,
       "player": "Tiffany Hayes",
       "team": "GSV",
       "position": "Guard",
@@ -3874,9 +3905,9 @@
       "odds_type": "goblin",
       "recommendation": "OVER",
       "projection_source": "wnba/backend/index.js",
-      "rating": 100.3,
+      "rating": 113.7,
       "game_date_iso": "2026-10-24",
-      "effective_dvp_factor": 1,
+      "effective_dvp_factor": 7,
       "avg_mins": 19.6,
       "dvp_opponent": "ATL",
       "spread": 4.5,
@@ -3887,8 +3918,8 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-23T01:12:44+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
       "projection": 11.51,
@@ -3915,13 +3946,13 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-22T09:20:05+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec",
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f",
       "standard_line": 13
     },
     {
-      "projection": 11.51,
-      "edge": 3.01,
+      "projection": 11.9,
+      "edge": 3.4,
       "player": "Tiffany Hayes",
       "team": "GSV",
       "position": "Guard",
@@ -3931,10 +3962,10 @@
       "odds_type": "goblin",
       "recommendation": "OVER",
       "projection_source": "wnba/backend/index.js",
-      "rating": 67.7,
+      "rating": 70.0,
       "standard_line": 13,
       "game_date_iso": "2026-10-24",
-      "effective_dvp_factor": 2,
+      "effective_dvp_factor": 7,
       "avg_mins": 19.6,
       "dvp_opponent": "ATL",
       "spread": 4.5,
@@ -3945,8 +3976,8 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-23T01:12:44+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
       "projection": 11.51,
@@ -3974,8 +4005,8 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-22T23:53:06+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
       "projection": 14.28,
@@ -4003,12 +4034,12 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-22T09:20:05+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
-      "projection": 14.28,
-      "edge": -0.22,
+      "projection": 14.84,
+      "edge": 0.34,
       "player": "Tiffany Hayes",
       "team": "GSV",
       "position": "Guard",
@@ -4016,12 +4047,12 @@
       "stat": "Pts+Asts",
       "line": 14.5,
       "odds_type": "goblin",
-      "recommendation": "UNDER",
+      "recommendation": "OVER",
       "projection_source": "wnba/backend/index.js",
-      "rating": 49.2,
+      "rating": 51.2,
       "standard_line": 15.5,
       "game_date_iso": "2026-10-24",
-      "effective_dvp_factor": 2,
+      "effective_dvp_factor": 7,
       "avg_mins": 19.6,
       "dvp_opponent": "ATL",
       "spread": 4.5,
@@ -4032,8 +4063,8 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-23T01:12:44+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
       "projection": 14.28,
@@ -4061,8 +4092,8 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-22T09:20:05+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
       "projection": 14.14,
@@ -4090,12 +4121,12 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-22T09:20:05+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
-      "projection": 14.14,
-      "edge": -0.36,
+      "projection": 14.66,
+      "edge": 0.16,
       "player": "Tiffany Hayes",
       "team": "GSV",
       "position": "Guard",
@@ -4103,12 +4134,12 @@
       "stat": "Pts+Rebs",
       "line": 14.5,
       "odds_type": "goblin",
-      "recommendation": "UNDER",
+      "recommendation": "OVER",
       "projection_source": "wnba/backend/index.js",
-      "rating": 48.8,
+      "rating": 50.6,
       "standard_line": 15.5,
       "game_date_iso": "2026-10-24",
-      "effective_dvp_factor": 2,
+      "effective_dvp_factor": 7,
       "avg_mins": 19.6,
       "dvp_opponent": "ATL",
       "spread": 4.5,
@@ -4119,8 +4150,8 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-23T01:12:44+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
       "projection": 14.14,
@@ -4148,8 +4179,8 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-22T09:20:05+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
       "projection": 14.34,
@@ -4176,12 +4207,12 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-22T09:20:05+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
-      "projection": 14.34,
-      "edge": -0.16,
+      "projection": 15.53,
+      "edge": 1.03,
       "player": "Tiffany Hayes",
       "team": "GSV",
       "position": "Guard",
@@ -4189,12 +4220,12 @@
       "stat": "Pts+Rebs+Asts",
       "line": 14.5,
       "odds_type": "goblin",
-      "recommendation": "UNDER",
+      "recommendation": "OVER",
       "projection_source": "wnba/backend/index.js",
-      "rating": 49.4,
+      "rating": 53.6,
       "standard_line": 18.5,
       "game_date_iso": "2026-10-24",
-      "effective_dvp_factor": 2,
+      "effective_dvp_factor": 7,
       "avg_mins": 19.6,
       "dvp_opponent": "ATL",
       "spread": 4.5,
@@ -4204,8 +4235,8 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-23T01:12:44+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
       "projection": 14.34,
@@ -4232,8 +4263,8 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-22T09:20:05+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
       "projection": 1.71,
@@ -4260,12 +4291,12 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-22T09:20:05+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
-      "projection": 1.71,
-      "edge": 0.21,
+      "projection": 1.88,
+      "edge": 0.38,
       "player": "Tiffany Hayes",
       "team": "GSV",
       "position": "Guard",
@@ -4275,10 +4306,10 @@
       "odds_type": "goblin",
       "recommendation": "OVER",
       "projection_source": "wnba/backend/index.js",
-      "rating": 57,
+      "rating": 62.7,
       "standard_line": 2.5,
       "game_date_iso": "2026-10-24",
-      "effective_dvp_factor": 2,
+      "effective_dvp_factor": 7,
       "avg_mins": 19.6,
       "dvp_opponent": "ATL",
       "spread": 4.5,
@@ -4288,8 +4319,8 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-23T01:12:44+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
       "projection": 1.71,
@@ -4316,8 +4347,8 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-22T09:20:05+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
       "projection": 5.47,
@@ -4344,12 +4375,12 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-22T09:20:05+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
-      "projection": 5.47,
-      "edge": 0.97,
+      "projection": 5.79,
+      "edge": 1.29,
       "player": "Tiffany Hayes",
       "team": "GSV",
       "position": "Guard",
@@ -4359,9 +4390,9 @@
       "odds_type": "goblin",
       "recommendation": "OVER",
       "projection_source": "wnba/backend/index.js",
-      "rating": 60.8,
+      "rating": 64.3,
       "game_date_iso": "2026-10-24",
-      "effective_dvp_factor": 2,
+      "effective_dvp_factor": 7,
       "avg_mins": 19.6,
       "dvp_opponent": "ATL",
       "spread": 4.5,
@@ -4372,8 +4403,8 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-23T01:12:44+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
       "projection": 1.08,
@@ -4399,12 +4430,12 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-22T09:20:05+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
-      "projection": 1.08,
-      "edge": 0.58,
+      "projection": 1.22,
+      "edge": 0.72,
       "player": "Veronica Burton",
       "team": "GSV",
       "position": "Guard",
@@ -4414,9 +4445,9 @@
       "odds_type": "goblin",
       "recommendation": "OVER",
       "projection_source": "wnba/backend/index.js",
-      "rating": 108,
+      "rating": 122,
       "game_date_iso": "2026-10-24",
-      "effective_dvp_factor": 2,
+      "effective_dvp_factor": 7,
       "avg_mins": 29.2,
       "dvp_opponent": "ATL",
       "spread": 4.5,
@@ -4426,8 +4457,8 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-23T01:12:44+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
       "projection": 5.54,
@@ -4454,12 +4485,12 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-22T09:20:05+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
-      "projection": 5.54,
-      "edge": 3.04,
+      "projection": 6.28,
+      "edge": 3.78,
       "player": "Veronica Burton",
       "team": "GSV",
       "position": "Guard",
@@ -4469,9 +4500,9 @@
       "odds_type": "goblin",
       "recommendation": "OVER",
       "projection_source": "wnba/backend/index.js",
-      "rating": 110.8,
+      "rating": 125.6,
       "game_date_iso": "2026-10-24",
-      "effective_dvp_factor": 1,
+      "effective_dvp_factor": 7,
       "avg_mins": 29.2,
       "dvp_opponent": "ATL",
       "spread": 4.5,
@@ -4482,8 +4513,8 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-23T01:12:44+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
       "projection": 11.33,
@@ -4511,12 +4542,12 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-22T09:20:05+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
-      "projection": 11.33,
-      "edge": 6.83,
+      "projection": 11.7,
+      "edge": 7.2,
       "player": "Veronica Burton",
       "team": "GSV",
       "position": "Guard",
@@ -4526,10 +4557,10 @@
       "odds_type": "goblin",
       "recommendation": "OVER",
       "projection_source": "wnba/backend/index.js",
-      "rating": 125.9,
+      "rating": 130.0,
       "standard_line": 8.5,
       "game_date_iso": "2026-10-24",
-      "effective_dvp_factor": 2,
+      "effective_dvp_factor": 7,
       "avg_mins": 29.2,
       "dvp_opponent": "ATL",
       "spread": 4.5,
@@ -4540,8 +4571,8 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-23T01:12:44+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
       "projection": 11.33,
@@ -4569,22 +4600,22 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-22T09:20:05+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
       "projection": 17.15,
-      "edge": 2.65,
+      "edge": 3.65,
       "player": "Veronica Burton",
       "team": "GSV",
       "position": "Guard",
       "opponent": "ATL",
       "stat": "Pts+Asts",
-      "line": 14.5,
+      "line": 13.5,
       "odds_type": "demon",
       "recommendation": "OVER",
       "projection_source": "wnba/backend/index.js",
-      "rating": 59.1,
+      "rating": 63.5,
       "standard_line": 13.5,
       "game_date_iso": "2026-10-24",
       "effective_dvp_factor": 2,
@@ -4598,12 +4629,12 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-22T09:20:05+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
-      "projection": 17.15,
-      "edge": 7.65,
+      "projection": 17.91,
+      "edge": 8.41,
       "player": "Veronica Burton",
       "team": "GSV",
       "position": "Guard",
@@ -4613,10 +4644,10 @@
       "odds_type": "goblin",
       "recommendation": "OVER",
       "projection_source": "wnba/backend/index.js",
-      "rating": 90.3,
+      "rating": 94.3,
       "standard_line": 13.5,
       "game_date_iso": "2026-10-24",
-      "effective_dvp_factor": 2,
+      "effective_dvp_factor": 7,
       "avg_mins": 29.2,
       "dvp_opponent": "ATL",
       "spread": 4.5,
@@ -4627,8 +4658,8 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-23T01:12:44+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
       "projection": 17.15,
@@ -4657,7 +4688,8 @@
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-22T09:20:05+00:00",
       "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "source_commit": "4ad35970c7ec",
+      "superseded_at": "2026-10-23T09:15:29.317417+00:00"
     },
     {
       "projection": 15.39,
@@ -4685,12 +4717,12 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-22T09:20:05+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
-      "projection": 15.39,
-      "edge": 5.89,
+      "projection": 15.98,
+      "edge": 6.48,
       "player": "Veronica Burton",
       "team": "GSV",
       "position": "Guard",
@@ -4700,10 +4732,10 @@
       "odds_type": "goblin",
       "recommendation": "OVER",
       "projection_source": "wnba/backend/index.js",
-      "rating": 81.0,
+      "rating": 84.1,
       "standard_line": 12.5,
       "game_date_iso": "2026-10-24",
-      "effective_dvp_factor": 2,
+      "effective_dvp_factor": 7,
       "avg_mins": 29.2,
       "dvp_opponent": "ATL",
       "spread": 4.5,
@@ -4714,8 +4746,8 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-23T01:12:44+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
       "projection": 15.39,
@@ -4743,8 +4775,8 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-22T09:20:05+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
       "projection": 20.13,
@@ -4771,12 +4803,12 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-22T09:20:05+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
-      "projection": 20.13,
-      "edge": 5.63,
+      "projection": 21.95,
+      "edge": 7.45,
       "player": "Veronica Burton",
       "team": "GSV",
       "position": "Guard",
@@ -4786,10 +4818,10 @@
       "odds_type": "goblin",
       "recommendation": "OVER",
       "projection_source": "wnba/backend/index.js",
-      "rating": 69.4,
+      "rating": 75.7,
       "standard_line": 16.5,
       "game_date_iso": "2026-10-24",
-      "effective_dvp_factor": 2,
+      "effective_dvp_factor": 7,
       "avg_mins": 29.2,
       "dvp_opponent": "ATL",
       "spread": 4.5,
@@ -4799,8 +4831,8 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-23T01:12:44+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
       "projection": 20.13,
@@ -4827,8 +4859,8 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-22T09:20:05+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
       "projection": 3.89,
@@ -4854,12 +4886,12 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-22T09:20:05+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
-      "projection": 3.89,
-      "edge": 2.39,
+      "projection": 4.29,
+      "edge": 2.79,
       "player": "Veronica Burton",
       "team": "GSV",
       "position": "Guard",
@@ -4869,9 +4901,9 @@
       "odds_type": "goblin",
       "recommendation": "OVER",
       "projection_source": "wnba/backend/index.js",
-      "rating": 129.7,
+      "rating": 143,
       "game_date_iso": "2026-10-24",
-      "effective_dvp_factor": 2,
+      "effective_dvp_factor": 7,
       "avg_mins": 29.2,
       "dvp_opponent": "ATL",
       "spread": 4.5,
@@ -4881,8 +4913,8 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-23T01:12:44+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
       "projection": 9.76,
@@ -4910,12 +4942,12 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-22T09:20:05+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
-      "projection": 9.76,
-      "edge": 3.26,
+      "projection": 10.34,
+      "edge": 3.84,
       "player": "Veronica Burton",
       "team": "GSV",
       "position": "Guard",
@@ -4925,10 +4957,10 @@
       "odds_type": "goblin",
       "recommendation": "OVER",
       "projection_source": "wnba/backend/index.js",
-      "rating": 75.1,
+      "rating": 79.5,
       "standard_line": 7.5,
       "game_date_iso": "2026-10-24",
-      "effective_dvp_factor": 2,
+      "effective_dvp_factor": 7,
       "avg_mins": 29.2,
       "dvp_opponent": "ATL",
       "spread": 4.5,
@@ -4939,8 +4971,8 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-23T01:12:44+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     },
     {
       "projection": 9.76,
@@ -4968,8 +5000,8 @@
       "start_time_utc": "2026-10-24T16:00:00+00:00",
       "start_time_source": "fallback_wnba_noon_et",
       "first_frozen_at": "2026-10-22T09:20:05+00:00",
-      "last_pregame_frozen_at": "2026-10-23T01:12:44+00:00",
-      "source_commit": "4ad35970c7ec"
+      "last_pregame_frozen_at": "2026-10-23T09:15:29+00:00",
+      "source_commit": "4b2d29a0250f"
     }
   ]
 }
