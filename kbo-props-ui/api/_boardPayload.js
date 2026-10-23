@@ -37,6 +37,8 @@ export const HISTORY_KEYS = [
   'logSeasons',
   'logOpponents',
   'logTeams',
+  // NHL API per-game logs for the player page only (nhl/ui_game_logs.py).
+  'nhlApiLog',
   ...L10_HEAD_KEYS,
 ]
 
@@ -162,10 +164,30 @@ export function historyForPlayer(fullData, visibleData, player) {
   return filterToPlayer(fullData, wanted)
 }
 
-export function presentBoardPayload(player, shaped, fullData) {
+// NHL API game logs (nhl/ui_game_logs.py) leave the server only when
+// NHL_API_SECTIONS_SERVER is exactly '1' (unset by default). Turning on the
+// collector (vars.NHL_API_UI_LOGS) alone can't ship them to members.
+export function nhlApiLogsServed(env = process.env) {
+  return String(env?.NHL_API_SECTIONS_SERVER || '').trim() === '1'
+}
+
+function dropNhlApiLog(row) {
+  if (!row || typeof row !== 'object' || Array.isArray(row) || !('nhlApiLog' in row)) return row
+  const { nhlApiLog: _dropped, ...rest } = row
+  return rest
+}
+
+// Works on a row array or a single row object.
+export function withoutNhlApiLog(data) {
+  if (Array.isArray(data)) return data.some((row) => row && typeof row === 'object' && 'nhlApiLog' in row) ? data.map(dropNhlApiLog) : data
+  return dropNhlApiLog(data)
+}
+
+export function presentBoardPayload(player, shaped, fullData, { env = process.env } = {}) {
   const name = String(player || '').trim()
   if (!name) return stripBoardHistory(shaped?.data)
-  return historyForPlayer(fullData, shaped?.data, name)
+  const rows = historyForPlayer(fullData, shaped?.data, name)
+  return nhlApiLogsServed(env) ? rows : withoutNhlApiLog(rows)
 }
 
 export function payloadBytes(data) {

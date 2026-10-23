@@ -1,0 +1,212 @@
+/* NHL player page parity sections (pick card, prop chips, TOI sliders, ice
+   time trends). Mirrors the NBA player page styles, scoped to NHL classes. */
+
+.nhl-pick {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 0 12px;
+}
+.nhl-pick > span {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 10px;
+  border: 1px solid #27272a;
+  border-radius: 10px;
+  background: #0b1714;
+  min-width: 0;
+}
+.nhl-pick > span.nhl-pick-line { flex: 1 1 100%; }
+.nhl-pick small { color: #a1a1aa; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em; }
+.nhl-pick b { color: #f4f4f5; font-size: 16px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.nhl-pick b.is-over { color: #7efc6a; }
+.nhl-pick b.is-under { color: #ff7b79; }
+.nhl-pick b.is-pending { color: #a1a1aa; font-size: 13px; font-weight: 700; }
+
+.nhl-props {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 0 12px;
+}
+.nhl-props button {
+  min-height: 36px;
+  padding: 6px 12px;
+  border: 1px solid #222;
+  border-radius: 999px;
+  background: transparent;
+  color: #a1a1aa;
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+}
+.nhl-props button.active { border-color: #4ade80; color: #f4f4f5; }
+
+.nhl-filters {
+  margin: 0 0 14px;
+  padding: 12px 12px 6px;
+  border: 1px solid #1f2b29;
+  border-radius: 12px;
+  background: #0b1210;
+}
+.nhl-filters.is-narrowed {
+  border-color: #2f6b45;
+  box-shadow: inset 0 0 0 1px rgba(74, 222, 128, 0.18);
+}
+.nhl-filters-head { display: flex; align-items: center; gap: 10px; }
+.nhl-filters-head > span,
+.nhl-filter-label > span {
+  color: #8b9a96;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.nhl-filters-head > b {
+  flex: 1 1 auto;
+  color: #d4d4d8;
+  font-size: 12px;
+  font-weight: 700;
+  text-align: right;
+  white-space: nowrap;
+}
+.nhl-filters.is-narrowed .nhl-filters-head > b { color: #4ade80; }
+.nhl-filters-head > button {
+  min-width: 64px;
+  min-height: 36px;
+  padding: 6px 12px;
+  border: 1px solid #2f3a38;
+  border-radius: 999px;
+  background: transparent;
+  color: #f4f4f5;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.nhl-filters-head > button:disabled { opacity: .4; cursor: default; }
+.nhl-filter { margin-top: 10px; }
+.nhl-filter-label { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.nhl-filter-label > b { color: #f4f4f5; font-size: 13px; font-weight: 800; font-variant-numeric: tabular-nums; }
+
+/* The shared two-handle slider (NbaRangeSlider), same look as on NBA. */
+.nhl-filters .nba-range {
+  position: relative;
+  height: 44px;
+  margin: 2px 16px 0;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: pointer;
+}
+.nhl-filters .nba-range-rail,
+.nhl-filters .nba-range-fill {
+  position: absolute;
+  top: 50%;
+  height: 4px;
+  border-radius: 999px;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+.nhl-filters .nba-range-rail { left: 0; right: 0; background: #1a3c36; }
+.nhl-filters .nba-range-fill { background: #4ade80; box-shadow: 0 0 10px rgba(74, 222, 128, 0.35); }
+.nhl-filters .nba-range-thumb {
+  position: absolute;
+  top: 50%;
+  width: 32px;
+  height: 32px;
+  margin: 0;
+  padding: 0;
+  border: 2px solid #4ade80;
+  border-radius: 50%;
+  background: radial-gradient(circle at center, #4ade80 0 4px, #0c1a17 5px);
+  box-shadow: 0 0 0 4px rgba(74, 222, 128, 0.12);
+  transform: translate(-50%, -50%);
+  touch-action: none;
+  cursor: grab;
+}
+.nhl-filters .nba-range-thumb:active { background: #4ade80; cursor: grabbing; }
+.nhl-filters .nba-range-thumb:focus-visible { outline: 2px solid #4ade80; outline-offset: 3px; }
+.nhl-filters .nba-range-thumb:disabled { opacity: .45; cursor: default; }
+
+.nhl-mu {
+  margin: 0 0 16px;
+  padding: 14px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  background: #080c0a;
+}
+.nhl-mu-title {
+  margin: 0;
+  color: #a1a1aa;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+.nhl-mu-metric + .nhl-mu-metric { margin-top: 14px; padding-top: 12px; border-top: 1px solid #1f1f1f; }
+.nhl-mu-head { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 6px; row-gap: 2px; margin: 6px 0 8px; font-variant-numeric: tabular-nums; }
+.nhl-mu-label { color: #f4f4f5; white-space: nowrap; font-size: 13px; font-weight: 700; }
+.nhl-mu-trend { font-size: 15px; line-height: 1; }
+.nhl-mu-avgs { display: flex; flex-wrap: wrap; gap: 10px; margin-left: auto; min-width: 0; color: #e4e4e7; font-size: 12px; font-weight: 700; white-space: nowrap; }
+.nhl-mu-avgs em { margin-right: 3px; color: #71717a; font-style: normal; font-weight: 600; }
+.nhl-mu-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  box-sizing: content-box;
+  height: 64px;
+  padding-top: 8px;
+  margin: 14px 0 6px;
+}
+.nhl-mu-col { display: flex; flex: 1 1 0; align-items: flex-end; justify-content: center; min-width: 0; height: 100%; }
+.nhl-mu-bar { position: relative; width: 100%; border-radius: 3px 3px 0 0; background: #38bdf8; }
+.nhl-mu-sog .nhl-mu-bar, .nhl-mu-sa .nhl-mu-bar { background: #f59e0b; }
+.nhl-mu-pp .nhl-mu-bar, .nhl-mu-sv .nhl-mu-bar { background: #a78bfa; }
+.nhl-mu-bar i {
+  position: absolute;
+  bottom: calc(100% + 2px);
+  left: 50%;
+  color: #d4d4d8;
+  font: 700 9px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-style: normal;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+.nhl-mu-none { color: #52525b; font-size: 10px; }
+.nhl-mu-dates { display: flex; gap: 4px; }
+.nhl-mu-dates > span {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  align-items: center;
+  min-width: 0;
+  color: #71717a;
+  font-size: 9px;
+  text-align: center;
+}
+.nhl-mu-col.is-dimmed,
+.nhl-mu-dates > span.is-dimmed { opacity: 0.25; }
+.nhl-mu-empty,
+.nhl-mu-note { margin: 6px 0 0; color: #71717a; font-size: 12px; }
+
+@media (max-width: 420px) {
+  .nhl-mu-avgs { gap: 6px; font-size: 11px; }
+  .nhl-mu-label { font-size: 12px; }
+}
+.nhl-pick-side {
+  margin-left: 6px;
+  padding: 1px 5px;
+  border: 1px solid currentColor;
+  border-radius: 4px;
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  vertical-align: 2px;
+}
+.nhl-pick-cgrow { display: inline-flex; align-items: center; flex-wrap: nowrap; }
+.nhl-pick-side.is-over { color: #7efc6a; }
+.nhl-pick-side.is-under { color: #ff7b79; }

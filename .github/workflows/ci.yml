@@ -74,7 +74,8 @@ jobs:
 
   phone-width:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    # 30: room for the NHL parity suite after a slow browser install.
+    timeout-minutes: 30
     defaults:
       run:
         working-directory: kbo-props-ui
@@ -100,6 +101,12 @@ jobs:
         # member fixture can finish the plan check and the edge grid paints.
         # The phone-width build above stays a normal production bundle.
         run: npx playwright test -c playwright.card-fit.config.js
+        env:
+          CI: "true"
+      - name: NHL player page parity at 320 and 390
+        # Made-up data. A production bundle (NHL API sections off) and the
+        # vite dev server with the local preview param.
+        run: npx playwright test -c playwright.nhl-parity.config.js
         env:
           CI: "true"
       - name: Save board screenshots
