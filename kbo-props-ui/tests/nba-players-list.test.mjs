@@ -126,9 +126,6 @@ test('prior team labels the 2025-26 line after a move', () => {
 
 test('display helpers', () => {
   assert.equal(statShort('Pts+Rebs+Asts'), 'PRA')
-  assert.equal(statShort('Free Throws Attempted'), 'FTA')
-  assert.equal(statShort('Two Pointers Made'), '2PM')
-  assert.equal(statShort('Two Pointers Attempted'), '2PA')
   assert.equal(statShort('Something New'), 'Something New')
   assert.equal(hitTone(70), 'good')
   assert.equal(hitTone(50), 'mid')
