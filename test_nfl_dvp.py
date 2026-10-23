@@ -360,6 +360,14 @@ class DvpRankTests(unittest.TestCase):
         self.assertIsNone(nfl.recent_dvp_rank('WR', 'Receiving Yards', 'SEA', {}))
         self.assertEqual(nfl.dvp_for('WR', 'Receiving Yards', 'XXX', ratings), (16, 1.0))
 
+    def test_dvp_is_ranked_flags_the_neutral_default_only(self):
+        ratings = {('WR', 'Receiving Yards'): ({'DAL': 3}, {'DAL': 1.12})}
+        self.assertTrue(nfl.dvp_is_ranked('WR', 'Receiving Yards', 'DAL', ratings))
+        self.assertFalse(nfl.dvp_is_ranked('WR', 'Receiving Yards', 'XYZ', ratings))
+        self.assertFalse(nfl.dvp_is_ranked('TE', 'Receiving Yards', 'DAL', ratings))
+        # dvp_for keeps its neutral default for the model, grade and sort.
+        self.assertEqual(nfl.dvp_for('WR', 'Receiving Yards', 'XYZ', ratings), (16, 1.0))
+
     def test_non_skill_positions_use_the_prop_table(self):
         self.assertEqual(nfl.dvp_position('WR', 'Receiving Yards'), 'WR')
         self.assertEqual(nfl.dvp_position('FB', 'Receiving Yards'), 'RB')

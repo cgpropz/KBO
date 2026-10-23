@@ -137,3 +137,25 @@ test('nfl board shows Pending, not 0, for a blank projection', async ({ page }) 
   await expect(row).toContainText('Pending')
   await expect(row).not.toContainText(/(^|[^0-9.])0\.0([^0-9]|$)|NaN|undefined/)
 })
+
+test('nfl board leaves Pending rows out of Overs and Unders', async ({ page }) => {
+  await page.goto('/?sport=nfl', { waitUntil: 'load' })
+  const rookie = page.locator('.nfl-lines-row, .nfl-edge-card').filter({ hasText: 'Synth Rookie' })
+  await expect(rookie.first()).toBeVisible()
+  for (const side of ['Unders', 'Overs', 'All']) {
+    await page.locator('.nfl-filters-btn').click()
+    await page.locator('.nfl-filters-side button', { hasText: side }).click()
+    await page.locator('.nfl-filters-close').click()
+    if (side === 'All') await expect(rookie.first()).toBeVisible()
+    else await expect(rookie).toHaveCount(0)
+  }
+})
+
+test('nfl board DvP shows a dash for an unranked opponent', async ({ page }) => {
+  await page.goto('/?sport=nfl', { waitUntil: 'load' })
+  const rookie = page.locator('.nfl-lines-row, .nfl-edge-card').filter({ hasText: 'Synth Rookie' }).first()
+  await expect(rookie).toBeVisible()
+  await expect(rookie.getByTestId('nfl-board-dvp')).toHaveText('—')
+  const back = page.locator('.nfl-lines-row, .nfl-edge-card').filter({ hasText: 'Synth Back' }).first()
+  await expect(back.getByTestId('nfl-board-dvp')).toHaveText('14th')
+})

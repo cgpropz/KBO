@@ -315,6 +315,18 @@ def dvp_for(position, stat, opponent, ratings):
     return int(rank), round(float(ratio), 2)
 
 
+def dvp_is_ranked(position, stat, opponent, ratings):
+    """True when dvp_for found a real rank (not its neutral 16, 1.0 default).
+
+    Display only (dvpRanked): the boards show '—' for an unranked opponent.
+    dvp_for, dvpRank and dvpRatio are unchanged, so the grade, sort, sharp
+    odds and the memory slate keep the neutral default.
+    """
+    ranks, ratios = ratings.get((position, stat), ({}, {}))
+    opponent = canonical_team(opponent)
+    return ranks.get(opponent) is not None and ratios.get(opponent) is not None
+
+
 def recent_dvp_rank(position, stat, opponent, ratings):
     """Rank for one past opponent on the player page's per-game chart filter.
 
@@ -787,6 +799,7 @@ def make_record(row, history, directory, dvp_ratings, snap_counts, snap_games, p
     position = text_or_empty(player.get('position')) or default_position
     rated_position = dvp_position(position, row.prop)
     dvp_rank, dvp_ratio = dvp_for(rated_position, row.prop, row.opponent, dvp_ratings)
+    dvp_ranked = dvp_is_ranked(rated_position, row.prop, row.opponent, dvp_ratings)
 
     # Per-game context for the player page's chart filters: matchup toughness, snap share, and usage volume.
     recent_dvp_ranks = [recent_dvp_rank(rated_position, row.prop, opponent, dvp_ratings) for opponent in recent_opponents]
@@ -850,7 +863,7 @@ def make_record(row, history, directory, dvp_ratings, snap_counts, snap_games, p
         'gameDates': recent_dates, 'gameOpponents': recent_opponents, 'gameSeasons': recent_seasons,
         'hitRate': l10_rate,
         'gamesPlayed': l10_games, 'snapCount': round(float(snap_counts.get(key, 0)), 1),
-        'dvpRank': dvp_rank, 'dvpRatio': dvp_ratio, 'trend': 'up' if projection >= row.line else 'down',
+        'dvpRank': dvp_rank, 'dvpRatio': dvp_ratio, 'dvpRanked': dvp_ranked, 'trend': 'up' if projection >= row.line else 'down',
         'seasonHitRate': season_hit_rate, 'seasonGames': season_games,
         'priorSeasonHitRate': prior_season_hit_rate, 'priorSeasonGames': prior_season_games, 'priorSeasonLabel': CURRENT_SEASON - 1,
         'h2hHitRate': h2h_hit_rate, 'h2hGames': h2h_games,

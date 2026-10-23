@@ -18,7 +18,7 @@ import HitRateStrip from '../HitRateStrip'
 import { nflHitPills } from '../hitRateStrip'
 import { cgSide, lineMatchesStat } from '../cgScore'
 import { compareNflScores, nflCgScore, nflRawScore } from './nflLineFloors'
-import { nflTodayPick } from './nflPlayerGames.js'
+import { nflBoardDvpRank, nflBoardSide, nflTodayPick } from './nflPlayerGames.js'
 import { compareSymmetric, symmetricRankOn } from '../sideRank'
 import { buildCgScoreExplainer } from '../cgScoreExplainer'
 import { CgScoreCell, CgScoreNote } from '../CgScoreExplainer'
@@ -102,6 +102,9 @@ function PropRow({ item, onSelectPlayer, locked, rowRef, open, onToggle, whyOpen
   const side = pending ? null : cgSide(item.score)
   const sideClass = side === 'OVER' ? 'over' : side === 'UNDER' ? 'under' : 'neutral'
   const grade = dvpGrade(item.dvpRank)
+  // DvP column: '—' for an unranked opponent (display only; grade, filter and
+  // sort keep the builder's neutral rank).
+  const shownDvp = nflBoardDvpRank(item)
   const stripId = `nfl-board-odds-${String(item.id).replace(/[^a-zA-Z0-9_-]+/g, '-')}`
   const scoreNote = pending ? null : buildCgScoreExplainer({
     player: item.player,
@@ -150,7 +153,7 @@ function PropRow({ item, onSelectPlayer, locked, rowRef, open, onToggle, whyOpen
           <CgScoreCell scoreText={pending ? 'Pending' : item.score.toFixed(1)} score={pending ? null : item.score} side={pending ? null : item.side} symmetric={symmetricRankOn('nfl')} note={locked ? null : scoreNote} open={whyOpen} onToggle={onWhy} />
         ) },
         { className: 'hit-rate-col', node: <HitRateStrip pills={item.hitPills} /> },
-        { className: 'hit-rate-extra', style: item.dvpRank ? { color: dvpColor(item.dvpRank) } : undefined, node: <><span className="nfl-dvp-label">DvP</span> {item.dvpRank ? ordinal(item.dvpRank) : '—'}</> },
+        { className: 'hit-rate-extra', style: shownDvp ? { color: dvpColor(shownDvp) } : undefined, node: <><span className="nfl-dvp-label">DvP</span> <span data-testid="nfl-board-dvp">{shownDvp ? ordinal(shownDvp) : '—'}</span></> },
         { node: (
           <div className="nfl-lines-matchup">
             {item.opponent ? <span className="board-vs">{opponentLabel(item.opponent)}</span> : null}
@@ -355,7 +358,9 @@ export default function NflPropLines({ onSelectPlayer, onNavigatePricing }) {
         cgScore: nflTodayPick(item).cg,
         score: nflCgScore(item.projection, item.line, item.prop) ?? 0,
         rawScore: nflRawScore(item.projection, item.line, item.prop),
-        side: cgSide(nflCgScore(item.projection, item.line, item.prop)),
+        // A Pending row (no CG Score) has no side, so the Overs and Unders
+        // filters leave it out; it shows under All only.
+        side: nflBoardSide(item),
       }
     })
     const edgeMin = filters.edgeMin === '' ? -Infinity : Number(filters.edgeMin)

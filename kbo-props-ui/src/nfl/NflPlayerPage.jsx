@@ -26,7 +26,8 @@ import NbaRangeSlider from '../nba/NbaRangeSlider'
 import { formatMetric } from '../nba/nbaGameFilters'
 import NflSnapsUsage from './NflSnapsUsage'
 import {
-  PENDING, gamePassesRanges, hiddenForMissing, nflGameFilters, nflGameLog, nflTodayPick, nflTrendMetrics, pickText, rangesActive, resolveFilterRanges,
+  PENDING, gamePassesRanges, hiddenForMissing, nflBoardDvpRank, nflGameFilters, nflGameLog, nflTodayPick, nflTrendMetrics, pickText, rangesActive,
+  resolveFilterRanges,
 } from './nflPlayerGames.js'
 import './nflPlayerParity.css'
 
@@ -330,7 +331,7 @@ export default function NflPlayerPage({ player, prop, onBack }) {
         <div><small>LINE</small><strong>{formatValue(currentRow.line)}</strong></div>
         <div><small>MODEL</small>{modelDelta == null ? <strong className="nfl-pending">{PENDING}</strong> : <><strong>{formatValue(pick.projection)}</strong><span className={modelDelta >= 0 ? 'over' : 'under'}>{formatDelta(modelDelta)}</span></>}</div>
         <div><small>SEASON AVG</small><strong>{seasonAvgText(currentRow)}</strong></div>
-        <div><small>DVP RANK</small><strong className={currentRow.dvpRatio >= 1 ? 'over' : 'under'}>{currentRow.dvpRank}<i> /32</i></strong></div>
+        <div><small>DVP RANK</small>{nflBoardDvpRank(currentRow) == null ? <strong className="neutral" data-testid="nfl-player-dvp">—</strong> : <strong className={currentRow.dvpRatio >= 1 ? 'over' : 'under'} data-testid="nfl-player-dvp">{currentRow.dvpRank}<i> /32</i></strong>}</div>
         <AdjMatchupStat payload={matchupDefense} prop={currentRow.prop} position={currentRow.position} opponent={currentRow.opponent} />
         <div><small>SNAPS</small><strong>{currentRow.snapCount > 0 ? `${currentRow.snapCount}%` : 'N/A'}</strong></div>
         {(currentRow.position === 'WR' || currentRow.position === 'TE') && currentRow.targetsPerGame != null && (

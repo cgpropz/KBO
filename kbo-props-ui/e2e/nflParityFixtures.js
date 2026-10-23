@@ -1,6 +1,6 @@
 // Made-up NFL players for the NFL player-page parity specs. No real names,
 // teams or numbers.
-import { nflCgScore } from '../src/nfl/nflLineFloors.js'
+import { shapeForTier } from '../api/_dataAccess.js'
 
 const seasons = [2025, 2025, 2025, 2025, 2026, 2026, 2026, 2026, 2026, 2026, 2026]
 const backBase = {
@@ -20,6 +20,8 @@ const backBase = {
   currentSeasonGames: 7,
   snapCount: 82,
   dvpRank: 14,
+  dvpRatio: 1.08,
+  dvpRanked: true,
   line_type: 'standard',
 }
 
@@ -39,7 +41,10 @@ const rookieBase = {
   priorSeasonLabel: 2025,
   currentSeasonGames: 3,
   snapCount: 60,
-  dvpRank: 20,
+  // Opponent with no DvP rank: the builder's neutral 16 / 1.0, flagged.
+  dvpRank: 16,
+  dvpRatio: 1.0,
+  dvpRanked: false,
   line_type: 'standard',
 }
 
@@ -51,17 +56,16 @@ export const nflParityRows = [
   { ...rookieBase, id: 'nflp-4', player: 'Synth Rookie', prop: 'Receiving Yards', line: 40.5, projection: null, recent: [30, 45, 52] },
 ]
 
-// What a signed-out visitor receives, the same shape as the server's free NFL
-// preview: each player's best-scoring prop, top 3 players, nothing else.
+// What a signed-out visitor receives: the server's own free NFL shaping
+// (shapeForTier on the free tier), run on the made-up rows. Not a copy of the
+// pick logic, so the fixture follows any change to the real preview.
+const FIXTURE_NOW = new Date('2026-10-21T20:00:00Z')
+export function nflFreePreview(rows = nflParityRows) {
+  return shapeForTier('nfl_projections', rows, 'free', { now: FIXTURE_NOW })
+}
+
 export function nflFreePreviewRows(rows = nflParityRows) {
-  const best = new Map()
-  rows.forEach((row) => {
-    const score = nflCgScore(row.projection, row.line, row.prop)
-    if (row.projection == null || score == null || score === 50) return
-    const current = best.get(row.player)
-    if (!current || score > current.score) best.set(row.player, { row, score })
-  })
-  return [...best.values()].sort((a, b) => b.score - a.score).slice(0, 3).map((item) => item.row)
+  return nflFreePreview(rows).data
 }
 
 // Serves the made-up NFL rows on top of the shared fixtures (later routes win).
@@ -76,7 +80,9 @@ export async function installNflParityRows(page, { member = false } = {}) {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify({ data: member ? nflParityRows : nflFreePreviewRows(), updatedAt: '2026-10-21T20:00:00Z', preview: !member, lockedCount: member ? 0 : nflParityRows.length - nflFreePreviewRows().length, tier: member ? 'combined' : 'free' }),
+      body: JSON.stringify(member
+        ? { data: nflParityRows, updatedAt: '2026-10-21T20:00:00Z', preview: false, lockedCount: 0, tier: 'combined' }
+        : { ...nflFreePreview(), updatedAt: '2026-10-21T20:00:00Z', tier: 'free' }),
     })
   })
 }

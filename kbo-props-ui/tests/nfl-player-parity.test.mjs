@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import {
-  PENDING, gamePassesRanges, hiddenForMissing, nflGameFilters, nflGameLog, nflTodayPick, nflTrendMetrics, nflTrendSummary, pickText, rangesActive, resolveFilterRanges,
+  PENDING, gamePassesRanges, hiddenForMissing, nflBoardDvpRank, nflBoardSide, nflGameFilters, nflGameLog, nflTodayPick, nflTrendMetrics, nflTrendSummary, pickText, rangesActive, resolveFilterRanges,
 } from '../src/nfl/nflPlayerGames.js'
 import { nflCgScore } from '../src/nfl/nflLineFloors.js'
 import { nflInsights } from '../src/playerInsights/insightsSports.js'
@@ -185,4 +185,34 @@ test('nfl defense and snap split rows color by over rate vs the overall rate', a
   assert.ok(['weak', 'soft'].includes(by.dvptough), JSON.stringify(by))
   assert.ok(['strong', 'good'].includes(by.dvpsoft), JSON.stringify(by))
   assert.ok(['weak', 'soft'].includes(by.snaphigh), JSON.stringify(by))
+})
+
+test('board side: Pending rows have no side, so Overs and Unders skip them', () => {
+  const pendingRows = [
+    { prop: 'Receiving Yards', line: 40.5, projection: null },
+    { prop: 'Receiving Yards', line: 40.5, projection: '' },
+    { prop: 'Receiving Yards', line: null, projection: 44 },
+    { prop: 'Receiving Yards', line: 0.5, projection: 44 },
+  ]
+  pendingRows.forEach((row) => assert.equal(nflBoardSide(row), null))
+  assert.equal(nflBoardSide({ prop: 'Receptions', line: 3.5, projection: 3.8 }), 'OVER')
+  assert.equal(nflBoardSide({ prop: 'Receptions', line: 3.5, projection: 3.1 }), 'UNDER')
+  assert.equal(nflBoardSide({ prop: 'Receptions', line: 3.5, projection: 3.5 }), null)
+  const rows = [...pendingRows, { prop: 'Receptions', line: 3.5, projection: 3.8 }, { prop: 'Receptions', line: 3.5, projection: 3.1 }]
+  const sideFilter = (want) => rows.filter((row) => nflBoardSide(row) === want)
+  assert.equal(sideFilter('OVER').length, 1)
+  assert.equal(sideFilter('UNDER').length, 1)
+})
+
+test('board DvP: unranked opponents show no rank, ranked ones keep theirs', () => {
+  assert.equal(nflBoardDvpRank({ dvpRank: 16, dvpRatio: 1.0, dvpRanked: false }), null)
+  assert.equal(nflBoardDvpRank({ dvpRank: 16, dvpRatio: 1.04, dvpRanked: true }), 16)
+  assert.equal(nflBoardDvpRank({ dvpRank: 16, dvpRatio: 1.0, dvpRanked: true }), 16)
+  assert.equal(nflBoardDvpRank({ dvpRank: 3, dvpRatio: 1.2, dvpRanked: true }), 3)
+  // Rows from before the flag: the builder's neutral default reads as unranked.
+  assert.equal(nflBoardDvpRank({ dvpRank: 16, dvpRatio: 1.0 }), null)
+  assert.equal(nflBoardDvpRank({ dvpRank: 16, dvpRatio: 0.97 }), 16)
+  assert.equal(nflBoardDvpRank({ dvpRank: 28, dvpRatio: 1.0 }), 28)
+  assert.equal(nflBoardDvpRank({}), null)
+  assert.equal(nflBoardDvpRank({ dvpRank: 0 }), null)
 })
