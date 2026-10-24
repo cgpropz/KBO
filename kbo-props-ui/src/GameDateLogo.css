@@ -4,6 +4,9 @@
 .hr-game .hr-game-date { max-width: 100%; overflow: hidden; font: 600 11px Inter, system-ui, sans-serif; letter-spacing: -0.03em; white-space: nowrap; }
 .hr-game .hr-game-logo { display: block; width: 16px; height: 16px; flex: none; object-fit: contain; }
 .hr-game .hr-game-abbr { max-width: 100%; overflow: hidden; color: inherit; font: 700 10px Inter, system-ui, sans-serif; letter-spacing: -0.03em; line-height: 16px; text-overflow: clip; white-space: nowrap; }
+/* Season chip under a landing L10 bar when the window mixes two seasons.
+   It stays inside the bar column so ten labels still fit at 390px. */
+.hr-game .hr-game-season { max-width: 100%; overflow: hidden; font: 700 9px Inter, system-ui, sans-serif; letter-spacing: -0.04em; line-height: 1.1; white-space: nowrap; color: #e4e4e7; }
 /* Phones: the logo drops to 14px. The text size comes from the shared phone
    type floor in mobile.css. */
 @media (max-width: 480px) {

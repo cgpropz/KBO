@@ -90,10 +90,29 @@ export function headChartBars(prop, games, getValue, limit = CHART_LABEL_LIMIT) 
 
 // NBA / WNBA: newest-first game objects. Games without the stat are skipped,
 // exactly like the bar values, so every bar keeps its own game's label.
+// `season` is kept when the log has one, so a landing chart can say which
+// season a February bar belongs to. A missing `date` falls back to `gameDate`.
 export function gameChartBars(games, getValue, getOpponent, limit = CHART_LABEL_LIMIT) {
   return (list(games) || [])
     .slice(0, limit)
-    .map((game) => ({ value: getValue(game), date: text(game?.date), team: text(getOpponent(game)) }))
+    .map((game) => {
+      const bar = {
+        value: getValue(game),
+        date: text(game?.date || game?.gameDate),
+        team: text(getOpponent(game)),
+      }
+      const season = text(game?.season)
+      if (season) bar.season = season
+      return bar
+    })
     .filter((bar) => bar.value != null)
     .reverse()
+}
+
+// The date row stays up when any bar has a date. One blank date used to hide
+// the whole row (ChartDateRow and MiniHitBars). All-blank still returns null.
+export function dateRowBars(bars) {
+  const rows = Array.isArray(bars) ? bars : []
+  if (!rows.length || !rows.some((bar) => text(bar?.date))) return null
+  return rows
 }

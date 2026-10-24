@@ -13,6 +13,7 @@ import { chartWindowRate, KBO_VALUE, kboHitPills, kboLoggedValues, nflHitPills, 
 import { gameChartBars, headChartBars, tailChartBars } from './chartLabels.js'
 import { matchupOpponent } from './gameDateLabel.js'
 import { EXCLUDED_PROP_LABELS, nbaHitPills, opponentFromMatchup, statValue, storedL10Values } from './nba/nbaPropLines.js'
+import { seasonShortLabel } from './nba/nbaTodayPick.js'
 import { hasPostedProjection } from './nba/nbaPostedProjection.js'
 import { nbaHighRisk, nbaRiskInput } from './nba/nbaRisk.js'
 import { compareSymmetric, rankable } from './sideRank.js'
@@ -252,18 +253,70 @@ function chartValues(values, newestFirst, limit = 10) {
 // Dates and opponent logos for the landing drilldown. The numeric series
 // stays `recent` (hit rate and bar height). Labels are attached only when
 // they line up with those exact values, using the same bar helpers as the
-// boards (#385). A stored series with no matching log stays unlabeled.
+// boards (#385). A stored series with no matching log stays unlabeled, so a
+// bar never shows another game's date. Season comes along when the log has
+// one: the landing chart uses it to name a mixed window.
 function barsForRecent(recent, bars) {
   const values = Array.isArray(recent) ? recent : []
   const plain = values.map((value) => ({ value, date: '', team: '' }))
   if (!Array.isArray(bars) || bars.length !== plain.length) return plain
   const aligned = bars.every((bar, index) => Number(bar?.value) === Number(plain[index].value))
   if (!aligned) return plain
-  return plain.map((bar, index) => ({
-    value: bar.value,
-    date: bars[index]?.date ? String(bars[index].date) : '',
-    team: bars[index]?.team ? String(bars[index].team) : '',
-  }))
+  return plain.map((bar, index) => {
+    const next = {
+      value: bar.value,
+      date: bars[index]?.date ? String(bars[index].date) : '',
+      team: bars[index]?.team ? String(bars[index].team) : '',
+    }
+    const season = bars[index]?.season ? String(bars[index].season).trim() : ''
+    if (season) next.season = season
+    return next
+  })
+}
+
+// NBA season code on the roster log: "2027" for 2026-27, rolling over in
+// July. Same rule as leagueSeasonFor('nba') on the player page.
+function nbaLeagueSeason(now = new Date()) {
+  const year = now.getFullYear()
+  return String(now.getMonth() >= 6 ? year + 1 : year)
+}
+
+// What the landing L10 date row should say. The bars are already the newest
+// games (this season only once ten of them exist; both seasons before that).
+// The row was printing M/D with no season, so last April sat next to this
+// October and looked like a broken date. Null when the bars carry no season
+// (NFL, NHL, KBO, WNBA).
+export function l10WindowLabel(bars, now = new Date()) {
+  const seasons = []
+  for (const bar of Array.isArray(bars) ? bars : []) {
+    const season = String(bar?.season || '').trim()
+    if (!season || seasons.includes(season)) continue
+    seasons.push(season)
+  }
+  if (!seasons.length) return null
+  const detail = seasons.map((season) => seasonShortLabel(season, '')).filter(Boolean).join(' · ')
+  if (seasons.length > 1) return { id: 'both', text: 'Both seasons', detail }
+  if (seasons[0] === nbaLeagueSeason(now)) return { id: 'season', text: 'This season', detail }
+  return { id: 'prior', text: 'Last season', detail }
+}
+
+// "'25-26" does not fit under a bar at 390px (it clips to "25"). The chip is
+// the season's end year ('26, '27). The chart caption keeps the full labels.
+function seasonChip(season) {
+  const full = seasonShortLabel(season, '')
+  const end = full.match(/-(\d{2})$/)
+  return end ? { chip: `'${end[1]}`, title: full } : (full ? { chip: full, title: full } : null)
+}
+
+// Per-bar season chip only while two seasons share the row. A this-season
+// window stays date + logo, which is what the 390px fit check measures.
+function withMixedSeasonLabels(bars, now = new Date()) {
+  const scope = l10WindowLabel(bars, now)
+  if (!scope || scope.id !== 'both') return bars
+  return bars.map((bar) => {
+    const mark = bar?.season ? seasonChip(bar.season) : null
+    return mark ? { ...bar, seasonLabel: mark.chip, seasonTitle: mark.title } : bar
+  })
 }
 
 function rosterGameLogs(roster) {
@@ -301,7 +354,8 @@ function basketballRecentBars({ sport, games, stat, recent, rosterLogs, fromStor
       return named ? named.toUpperCase() : matchupOpponent(game?.matchup)
     }
     : (game) => opponentFromMatchup(game?.matchup || game?.opponent)
-  return barsForRecent(recent, gameChartBars(source, getValue, getTeam, recent.length))
+  const bars = barsForRecent(recent, gameChartBars(source, getValue, getTeam, recent.length))
+  return sport === 'nba' ? withMixedSeasonLabels(bars) : bars
 }
 
 function l10FromPills(pills, storedRate) {

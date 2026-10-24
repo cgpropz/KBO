@@ -84,6 +84,8 @@ test('NBA landing drilldown: ten dated bars with logos fit at 390px', async ({ p
   await expect(labels).toHaveCount(10)
   await expect(chart.locator('.hr-game-date')).toHaveText(DATES)
   await expect(chart.locator('.hr-game-logo')).toHaveCount(10)
+  await expect(chart.getByTestId('hub-l10-scope')).toContainText("'26-27")
+  await expect(chart.getByTestId('hr-game-season')).toHaveCount(0)
 
   const geometry = await chart.evaluate((root) => {
     const rect = (el) => el.getBoundingClientRect()
@@ -121,4 +123,62 @@ test('NBA landing drilldown: ten dated bars with logos fit at 390px', async ({ p
   })
   const width = await page.evaluate(() => Math.max(document.documentElement.scrollWidth, document.body.scrollWidth))
   expect(width).toBeLessThanOrEqual(390)
+})
+
+test('NBA landing drilldown: a mixed-season L10 names last season at 390px', async ({ page }) => {
+  const last = [
+    ['04/12/2026', 'MIA', 22],
+    ['04/09/2026', 'NYK', 8],
+    ['03/28/2026', 'CHI', 16],
+    ['03/15/2026', 'MIL', 14],
+    ['03/02/2026', 'DEN', 9],
+    ['02/20/2026', 'DAL', 21],
+    ['02/14/2026', 'LAL', 13],
+  ]
+  const current = [
+    ['10/23/2026', 'BOS', 18],
+    ['10/22/2026', 'PHI', 11],
+    ['10/21/2026', 'GSW', 19],
+  ]
+  const games = [...current, ...last]
+  await page.route('**/api/data**', async (route) => {
+    const ds = new URL(route.request().url()).searchParams.get('ds')
+    const data = ds === 'nba_players'
+      ? [{
+        athleteId: 'sarr', name: 'Alex Sarr', team: 'WAS', position: 'C', gp: 10,
+        gameLogs: games.map(([date, opp, pts], index) => ({
+          date, matchup: index % 2 ? `WAS @ ${opp}` : `WAS vs. ${opp}`, min: 28, pts,
+          reb: 8, ast: 3, stl: 1, blk: 2, tov: 2, fg3m: 1,
+          season: date.startsWith('10/') ? '2027' : '2026',
+        })),
+      }]
+      : ds === 'nba_projections_standard'
+        ? [{
+          athleteId: 'sarr', name: 'Alex Sarr', team: 'WAS', avgMins: 30,
+          ppAllProps: [{
+            stat: 'Points', line: 14.5, standardLine: 14.5, projection: 17.2, rating: 84,
+            odds_type: 'standard', opponent: 'BOS', start_time: '2026-10-24T23:00:00Z',
+            l10Values: games.map((game) => game[2]),
+          }],
+        }]
+        : (Object.prototype.hasOwnProperty.call(fixtures, ds) ? fixtures[ds] : [])
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ data, updatedAt: '2026-10-24T12:00:00Z', preview: false, lockedCount: 0, tier: 'owner' }),
+    })
+  })
+  expect(page.viewportSize().width).toBe(390)
+  await page.goto('/?previewTier=owner', { waitUntil: 'load' })
+  await page.getByRole('button', { name: 'NBA', exact: true }).click()
+  const chart = page.getByRole('region', { name: 'Player drilldown' }).getByTestId('hub-l10-chart')
+  await expect(chart.locator('.hr-game-date')).toHaveText(['2/14', '2/20', '3/02', '3/15', '3/28', '4/09', '4/12', '10/21', '10/22', '10/23'])
+  await expect(chart.getByTestId('hub-l10-scope')).toHaveText("Both seasons · '25-26 · '26-27")
+  await expect(chart.getByTestId('hr-game-season')).toHaveText(["'26", "'26", "'26", "'26", "'26", "'26", "'26", "'27", "'27", "'27"])
+  const width = await page.evaluate(() => Math.max(document.documentElement.scrollWidth, document.body.scrollWidth))
+  expect(width).toBeLessThanOrEqual(390)
+  const clipped = await chart.locator('.hr-game-date, .hr-game-season').evaluateAll((nodes) => (
+    nodes.some((node) => node.scrollWidth > node.clientWidth + 0.5)
+  ))
+  expect(clipped).toBe(false)
 })

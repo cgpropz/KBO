@@ -1,6 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
+import { dateRowBars } from '../src/chartLabels.js'
 import { formatGameDate, gameDateLabelHtml, matchupOpponent, opponentAbbr } from '../src/gameDateLabel.js'
 
 const read = (path) => readFileSync(new URL(`../src/${path}`, import.meta.url), 'utf8')
@@ -43,6 +44,23 @@ test('every hit-rate log chart uses the shared date + logo label', () => {
     assert.match(read(file), /<GameDateLogo\b/, file)
   }
   assert.match(read('wnba/components/L10HitRateChart.jsx'), /gameDateLabelHtml\(/)
+})
+
+test('one bar without a date does not hide the rest of the label row', () => {
+  const rows = dateRowBars([
+    { value: 13, date: '02/14/2026', team: 'LAL' },
+    { value: 18, date: '', team: 'BOS' },
+    { value: 11, date: '10/22/2026', team: 'PHI' },
+  ])
+  assert.equal(rows.length, 3)
+  assert.equal(rows[0].date, '02/14/2026')
+  assert.equal(rows[2].team, 'PHI')
+  assert.equal(dateRowBars([{ value: 1, date: '' }, { value: 2, date: '  ' }]), null)
+  assert.equal(dateRowBars([]), null)
+  const row = read('MiniHitBars.jsx')
+  assert.match(row, /dateRowBars/)
+  assert.doesNotMatch(row, /every\(\(bar\) => bar\?\.date\)/)
+  assert.doesNotMatch(row, /rows\.every\(\(bar\) => bar\.date\)/)
 })
 
 test('the label falls back to the abbreviation when a logo is missing or fails', () => {
