@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import test from 'node:test'
+import { UNPROVEN_RANK_NOTE } from '../src/freePreviewCopy.js'
 import { kboHubRows, nflHubRows } from '../src/memberHub.js'
 import { FREE_TOP_LIMIT, publicFreeTopRows } from '../src/publicBoard.js'
 import { homeRootInner } from '../scripts/homeShell.mjs'
@@ -74,4 +75,26 @@ test('the landing section reads the CG Score ranking and no longer says highest 
   const shell = homeRootInner()
   assert.match(shell, /<h2>Today's free top 3<\/h2>/)
   assert.equal(/highest hit rates/i.test(shell), false)
+})
+
+test('ranks outside the free top 3 are labeled as model-ranked edges, with no cash rate', () => {
+  assert.equal(UNPROVEN_RANK_NOTE, 'Ranks outside the free top 3 are model-ranked edges, not a proven cash rate.')
+  assert.doesNotMatch(UNPROVEN_RANK_NOTE, /\b(lock|locks|locked|guarantee|guaranteed)\b/i)
+  assert.doesNotMatch(UNPROVEN_RANK_NOTE, /\d+(\.\d+)?%|\$\d|cash rate of/i)
+
+  const free = landing.slice(landing.indexOf('id="free-top-3"'), landing.indexOf('id="matchup"'))
+  const boards = landing.slice(landing.indexOf('id="boards"'), landing.indexOf('id="pricing"'))
+  assert.match(free, /<p className="pl-unproven" role="note">\{UNPROVEN_RANK_NOTE\}<\/p>/)
+  assert.match(boards, /<p className="pl-unproven" role="note">\{UNPROVEN_RANK_NOTE\}<\/p>/)
+  assert.equal(landing.includes('cashRate'), false)
+
+  const hub = readFileSync(new URL('../src/MemberCommandCenter.jsx', import.meta.url), 'utf8')
+  const preview = hub.slice(hub.indexOf('hub-preview'), hub.indexOf('Player drilldown'))
+  assert.match(preview, /<p className="hub-unproven" role="note">\{UNPROVEN_RANK_NOTE\}<\/p>/)
+  assert.equal(preview.includes('cashRate'), false)
+  assert.doesNotMatch(preview, /cash rate of|%\s*cash/i)
+
+  const shell = homeRootInner()
+  assert.ok(shell.indexOf(UNPROVEN_RANK_NOTE) > shell.indexOf('free-top3-end'))
+  assert.equal(shell.split(UNPROVEN_RANK_NOTE).length - 1, 1)
 })

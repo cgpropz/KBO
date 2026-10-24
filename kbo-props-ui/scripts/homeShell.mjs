@@ -7,6 +7,7 @@ import {
   OPERATOR_DISCLAIMER,
   STANDARD_LINE,
 } from '../src/responsibleGambling.js';
+import { UNPROVEN_RANK_NOTE } from '../src/freePreviewCopy.js';
 import { FREE_TOP3_END, FREE_TOP3_START } from './freeTop3Html.mjs';
 import { escapeHtml, jsonLdScript, organizationNode, pageUrl, renderDataCredit, websiteNode } from './seoShared.mjs';
 
@@ -37,6 +38,7 @@ const PRERENDER_CSS = `
     .seo-prerender h1 { font-size: clamp(32px, 5vw, 48px); line-height: 1.05; margin: 0 0 12px; letter-spacing: -0.03em; }
     .seo-prerender h2 { font-size: 22px; margin: 28px 0 8px; }
     #free-top-3 { scroll-margin-top: 24px; }
+    .free-top3-unproven { color: #a1a1aa; font-size: 14px; line-height: 1.45; margin: 12px 0 0; }
     .seo-prerender footer { margin-top: 28px; color: #a1a1aa; font-size: 14px; }
     .seo-prerender footer .data-credit { margin: 4px 0 0; color: #71717a; font-size: 11px; line-height: 1.3; }
     .seo-prerender footer .data-credit a { color: inherit; font-weight: 400; text-decoration: underline; }
@@ -59,6 +61,7 @@ export function homeRootInner() {
         <p>The three standard lines with the highest CG Scores on each board.</p>
         ${FREE_TOP3_START}
         ${FREE_TOP3_END}
+        <p class="free-top3-unproven">${escapeHtml(UNPROVEN_RANK_NOTE)}</p>
       </section>
     </main>
     <footer>

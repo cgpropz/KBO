@@ -19,6 +19,7 @@ import { lineClause, lineWord } from './lineCount';
 import { whenVisibleOrIdle } from './whenVisibleOrIdle';
 import { rowStartMs } from './etStart';
 import { freeTopEmptyText, kboHoldMessage } from './freeTopEmpty';
+import { UNPROVEN_RANK_NOTE } from './freePreviewCopy';
 import PlayerMark from './PlayerMark';
 import { playerInitials } from './playerMark';
 import './PublicLanding.css';
@@ -344,6 +345,7 @@ export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard, onSi
             {hitRows.length ? <BoardTable rows={hitRows} showHitRate showKickoff sport={hitSport.id} /> : (
               <p className="pl-empty">{freeTopEmptyText({ sportName: hitSport.name, settled: settled || !!hitState?.hold, hold: hitState?.hold })}</p>
             )}
+            <p className="pl-unproven" role="note">{UNPROVEN_RANK_NOTE}</p>
             {hitState?.preview && hitState.lockedCount > 0 && (
               <p className="pl-foot">Public preview · {hitState.lockedCount} more {lineWord(hitState.lockedCount)} on All-Access</p>
             )}
@@ -431,6 +433,7 @@ export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard, onSi
                   : 'Loading the board…'}
               </p>
             )}
+            <p className="pl-unproven" role="note">{UNPROVEN_RANK_NOTE}</p>
             <div className="pl-foot">
               <span>Standard lines · CG Score is the board score</span>
               {sportState?.rows?.length > 0 && (

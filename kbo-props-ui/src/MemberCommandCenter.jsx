@@ -23,6 +23,7 @@ import {
 import { readMemberSportChoice, rememberMemberSport, selectedHubSport } from './memberSport';
 import './MemberCommandCenter.css';
 import { DataCredit } from './SiteFooter'
+import { UNPROVEN_RANK_NOTE } from './freePreviewCopy';
 import { displayScore, symmetricRankOn } from './sideRank';
 import ExpectedMinutesPill from './nba/ExpectedMinutesPill';
 import { expectedMinutesPill } from './nba/expectedMinutes';
@@ -625,6 +626,7 @@ export default function MemberCommandCenter({ onEnterSport, onNavigate }) {
                   <h2>Board preview</h2>
                   <a href="/guides/cg-score">What&apos;s in a CG Score</a>
                 </div>
+                <p className="hub-unproven" role="note">{UNPROVEN_RANK_NOTE}</p>
                 {preview.length > 0 ? preview.map((row) => (
                   <button key={rowKey(row)} type="button" className="hub-preview-row" onClick={() => setFocus(rowKey(row))}>
                     <Avatar row={row} sport={selected} size={36} />
