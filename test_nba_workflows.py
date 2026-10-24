@@ -70,6 +70,22 @@ class WorkflowTests(unittest.TestCase):
         self.assertIn("nba/nbaPGdvp.csv", add_block)
         self.assertIn("notify-failure.sh", REFRESH)
 
+    def test_four_am_backup_collapses_and_props_window_stays_put(self):
+        self.assertIn('cron: "0 22 * * *"', REFRESH)
+        self.assertIn('cron: "0 1 * * *"', REFRESH)
+        self.assertIn('cron: "0 8 * * *"', REFRESH)
+        self.assertIn('cron: "20 8 * * *"', REFRESH)
+        self.assertIn("bash .github/scripts/nba-refresh-due.sh", REFRESH)
+        self.assertIn("needs: gate", REFRESH)
+        self.assertIn("needs.gate.outputs.due == 'true'", REFRESH)
+        self.assertIn('default: ""', REFRESH)
+        self.assertIn('cron: "17 0-9,11-23 * * *"', PROPS)
+        self.assertIn('cron: "7,37 0-9,11-23 * * *"', PROPS)
+        self.assertIn('cron: "22,52 * * * *"', PROPS)
+        self.assertIn("tip-5h..tip+3h", PROPS)
+        self.assertNotIn("nba-refresh.yml", executable(PROPS))
+        self.assertNotIn("nba-morning", executable(PROPS))
+
 
 if __name__ == "__main__":
     unittest.main()

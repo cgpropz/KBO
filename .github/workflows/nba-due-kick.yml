@@ -8,9 +8,15 @@ name: Start NBA refresh if due
 # on main (-f trigger=nba-due, so that run's gate keeps the 50-minute guard
 # and the 5-minute earlier-run rule) with the job's GITHUB_TOKEN.
 #
-# The caller job holds the only actions: write grant. Every step here is
-# continue-on-error and the script exits 0, so this job never fails or
-# blocks the host sport's refresh job.
+# Between 4:15 and 6:00 AM ET the same chain starts nba-refresh.yml
+# (-f trigger=nba-morning) when the 4:00 AM full refresh did not land. That
+# path is the post-finals rebuild, not a props scrape, and it leaves the
+# tip-5h..tip+3h props window alone. After 4:30 AM ET it can open an issue
+# if the public board is still stamped before 3:30 AM ET.
+#
+# The caller job holds actions: write (start workflows) and issues: write
+# (the morning stale issue). Every step here is continue-on-error and the
+# scripts exit 0, so this job never fails or blocks the host sport's refresh.
 
 on:
   workflow_call:
@@ -18,6 +24,7 @@ on:
 permissions:
   contents: read
   actions: write
+  issues: write
 
 jobs:
   kick:
@@ -26,10 +33,13 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      # Same UTC hours as nba-props-refresh.yml's hourly cron (0-9, 11-23).
-      # Outside them, skip checkout and the gate. refresh-due.sh still checks
-      # the real game window inside these hours.
-      - name: NBA window hours (UTC 0-9, 11-23)
+      # Props: same UTC hours as nba-props-refresh.yml's hourly cron (0-9, 11-23).
+      # Outside them, skip the props kick. refresh-due.sh still checks the
+      # real game window inside these hours. Morning: 4:15-6:00 AM ET is a
+      # separate flag so the full-refresh wake still runs at 5 AM EST, which
+      # is UTC hour 10 and outside the props hours. The props script stays
+      # on `inside` only.
+      - name: NBA window hours (UTC 0-9, 11-23) and morning full-refresh window
         id: hours
         continue-on-error: true
         run: |
@@ -37,12 +47,32 @@ jobs:
           if [ "$hour" -ne 10 ]; then
             echo "inside=true" >> "$GITHUB_OUTPUT"
           else
-            echo "nba-due: outside NBA window hours (UTC ${hour}); nothing to do."
+            echo "nba-due: outside NBA props window hours (UTC ${hour}); props kick skipped."
             echo "inside=false" >> "$GITHUB_OUTPUT"
           fi
+          stamp="$(TZ=America/New_York date +%H%M%Z 2>/dev/null || true)"
+          hm_raw="${stamp:0:4}"
+          zone="${stamp:4}"
+          hm=-1
+          if [[ "$hm_raw" =~ ^[0-9]{4}$ ]]; then
+            hm=$((10#$hm_raw))
+          fi
+          case "$zone" in
+            EST|EDT)
+              if (( hm >= 415 && hm < 600 )); then
+                echo "morning=true" >> "$GITHUB_OUTPUT"
+              else
+                echo "morning=false" >> "$GITHUB_OUTPUT"
+              fi
+              ;;
+            *)
+              echo "nba-due: Eastern time unavailable (${stamp:-empty}); morning wake skipped."
+              echo "morning=false" >> "$GITHUB_OUTPUT"
+              ;;
+          esac
 
       - name: Checkout repo
-        if: steps.hours.outputs.inside == 'true'
+        if: steps.hours.outputs.inside == 'true' || steps.hours.outputs.morning == 'true'
         continue-on-error: true
         uses: actions/checkout@v4
         with:
@@ -56,3 +86,11 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
         run: bash .github/scripts/nba-due-kick.sh
+
+      - name: Start nba-refresh.yml if the 4 AM build did not land
+        if: steps.hours.outputs.morning == 'true'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: bash .github/scripts/nba-morning-refresh.sh

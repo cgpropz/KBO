@@ -5,6 +5,10 @@ never includes prop rows. injuries_checked_at stays null unless the snapshot
 itself carries an injury-check timestamp. None of the current lineup files do.
 
 Stale windows match kbo-props-ui/src/boardFreshness.js.
+
+NBA's 12h window is the full refresh (nba-refresh.yml at 6pm, 9pm, and 4am
+ET). The 4am rebuild is not the hourly props job. Props stay inside
+tip-5h..tip+3h and do not rebuild the board at 4am.
 """
 
 from __future__ import annotations

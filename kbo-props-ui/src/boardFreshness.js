@@ -20,8 +20,12 @@
 //             publish did not land.
 //   NFL  18h  The slate is weekly, but lines are rebuilt through the week.
 //             18h means the board was touched yesterday; a silent day is stale.
-//   NBA  12h  Nightly tips, with full refreshes at 6pm, 9pm, and 4am ET.
-//             12h covers one missed cycle and still flags a skipped slate.
+//   NBA  12h  Nightly tips. Full refreshes at 6pm, 9pm, and 4am ET are
+//             nba-refresh.yml only. The 4am run is the post-finals rebuild;
+//             a 4:20 AM ET cron and the NHL/NFL morning wake cover a dropped
+//             4:00 tick. PrizePicks props refresh only inside tip-5h..tip+3h,
+//             so they do not run at 4am after a late tip. 12h covers one
+//             missed cycle and still flags a skipped slate.
 //   NHL  12h  Nightly games, same half-hour refresh pattern as the NFL board.
 //             12h means tonight's publish did not land.
 //

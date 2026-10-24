@@ -137,6 +137,7 @@ class WiringTests(unittest.TestCase):
             joined = "\n".join(block)
             self.assertIn("uses: ./.github/workflows/nba-due-kick.yml", joined, name)
             self.assertIn("actions: write", joined, name)
+            self.assertIn("issues: write", joined, name)
             self.assertIn("refs/heads/main", joined, name)
             self.assertNotIn("needs:", joined, name)
 
@@ -147,9 +148,19 @@ class WiringTests(unittest.TestCase):
     def test_reusable_steps_never_fail_the_host(self):
         code = _code(REUSABLE)
         self.assertIn("workflow_call:", code)
-        self.assertEqual(code.count("continue-on-error: true"), 3)
+        self.assertEqual(code.count("continue-on-error: true"), 4)
         self.assertIn("persist-credentials: false", code)
         self.assertIn("bash .github/scripts/nba-due-kick.sh", code)
+        self.assertIn("bash .github/scripts/nba-morning-refresh.sh", code)
+        self.assertIn("issues: write", code)
+        self.assertIn("hm >= 415 && hm < 600", _text(REUSABLE))
+        props = code.split("Start nba-props-refresh.yml if NBA is due", 1)[1].split(
+            "Start nba-refresh.yml if the 4 AM build did not land", 1
+        )[0]
+        self.assertIn("steps.hours.outputs.inside == 'true'", props)
+        self.assertNotIn("morning", props)
+        morning = code.split("Start nba-refresh.yml if the 4 AM build did not land", 1)[1]
+        self.assertIn("steps.hours.outputs.morning == 'true'", morning)
 
     def test_nba_props_passes_the_trigger_input_to_its_gate(self):
         code = _code(NBA_PROPS)

@@ -105,13 +105,16 @@ jobs:
           sleep "${NFL_ODDS_REFRESH_WAIT_SECONDS}"
           gh workflow run nfl-odds-live.yml --ref main
 
-  # GitHub drops most of nba-props-refresh.yml's cron ticks, but this job's
-  # self-requeue chain runs about every 25 minutes. This separate job starts
-  # the NBA props refresh when NBA is due (see nba-due-kick.yml). It has no
-  # needs and never fails, so it cannot block or fail the job above.
+  # GitHub drops most of nba-props-refresh.yml's cron ticks, and it has also
+  # dropped nba-refresh.yml's 4:00 AM ET tick. This job's self-requeue chain
+  # runs about every 25 minutes. This separate job starts the NBA props
+  # refresh when NBA is due, and between 4:15 and 6:00 AM ET starts the full
+  # refresh when that morning build did not land (see nba-due-kick.yml). It
+  # has no needs and never fails, so it cannot block or fail the job above.
   nba-due:
     if: (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main'
     permissions:
       contents: read
       actions: write
+      issues: write
     uses: ./.github/workflows/nba-due-kick.yml
