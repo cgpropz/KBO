@@ -296,8 +296,8 @@ def status_document_error(payload: Any) -> str | None:
 		extra = set(row) - STATUS_KEYS
 		if extra - {"removed_reasons", "note"}:
 			return "status board row has extra fields"
-		if "note" in row and (row.get("sport") != "kbo" or row.get("note") != NO_LINES_NOTE):
-			return "only the kbo entry may carry the no_lines note"
+		if "note" in row and (row.get("sport") not in ("kbo", "wnba") or row.get("note") != NO_LINES_NOTE):
+			return "only the kbo and wnba entries may carry the no_lines note"
 		if "removed_reasons" in row:
 			reasons = row.get("removed_reasons")
 			if row.get("sport") != "nhl" or not isinstance(reasons, dict):

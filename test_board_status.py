@@ -44,9 +44,11 @@ class ClockTests(unittest.TestCase):
 class ShapeTests(unittest.TestCase):
     def test_counts_props_without_copying_rows(self):
         kbo = {"cards": [{"name": "Secret Batter", "props": [{}, {}]}, {"props": [{}]}]}
-        wnba = [{"name": "Secret Guard", "ppAllProps": [{}, {}, {}]}]
+        wnba = [{"name": "Secret Guard", "ppLines": {"pts": 18.5, "reb": None}, "ppAllProps": [{}, {}, {}]}]
+        nba = [{"name": "Secret Forward", "ppAllProps": [{}, {}, {}]}]
         self.assertEqual(prop_count("kbo", kbo), 3)
-        self.assertEqual(prop_count("wnba", wnba), 3)
+        self.assertEqual(prop_count("wnba", wnba), 1)
+        self.assertEqual(prop_count("nba", nba), 3)
         self.assertEqual(prop_count("nfl", [{"player": "Secret Back"}]), 1)
         self.assertIsNone(injury_checked_at(kbo))
         self.assertIsNone(injury_checked_at([{"injury": "OUT"}]))
@@ -184,6 +186,77 @@ class ShapeTests(unittest.TestCase):
         nfl_fresh = record_sport({"boards": {"nhl": fresh["boards"]["nhl"]}}, "nfl", [{"player": "Back"}], NOW)
         self.assertEqual(nfl_fresh["boards"]["nhl"]["removed_reasons"]["pp_pull"], 2)
         self.assertNotIn("removed_reasons", nfl_fresh["boards"]["nfl"])
+
+
+OLD_WNBA = "2026-10-21T16:09:28-04:00"
+GHOST_WNBA = [{
+    "name": "Veronica Burton",
+    "ppLines": {},
+    "ppAllProps": [{"stat": "Offensive Rebounds", "line": 0.5, "projection": 0.85}],
+}]
+NULL_WNBA = [{
+    "name": "Naz Hillmon",
+    "ppLines": {"pts": None, "reb": None, "ast": None, "oreb": None},
+    "ppAllProps": [{"stat": "Points", "line": 5.5, "projection": 9.29}],
+}]
+LIVE_WNBA = [{
+    "name": "A'ja Wilson",
+    "ppLines": {"pts": 22.5, "reb": None, "ast": 2.5},
+    "ppAllProps": [{"stat": "Points", "line": 22.5}, {"stat": "Assists", "line": 2.5}, {"stat": "Offensive Rebounds", "line": 1.5}],
+}]
+
+
+class WnbaNoLinesTests(unittest.TestCase):
+    def test_live_count_reads_pp_lines_not_pp_all_props(self):
+        self.assertEqual(prop_count("wnba", GHOST_WNBA), 0)
+        self.assertEqual(prop_count("wnba", NULL_WNBA), 0)
+        self.assertEqual(prop_count("wnba", LIVE_WNBA), 2)
+        self.assertEqual(prop_count("wnba", [{"ppLines": {"pts": True, "reb": "5.5", "ast": float("nan")}}]), 0)
+        self.assertEqual(prop_count("nba", GHOST_WNBA), 1)
+
+    def test_empty_pp_lines_keeps_the_clock_and_reads_stale(self):
+        import pipeline.verify_production_data as verify
+
+        previous = [{
+            "sport": "wnba",
+            "board_updated_at": OLD_WNBA,
+            "prop_count": 101,
+            "stale": False,
+        }]
+        record = record_from_payload("wnba", GHOST_WNBA, PUBLISHED)
+        self.assertEqual(record["note"], "no_lines")
+        self.assertEqual(record["prop_count"], 0)
+        document = merge_status(previous, {"wnba": record}, NOW)
+        wnba = next(row for row in document["boards"] if row["sport"] == "wnba")
+        self.assertEqual(wnba["prop_count"], 0)
+        self.assertEqual(wnba["note"], "no_lines")
+        self.assertTrue(wnba["stale"])
+        self.assertEqual(wnba["board_updated_at"], OLD_WNBA)
+        self.assertIsNone(verify.status_document_error(document))
+        kept = prefer_fresher(document["boards"], [], NOW)
+        again = next(row for row in kept["boards"] if row["sport"] == "wnba")
+        self.assertEqual(again["note"], "no_lines")
+        self.assertEqual(again["board_updated_at"], OLD_WNBA)
+
+        null_record = record_from_payload("wnba", NULL_WNBA, PUBLISHED)
+        self.assertEqual(null_record["note"], "no_lines")
+
+    def test_live_pp_lines_clear_the_note_and_move_the_clock(self):
+        previous = [{
+            "sport": "wnba",
+            "board_updated_at": OLD_WNBA,
+            "prop_count": 0,
+            "stale": True,
+            "note": "no_lines",
+        }]
+        record = record_from_payload("wnba", LIVE_WNBA, PUBLISHED)
+        self.assertNotIn("note", record)
+        self.assertEqual(record["prop_count"], 2)
+        wnba = next(row for row in merge_status(previous, {"wnba": record}, NOW)["boards"] if row["sport"] == "wnba")
+        self.assertNotIn("note", wnba)
+        self.assertEqual(wnba["prop_count"], 2)
+        self.assertFalse(wnba["stale"])
+        self.assertEqual(wnba["board_updated_at"], "2026-10-11T09:44:00-04:00")
 
 
 if __name__ == "__main__":

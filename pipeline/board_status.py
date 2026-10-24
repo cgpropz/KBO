@@ -33,15 +33,20 @@ ENTRY_KEYS = ("sport", "board_updated_at", "injuries_checked_at", "prop_count", 
 # Optional on an entry: why the last run did not publish. Set by a failed
 # build step (e.g. nhl/fetch_history.py), cleared by the next publish.
 FAILURE_REASONS = ("download_failed",)
-# Optional on the KBO entry: PrizePicks returned 0 KBO props in the run that
-# wrote it (pipeline/kbo_run_signal.py). prop_count is 0, the board clock is
+# Optional on the KBO and WNBA entries. prop_count is 0, the board clock is
 # not moved forward, and the entry reads stale, so an empty board never shows
-# a fresh stamp. The next publish with KBO props clears it.
+# a fresh stamp. The next publish with lines clears it.
+# KBO: PrizePicks returned 0 KBO props in the run that wrote it
+# (pipeline/kbo_run_signal.py).
+# WNBA: the ppLines map PlayerCard and the projections table read has no
+# finite line. ppAllProps can still be non-empty; counting that list is the
+# ghost board.
 NO_LINES_NOTE = "no_lines"
+NO_LINES_SPORTS = ("kbo", "wnba")
 
 
 def copy_note(sport: str, value: Any) -> str | None:
-    return NO_LINES_NOTE if sport == "kbo" and value == NO_LINES_NOTE else None
+    return NO_LINES_NOTE if sport in NO_LINES_SPORTS and value == NO_LINES_NOTE else None
 
 
 def copy_failure(value: Any) -> dict | None:
@@ -56,6 +61,31 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 STATUS_PATH = REPO_ROOT / "kbo-props-ui" / "public" / "status.json"
 
 
+def _finite_line(value: Any) -> bool:
+    """A number a WNBA card can show. Null, booleans, and non-numbers are not lines."""
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return False
+    return value == value and value != float("inf") and value != float("-inf")
+
+
+def wnba_live_lines(data: Any) -> int:
+    """Finite values on each player's ppLines map.
+
+    PlayerCard shows a PrizePicks row only when that map has a non-null line,
+    and the projections table reads ppLines.pts from the same object. ppAllProps
+    is a second list and can stay full after every map value has been cleared.
+    """
+    if not isinstance(data, list):
+        return 0
+    total = 0
+    for player in data:
+        lines = player.get("ppLines") if isinstance(player, dict) else None
+        if not isinstance(lines, dict):
+            continue
+        total += sum(1 for value in lines.values() if _finite_line(value))
+    return total
+
+
 def prop_count(sport: str, data: Any) -> int:
     if sport == "kbo":
         cards = data.get("cards") if isinstance(data, dict) else None
@@ -67,7 +97,9 @@ def prop_count(sport: str, data: Any) -> int:
             if isinstance(props, list):
                 total += len(props)
         return total
-    if sport in ("wnba", "nba"):
+    if sport == "wnba":
+        return wnba_live_lines(data)
+    if sport == "nba":
         if not isinstance(data, list):
             return 0
         total = 0
@@ -282,4 +314,6 @@ def record_from_payload(sport: str, data: Any, published_at: str, env=None) -> d
 
         if no_kbo_lines_this_run(env):
             record["note"] = NO_LINES_NOTE
+    if sport == "wnba" and record["prop_count"] == 0:
+        record["note"] = NO_LINES_NOTE
     return record
