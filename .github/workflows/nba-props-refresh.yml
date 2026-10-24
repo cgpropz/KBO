@@ -29,6 +29,12 @@ name: Refresh NBA PrizePicks Lines (hourly)
 # 50-minute guard, and the 5-minute earlier-run rule, so it never scrapes
 # twice. A plain manual dispatch still always refreshes.
 #
+# The 4:00 AM ET post-finals rebuild is nba-refresh.yml (08:00 UTC, an 08:20
+# UTC backup, and a morning wake from nba-due-kick.yml). This props gate stays
+# tip-5h..tip+3h (pipeline/refresh_window.py WINDOW_BEFORE / WINDOW_AFTER).
+# Keep it there: after a late tip the window is already closed, and this job
+# is not the overnight full refresh.
+#
 # One tip, about 8 scrapes × ~1 min of work (measured 0.6-0.9), plus about
 # one minute for every other tick (71 starts: 23 hourly hours + 48 backup).
 # Game day ≈ 70 billed minutes. Off day ≈ 71. The old 25-minute chain was

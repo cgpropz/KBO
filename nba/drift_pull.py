@@ -54,8 +54,9 @@ NBA_LEAGUE_ID = 7
 PER_PAGE = 1000
 _PP = None
 
-# The morning NBA build (nba-refresh.yml) runs at 4:00 AM ET. The drift pull
-# starts after it has had time to publish.
+# The morning NBA build (nba-refresh.yml) runs at 4:00 AM ET, with a 4:20
+# backup and a wake if that tick is dropped. The drift pull starts after it
+# has had time to publish.
 MORNING_BUILD_DONE = time(6, 0)
 # Refuse to publish when more than this share of rows would be dropped in
 # one run. A board that loses most of its rows at once is a feed problem.

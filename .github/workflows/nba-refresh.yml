@@ -9,26 +9,69 @@ name: Refresh NBA Data
 # Paid JSON under kbo-props-ui/public/data/nba/ is published, never committed.
 # A 2026-27 box score file is committed only if the refresh script has written
 # one. This job does not call Unabated or apply_live_formula.py.
+#
+# The 4:00 AM ET cron is the post-finals full refresh. Props lines stay on
+# nba-props-refresh.yml inside tip-5h..tip+3h, so they are not a substitute
+# once the last tip is more than 3 hours behind. A second cron at 4:20 AM ET
+# covers a dropped 4:00 tick (GitHub dropped that tick on Oct 24, 2026). If
+# both are dropped, nba-due-kick.yml starts this workflow after 4:15 AM ET
+# when the public board is still older than 2 hours on a day with an NBA
+# slate. A plain manual run always refreshes. The 4:20 run and that wake
+# skip when a full refresh already succeeded in the last 90 minutes.
 
 on:
   schedule:
     # GitHub cron is UTC. Labels below are Eastern Daylight (UTC-4). During
-    # Eastern Standard the same crons run one hour earlier.
+    # Eastern Standard the same crons run one hour earlier. The morning wake
+    # in nba-due-kick.yml is keyed off America/New_York, so it stays at
+    # 4:15 AM ET in both seasons.
     - cron: "0 22 * * *" # 6:00 PM ET, before the early tip
     - cron: "0 1 * * *" # 9:00 PM ET, during the national window
     - cron: "0 8 * * *" # 4:00 AM ET, after west-coast finals
+    - cron: "20 8 * * *" # 4:20 AM ET backup if GitHub drops the 4:00 tick
   workflow_dispatch:
+    inputs:
+      trigger:
+        # Empty for a manual run (always refreshes). nba-morning is the wake
+        # from nba-due-kick.yml; nba-refresh-due.sh gives it the same
+        # 90-minute collapse as the 4:20 cron.
+        description: "Leave empty for a manual run"
+        required: false
+        default: ""
+        type: string
 
 permissions:
   contents: write
   issues: write
+  actions: read
 
 concurrency:
   group: nba-refresh-pipeline
   cancel-in-progress: false
 
 jobs:
+  gate:
+    name: Skip a duplicate full refresh
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      due: ${{ steps.gate.outputs.due }}
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Decide whether this run should refresh
+        id: gate
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REFRESH_TRIGGER: ${{ inputs.trigger }}
+        run: bash .github/scripts/nba-refresh-due.sh
+
   refresh-nba:
+    needs: gate
+    if: needs.gate.outputs.due == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo

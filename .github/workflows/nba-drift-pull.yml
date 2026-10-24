@@ -7,7 +7,8 @@ name: NBA mid-day drift pull
 # - Hourly at :41, 12:41-21:41 UTC (8:41 AM-5:41 PM EDT; one hour earlier
 #   in ET under EST). At most 10 starts a day.
 # - The gate makes no PrizePicks call. It needs an NBA game today (Eastern),
-#   a time after the 4:00 AM ET morning build, and the props window not yet
+#   a time after the 4:00 AM ET morning build (4:20 AM backup and wake if
+#   that tick is dropped), and the props window not yet
 #   open (pipeline/refresh_window.py). Otherwise the pull is skipped.
 # - A due run makes exactly one PrizePicks request (league_id=7, one page,
 #   no retries). A row stays only when that exact line is still standard;
