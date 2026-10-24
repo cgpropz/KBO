@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { cgScore } from '../src/cgScore.js'
-import { confirmedGoalieStarters, formatRecord, hubGames, kboHubRows, nbaHubRows, nhlHubRows, nflHubRows, playableRows, recapLabel, sameMatchup, statusChips, topHitRateRows, topHubRows, unavailableFromLineups, wnbaHubRows } from '../src/memberHub.js'
+import { confirmedGoalieStarters, formatRecord, hubGames, kboHubRows, l10WindowLabel, nbaHubRows, nhlHubRows, nflHubRows, playableRows, recapLabel, sameMatchup, statusChips, topHitRateRows, topHubRows, unavailableFromLineups, wnbaHubRows } from '../src/memberHub.js'
+import { dateRowBars } from '../src/chartLabels.js'
 import { standardRecord } from '../scripts/write-member-recap.mjs'
 
 test('kbo hub prefers a manual player photo over the name lookup', () => {
@@ -141,12 +142,32 @@ test('landing drilldown bars keep the chart values and add the matching game dat
     { value: 18, date: '10/22/2026', team: 'BOS' },
   ])
 
+  // Stored series does not match the log (the phone case: bars draw, the
+  // label row used to return null). Dates and logos still come from the log
+  // window. Bar heights stay the stored values, so the hit rate is unchanged.
   const mismatched = nbaHubRows([{
     athleteId: '7', name: 'Alex Sarr', team: 'WAS',
-    ppAllProps: [{ stat: 'Points', line: 14.5, standardLine: 14.5, projection: 17, rating: 80, odds_type: 'standard', l10Values: [18, 99, 22] }],
+    ppAllProps: [{ stat: 'Points', line: 1.5, standardLine: 1.5, projection: 3.4, rating: 80, odds_type: 'standard', l10Values: [18, 99, 22] }],
   }], [{ athleteId: '7', name: 'Alex Sarr', gameLogs: logs }])
   assert.deepEqual(mismatched[0].recent, [22, 99, 18])
-  assert.ok(mismatched[0].recentBars.every((bar) => bar.date === '' && bar.team === ''))
+  assert.equal(mismatched[0].score, 80)
+  assert.deepEqual(mismatched[0].recentBars.map((bar) => [bar.value, bar.date, bar.team]), [
+    [22, '10/18/2026', 'MIA'],
+    [99, '10/20/2026', 'PHI'],
+    [18, '10/22/2026', 'BOS'],
+  ])
+
+  // One log in that mismatched window has no date. The other dates stay, and
+  // the date row still has a slot for every bar.
+  const hole = logs.map((game, index) => (index === 1 ? { ...game, date: '' } : game))
+  const holed = nbaHubRows([{
+    athleteId: '7', name: 'Alex Sarr', team: 'WAS',
+    ppAllProps: [{ stat: 'Points', line: 1.5, standardLine: 1.5, projection: 3.4, rating: 80, odds_type: 'standard', l10Values: [18, 99, 22] }],
+  }], [{ athleteId: '7', name: 'Alex Sarr', gameLogs: hole }])
+  assert.deepEqual(holed[0].recent, [22, 99, 18])
+  assert.equal(holed[0].score, 80)
+  assert.deepEqual(holed[0].recentBars.map((bar) => bar.date), ['10/18/2026', '', '10/22/2026'])
+  assert.equal(dateRowBars(holed[0].recentBars).length, 3)
 
   const nfl = nflHubRows([{
     player: 'Synth Receiver', prop: 'Receiving Yards', line: 15.5, projection: 20,
@@ -174,6 +195,84 @@ test('landing drilldown bars keep the chart values and add the matching game dat
     { value: 0, date: '2026-10-20', team: 'SSG' },
     { value: 3, date: '2026-10-22', team: 'KT' },
   ])
+})
+
+const OPENING_WEEK = new Date('2026-10-24T16:00:00Z')
+
+function sarrRow(logs) {
+  return nbaHubRows([{
+    athleteId: '7', name: 'Alex Sarr', team: 'WAS',
+    ppAllProps: [{
+      stat: 'Points', line: 14.5, standardLine: 14.5, projection: 17, rating: 80,
+      odds_type: 'standard', l10Values: logs.map((game) => game.pts),
+    }],
+  }], [{ athleteId: '7', name: 'Alex Sarr', gameLogs: logs }])
+}
+
+test('NBA landing L10 names a mixed season window and drops last season after ten games', () => {
+  // Newest first, the roster order. Three games this season, then last season:
+  // the same shape Board QA saw (Feb–Apr, then 10/21–10/23).
+  const early = [
+    { date: '10/23/2026', matchup: 'WAS vs. BOS', min: 32, pts: 18, season: '2027' },
+    { date: '10/22/2026', matchup: 'WAS @ PHI', min: 30, pts: 11, season: '2027' },
+    { date: '10/21/2026', matchup: 'WAS vs. GSW', min: 28, pts: 19, season: '2027' },
+    { date: '04/12/2026', matchup: 'WAS vs. MIA', min: 30, pts: 22, season: '2026' },
+    { date: '04/09/2026', matchup: 'WAS @ NYK', min: 26, pts: 8, season: '2026' },
+    { date: '03/28/2026', matchup: 'WAS vs. CHI', min: 24, pts: 16, season: '2026' },
+    { date: '03/15/2026', matchup: 'WAS @ MIL', min: 27, pts: 14, season: '2026' },
+    { date: '03/02/2026', matchup: 'WAS vs. DEN', min: 22, pts: 9, season: '2026' },
+    { date: '02/20/2026', matchup: 'WAS @ DAL', min: 25, pts: 21, season: '2026' },
+    { date: '02/14/2026', matchup: 'WAS vs. LAL', min: 29, pts: 13, season: '2026' },
+  ]
+  const mixed = sarrRow(early)
+  assert.equal(mixed[0].score, 80)
+  assert.deepEqual(mixed[0].recent, [13, 21, 9, 14, 16, 8, 22, 19, 11, 18])
+  assert.equal(mixed[0].recentBars[0].date, '02/14/2026')
+  assert.equal(mixed[0].recentBars[0].team, 'LAL')
+  assert.equal(mixed[0].recentBars[0].season, '2026')
+  assert.equal(mixed[0].recentBars[0].seasonLabel, "'26")
+  assert.equal(mixed[0].recentBars[0].seasonTitle, "'25-26")
+  assert.equal(mixed[0].recentBars[9].date, '10/23/2026')
+  assert.equal(mixed[0].recentBars[9].team, 'BOS')
+  assert.equal(mixed[0].recentBars[9].seasonLabel, "'27")
+  assert.equal(mixed[0].recentBars[9].seasonTitle, "'26-27")
+  const both = l10WindowLabel(mixed[0].recentBars, OPENING_WEEK)
+  assert.equal(both.id, 'both')
+  assert.equal(both.text, 'Both seasons')
+  assert.equal(both.detail, "'25-26 · '26-27")
+
+  // One aligned game with no date keeps the other dates. The row is not dropped.
+  const partialLogs = early.map((game, index) => (index === 0 ? { ...game, date: '' } : game))
+  const partial = sarrRow(partialLogs)
+  assert.equal(partial[0].recentBars[9].date, '')
+  assert.equal(partial[0].recentBars[0].date, '02/14/2026')
+  assert.equal(partial[0].recentBars[0].team, 'LAL')
+  assert.equal(dateRowBars(partial[0].recentBars).length, 10)
+  assert.equal(dateRowBars(partial[0].recentBars.map((bar) => ({ ...bar, date: '' }))), null)
+
+  // Ten games this season: last season stays out of the window. Hit-rate
+  // values are still the stored series. No per-bar season chip.
+  const current = Array.from({ length: 10 }, (_, index) => ({
+    date: `10/${21 - index}/2026`,
+    matchup: index % 2 ? 'WAS @ PHI' : 'WAS vs. BOS',
+    min: 30,
+    pts: 10 + index,
+    season: '2027',
+  }))
+  const later = [
+    { date: '04/12/2026', matchup: 'WAS vs. MIA', min: 30, pts: 40, season: '2026' },
+    { date: '02/14/2026', matchup: 'WAS @ CHI', min: 28, pts: 3, season: '2026' },
+  ]
+  const settled = sarrRow([...current, ...later])
+  assert.deepEqual(settled[0].recent, current.map((game) => game.pts).reverse())
+  assert.ok(settled[0].recentBars.every((bar) => bar.season === '2027' && bar.seasonLabel == null))
+  assert.equal(settled[0].recentBars[0].date, '10/12/2026')
+  assert.ok(settled[0].recentBars.every((bar) => !bar.date.startsWith('02/') && !bar.date.startsWith('04/')))
+  const season = l10WindowLabel(settled[0].recentBars, OPENING_WEEK)
+  assert.equal(season.id, 'season')
+  assert.equal(season.text, 'This season')
+  assert.equal(season.detail, "'26-27")
+  assert.equal(settled[0].score, 80)
 })
 
 test('NFL L10 uses the chart window, and a missing stored rate is not 0%', () => {

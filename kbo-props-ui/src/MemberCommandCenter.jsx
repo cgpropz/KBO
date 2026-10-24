@@ -16,7 +16,7 @@ import Results from './Results';
 import { barResult, hitRatePillColor } from './hitRateStrip';
 import { ChartDateRow } from './MiniHitBars';
 import {
-  countPlayable, hubGames, kboHubRows, nbaHubRows, nflHubRows, nhlHubRows,
+  countPlayable, hubGames, kboHubRows, l10WindowLabel, nbaHubRows, nflHubRows, nhlHubRows,
   confirmedGoalieStarters, playableRows, sameMatchup, sideLetter, statusChips, topHitRateRows, topHubRows, unavailableFromLineups, wnbaHubRows,
   hubGamedayFor,
   scopeToGameday,
@@ -189,7 +189,7 @@ function Matchup({ row, sport }) {
   );
 }
 
-function L10Chart({ values, bars, line, side, logoFor }) {
+function L10Chart({ values, bars, line, side, logoFor, sportId }) {
   const nums = (values || []).map(Number).filter(Number.isFinite);
   const target = Number(line);
   if (!nums.length || !Number.isFinite(target)) {
@@ -197,14 +197,16 @@ function L10Chart({ values, bars, line, side, logoFor }) {
   }
   const max = Math.max(target, ...nums, 1);
   const linePct = Math.min(96, Math.max(4, (target / max) * 100));
-  const labelBars = Array.isArray(bars)
-    && bars.length === nums.length
-    && bars.every((bar, index) => Number(bar?.value) === nums[index])
+  // Same count as the bars, and at least one date. One blank date, or a
+  // stored series that does not equal the roster log, used to drop the row.
+  const labelBars = Array.isArray(bars) && bars.length === nums.length && bars.some((bar) => bar?.date)
     ? bars
     : null;
+  const scope = sportId === 'nba' ? l10WindowLabel(labelBars) : null;
+  const scopeText = scope ? `, ${scope.text.toLowerCase()}${scope.detail ? ` (${scope.detail})` : ''}` : '';
   return (
     <div className="hub-chart-block" data-testid="hub-l10-chart">
-      <div className="hub-chart" role="img" aria-label={`Last ${nums.length} games against a line of ${fmt(target)}`}>
+      <div className="hub-chart" role="img" aria-label={`Last ${nums.length} games${scopeText} against a line of ${fmt(target)}`}>
         {nums.map((value, index) => {
           const kind = barResult(value, target, side);
           const color = kind === 'push' ? '#a1a1aa' : kind === 'hit' ? '#22c55e' : '#f87171';
@@ -219,6 +221,11 @@ function L10Chart({ values, bars, line, side, logoFor }) {
         </span>
       </div>
       {labelBars ? <ChartDateRow bars={labelBars} logoFor={logoFor} /> : null}
+      {scope ? (
+        <p className="hub-l10-scope" data-testid="hub-l10-scope">
+          {scope.text}{scope.detail ? <span>{` · ${scope.detail}`}</span> : null}
+        </p>
+      ) : null}
     </div>
   );
 }
@@ -666,7 +673,7 @@ export default function MemberCommandCenter({ onEnterSport, onNavigate }) {
                         <Matchup row={active} sport={selected} />
                       </div>
                     </div>
-                    <L10Chart values={active.recent} bars={active.recentBars} line={active.line} side={active.side} logoFor={selected.logo} />
+                    <L10Chart values={active.recent} bars={active.recentBars} line={active.line} side={active.side} logoFor={selected.logo} sportId={selected.id} />
                     <div className="hub-stats">
                       <div>
                         <span>L10</span>

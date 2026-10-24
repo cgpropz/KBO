@@ -29,6 +29,17 @@ test('the phone board and the phone stylesheet share one query', () => {
   assert.match(menu, /\.cg-menu-btn \{/)
 })
 
+test('phone hub L10 is not a query container, so WebKit cannot clip the date row', () => {
+  const css = readFileSync(join(root, 'src/mobile.css'), 'utf8')
+  const phone = css.slice(css.indexOf('@media (--phone-board)'))
+  assert.match(phone, /body \.hub-chart-block \{[^}]*container-type: normal !important/)
+  assert.match(phone, /body \.hub-chart-block \{[^}]*overflow: visible !important/)
+  assert.match(phone, /body \.hub-chart-block \.mini-hit-dates \{[^}]*min-height: 32px !important/)
+  assert.match(phone, /body \.hub-chart-block \.mini-hit-dates \{[^}]*overflow: visible !important/)
+  assert.match(phone, /body \.hub-chart-block \.hr-game-date \{[^}]*-webkit-text-fill-color: #a1a1aa !important/)
+  assert.match(phone, /body \.hub-chart-block \.hr-game-logo \{[^}]*min-height: 14px !important/)
+})
+
 test('the NFL/NHL edge grid goes two-up on the phone query, not on a width query', () => {
   const nfl = readFileSync(join(root, 'src/nfl/nfl.css'), 'utf8')
   // A desktop-site or zoomed iPhone lays out at 980px, so a max-width rule
