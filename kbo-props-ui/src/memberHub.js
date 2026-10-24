@@ -9,8 +9,10 @@ import { manualPlayerPng } from './fitImage.js'
 import { pointsOverDisposition, prepareBoardRows } from './nhl/pointsGate.js'
 import { nflCgScore, nflRawScore } from './nfl/nflLineFloors.js'
 import { wnbaCgScore } from './wnba/wnbaScore.js'
-import { chartWindowRate, kboHitPills, kboLoggedValues, nflHitPills, nhlHitPills, pillById, wnbaHitPills, wnbaLoggedValues } from './hitRateStrip.js'
-import { EXCLUDED_PROP_LABELS, nbaHitPills, statValue, storedL10Values } from './nba/nbaPropLines.js'
+import { chartWindowRate, KBO_VALUE, kboHitPills, kboLoggedValues, nflHitPills, nhlHitPills, pillById, wnbaHitPills, wnbaLoggedValues } from './hitRateStrip.js'
+import { gameChartBars, headChartBars, tailChartBars } from './chartLabels.js'
+import { matchupOpponent } from './gameDateLabel.js'
+import { EXCLUDED_PROP_LABELS, nbaHitPills, opponentFromMatchup, statValue, storedL10Values } from './nba/nbaPropLines.js'
 import { hasPostedProjection } from './nba/nbaPostedProjection.js'
 import { nbaHighRisk, nbaRiskInput } from './nba/nbaRisk.js'
 import { compareSymmetric, rankable } from './sideRank.js'
@@ -247,6 +249,61 @@ function chartValues(values, newestFirst, limit = 10) {
   return newestFirst ? window.reverse() : window
 }
 
+// Dates and opponent logos for the landing drilldown. The numeric series
+// stays `recent` (hit rate and bar height). Labels are attached only when
+// they line up with those exact values, using the same bar helpers as the
+// boards (#385). A stored series with no matching log stays unlabeled.
+function barsForRecent(recent, bars) {
+  const values = Array.isArray(recent) ? recent : []
+  const plain = values.map((value) => ({ value, date: '', team: '' }))
+  if (!Array.isArray(bars) || bars.length !== plain.length) return plain
+  const aligned = bars.every((bar, index) => Number(bar?.value) === Number(plain[index].value))
+  if (!aligned) return plain
+  return plain.map((bar, index) => ({
+    value: bar.value,
+    date: bars[index]?.date ? String(bars[index].date) : '',
+    team: bars[index]?.team ? String(bars[index].team) : '',
+  }))
+}
+
+function rosterGameLogs(roster) {
+  const byId = new Map()
+  const byName = new Map()
+  for (const player of Array.isArray(roster) ? roster : []) {
+    const logs = Array.isArray(player?.gameLogs) && player.gameLogs.length
+      ? player.gameLogs
+      : (Array.isArray(player?.recentGames) ? player.recentGames : [])
+    if (!logs.length) continue
+    if (player.athleteId != null && player.athleteId !== '') byId.set(String(player.athleteId), logs)
+    const name = String(player.name || '').trim().toLowerCase()
+    if (name) byName.set(name, logs)
+  }
+  return (player) => {
+    const id = player?.athleteId == null ? '' : String(player.athleteId)
+    return (id && byId.get(id)) || byName.get(String(player?.name || '').trim().toLowerCase()) || []
+  }
+}
+
+function basketballRecentBars({ sport, games, stat, recent, rosterLogs, fromStored }) {
+  const source = fromStored
+    ? (rosterLogs || []).filter((game) => (Number(game?.min) || 0) > 0)
+    : (games || [])
+  if (!recent.length || !source.length) return barsForRecent(recent, [])
+  const getValue = sport === 'wnba'
+    ? (game) => {
+      const values = wnbaLoggedValues([game], stat)
+      return values.length ? values[0] : null
+    }
+    : (game) => statValue(game, stat)
+  const getTeam = sport === 'wnba'
+    ? (game) => {
+      const named = String(game?.opponent || '').trim()
+      return named ? named.toUpperCase() : matchupOpponent(game?.matchup)
+    }
+    : (game) => opponentFromMatchup(game?.matchup || game?.opponent)
+  return barsForRecent(recent, gameChartBars(source, getValue, getTeam, recent.length))
+}
+
 function l10FromPills(pills, storedRate) {
   const pill = pillById(pills, 'l10')
   const stored = finiteOrNull(storedRate)
@@ -314,6 +371,10 @@ export function kboHubRows(data, photos = {}) {
       const pills = kboHitPills({ games: card.games, stat: prop.stat, line: prop.line, opponent: card.opponent })
       const recent = chartValues(logged, true)
       const side = sideFor(prop.projection ?? prop.avg, prop.line, prop.recommendation)
+      const kboValue = KBO_VALUE[prop.stat]
+      const recentBars = Array.isArray(prop?.recent_values) && prop.recent_values.length
+        ? barsForRecent(recent, headChartBars(prop, card.games, kboValue))
+        : barsForRecent(recent, kboValue ? gameChartBars(card.games, kboValue, (game) => game?.opp || game?.opponent, recent.length) : [])
       rows.push({
         player: card.name,
         team: card.team,
@@ -330,6 +391,7 @@ export function kboHubRows(data, photos = {}) {
         start: card.start_time || card.game_time || null,
         ...scheduleFields(card, prop),
         recent,
+        recentBars,
         ...l10ForRow(recent, prop.line, side, pills, prop.hit_rate_l10),
         oppRank: null,
         statusLabel: availabilityLabel({ ...card, ...prop }),
@@ -370,6 +432,7 @@ export function nflHubRows(data) {
         start: row.start_time || null,
         ...scheduleFields(row),
         recent,
+        recentBars: barsForRecent(recent, tailChartBars(row)),
         ...l10ForRow(recent, row.line, side, nflHitPills(row), null),
         oppRank: rankOrNull(row.dvpRank),
         statusLabel: availabilityLabel(row),
@@ -400,6 +463,7 @@ export function nhlHubRows(data) {
       start: row.start_time || null,
       ...scheduleFields(row),
       recent,
+      recentBars: barsForRecent(recent, tailChartBars(row)),
       ...l10ForRow(recent, row.line, side, nhlHitPills(row), row.hitRate),
       oppRank: rankOrNull(row.dvpRank),
       goalieStatus: row.goalieStatus || null,
@@ -429,6 +493,7 @@ function rosterImages(roster) {
 function basketballRows(data, scoreFn, roster, sport) {
   const rows = []
   const imageFor = rosterImages(roster)
+  const logsFor = rosterGameLogs(roster)
   const wnba = sport === 'wnba'
   for (const player of Array.isArray(data) ? data : []) {
     for (const prop of Array.isArray(player?.ppAllProps) ? player.ppAllProps : []) {
@@ -446,6 +511,14 @@ function basketballRows(data, scoreFn, roster, sport) {
         ? wnbaHitPills({ games, stat: prop.stat, line: prop.line, opponent: prop.opponent || prop.versus })
         : nbaHitPills(games, prop.stat, prop.line, prop.opponent || prop.versus, storedL10Values(prop))
       const recent = chartValues(series, true)
+      const recentBars = basketballRecentBars({
+        sport,
+        games,
+        stat: prop.stat,
+        recent,
+        rosterLogs: logsFor(player),
+        fromStored: !logged.length,
+      })
       const side = sideFor(prop.projection, prop.line)
       const riskPlayer = sport === 'nba' ? nbaRiskInput(player) : null
       rows.push({
@@ -464,6 +537,7 @@ function basketballRows(data, scoreFn, roster, sport) {
         ...scheduleFields(prop, player),
         ...(riskPlayer ? { riskPlayer } : {}),
         recent,
+        recentBars,
         ...l10ForRow(recent, prop.line, side, pills, prop.hitRates?.L10 ?? prop.hit_rate_l10),
         oppRank: rankOrNull(prop.effectiveDvpRank ?? prop.effectiveDvpFactor),
         statusLabel: availabilityLabel({ ...player, ...prop }),

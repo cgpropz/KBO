@@ -364,6 +364,7 @@ button.hub-card {
 .hub-actions button { flex: 1; }
 
 .hub-drill-player { display: flex; gap: 10px; align-items: center; margin-bottom: 12px; }
+.hub-chart-block { container-type: inline-size; margin: 8px 0 12px; min-width: 0; }
 .hub-chart {
   position: relative;
   display: flex;
@@ -371,7 +372,38 @@ button.hub-card {
   gap: 6px;
   height: 120px;
   padding: 14px 46px 0 4px;
-  margin: 8px 0 12px;
+  margin: 0;
+}
+/* Same date + opponent-logo row as the board mini charts (#385 ChartDateRow).
+   Horizontal padding and gap match the bars so each label sits under its bar. */
+.hub-chart-block .mini-hit-dates {
+  gap: 6px;
+  width: auto;
+  padding: 4px 46px 0 4px;
+  box-sizing: border-box;
+}
+@container (max-width: 420px) {
+  /* A phone card is narrower than the line-label gutter. Drop the gutter,
+     tighten the gap, and let ten M/D labels share the full card width. */
+  .hub-chart-block .hub-chart {
+    gap: 2px;
+    padding: 18px 0 0;
+  }
+  .hub-chart-block .hub-chart-line {
+    left: 0;
+    right: 0;
+  }
+  .hub-chart-block .hub-line-label {
+    left: auto;
+    right: 0;
+    transform: translateY(-140%);
+    background: var(--hub-card);
+    padding-left: 4px;
+  }
+  .hub-chart-block .mini-hit-dates {
+    gap: 0;
+    padding: 3px 0 0;
+  }
 }
 .hub-bar-col { flex: 1; height: 100%; display: flex; align-items: flex-end; }
 .hub-bar { display: block; width: 100%; border-radius: 6px 6px 2px 2px; background: #3f3f46; }

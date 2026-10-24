@@ -107,6 +107,65 @@ test('hub rows carry the board hit rate and log without changing the score', () 
   assert.equal(wnba[0].oppRank, 6)
   assert.deepEqual(wnba[0].recent, [1, 4])
   assert.equal(wnba[0].hitRate, null)
+  assert.deepEqual(wnba[0].recentBars, [
+    { value: 1, date: '10/07/2026', team: '' },
+    { value: 4, date: '10/09/2026', team: '' },
+  ])
+})
+
+test('landing drilldown bars keep the chart values and add the matching game date and opponent', () => {
+  const dates = ['10/22/2026', '10/20/2026', '10/18/2026']
+  const logs = [
+    { date: dates[0], matchup: 'WAS vs. BOS', min: 30, pts: 18 },
+    { date: dates[1], matchup: 'WAS @ PHI', min: 28, pts: 11 },
+    { min: 0, pts: 40, date: '10/19/2026', matchup: 'WAS vs. NYK' },
+    { date: dates[2], matchup: 'WAS vs. MIA', min: 26, pts: 22 },
+  ]
+  const nba = nbaHubRows([{
+    athleteId: '7', name: 'Alex Sarr', team: 'WAS',
+    ppAllProps: [{ stat: 'Points', line: 14.5, standardLine: 14.5, projection: 17, rating: 80, odds_type: 'standard', l10Values: [18, 11, 22] }],
+  }], [{ athleteId: '7', name: 'Alex Sarr', gameLogs: logs }])
+  assert.deepEqual(nba[0].recent, [22, 11, 18])
+  assert.equal(nba[0].score, 80)
+  assert.deepEqual(nba[0].recentBars, [
+    { value: 22, date: '10/18/2026', team: 'MIA' },
+    { value: 11, date: '10/20/2026', team: 'PHI' },
+    { value: 18, date: '10/22/2026', team: 'BOS' },
+  ])
+
+  const mismatched = nbaHubRows([{
+    athleteId: '7', name: 'Alex Sarr', team: 'WAS',
+    ppAllProps: [{ stat: 'Points', line: 14.5, standardLine: 14.5, projection: 17, rating: 80, odds_type: 'standard', l10Values: [18, 99, 22] }],
+  }], [{ athleteId: '7', name: 'Alex Sarr', gameLogs: logs }])
+  assert.deepEqual(mismatched[0].recent, [22, 99, 18])
+  assert.ok(mismatched[0].recentBars.every((bar) => bar.date === '' && bar.team === ''))
+
+  const nfl = nflHubRows([{
+    player: 'Synth Receiver', prop: 'Receiving Yards', line: 15.5, projection: 20,
+    line_type: 'standard', recent: [4, 28, 9],
+    gameDates: ['2026-10-12', '2026-10-19', '2026-10-26'],
+    gameOpponents: ['CHI', 'GB', 'MIN'],
+  }])
+  assert.deepEqual(nfl[0].recent, [4, 28, 9])
+  assert.equal(nfl[0].hitRate, null)
+  assert.deepEqual(nfl[0].recentBars.map((bar) => [bar.date, bar.team]), [
+    ['2026-10-12', 'CHI'],
+    ['2026-10-19', 'GB'],
+    ['2026-10-26', 'MIN'],
+  ])
+
+  const kbo = kboHubRows({ cards: [{ name: 'A', team: 'LG', opponent: 'KT', games: [
+    { tb: 3, date: '2026-10-22', opp: 'KT' },
+    { tb: 0, date: '2026-10-20', opp: 'SSG' },
+    { tb: 2, date: '2026-10-18', opp: 'NC' },
+  ], props: [{ stat: 'Total Bases', line: 1.5, odds_type: 'standard', cg_projection: 70, projection: 1.8, recent_values: [3, 0, 2] }] }] })
+  assert.deepEqual(kbo[0].recent, [2, 0, 3])
+  assert.equal(kbo[0].score, 60)
+  assert.deepEqual(kbo[0].recentBars, [
+    { value: 2, date: '2026-10-18', team: 'NC' },
+    { value: 0, date: '2026-10-20', team: 'SSG' },
+    { value: 3, date: '2026-10-22', team: 'KT' },
+  ])
 })
 
 test('NFL L10 uses the chart window, and a missing stored rate is not 0%', () => {

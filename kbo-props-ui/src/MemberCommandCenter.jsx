@@ -14,6 +14,7 @@ import { teamLogoUrl as nhlLogo, nhlHeadshotUrl } from './nhl/nhlTeams';
 import { nbaLogoUrl } from './nba/nbaPropLines';
 import Results from './Results';
 import { barResult, hitRatePillColor } from './hitRateStrip';
+import { ChartDateRow } from './MiniHitBars';
 import {
   countPlayable, hubGames, kboHubRows, nbaHubRows, nflHubRows, nhlHubRows,
   confirmedGoalieStarters, playableRows, sameMatchup, sideLetter, statusChips, topHitRateRows, topHubRows, unavailableFromLineups, wnbaHubRows,
@@ -188,7 +189,7 @@ function Matchup({ row, sport }) {
   );
 }
 
-function L10Chart({ values, line, side }) {
+function L10Chart({ values, bars, line, side, logoFor }) {
   const nums = (values || []).map(Number).filter(Number.isFinite);
   const target = Number(line);
   if (!nums.length || !Number.isFinite(target)) {
@@ -196,20 +197,28 @@ function L10Chart({ values, line, side }) {
   }
   const max = Math.max(target, ...nums, 1);
   const linePct = Math.min(96, Math.max(4, (target / max) * 100));
+  const labelBars = Array.isArray(bars)
+    && bars.length === nums.length
+    && bars.every((bar, index) => Number(bar?.value) === nums[index])
+    ? bars
+    : null;
   return (
-    <div className="hub-chart" role="img" aria-label={`Last ${nums.length} games against a line of ${fmt(target)}`}>
-      {nums.map((value, index) => {
-        const kind = barResult(value, target, side);
-        const color = kind === 'push' ? '#a1a1aa' : kind === 'hit' ? '#22c55e' : '#f87171';
-        return (
-          <span key={`${value}-${index}`} className="hub-bar-col">
-            <span className="hub-bar" style={{ height: `${Math.max(8, (value / max) * 100)}%`, background: color }} />
-          </span>
-        );
-      })}
-      <span className="hub-chart-line" style={{ bottom: `${linePct}%` }}>
-        <span className="hub-line-label hub-num">{sideLetter(side)}{sideLetter(side) ? ' ' : ''}{fmt(target)}</span>
-      </span>
+    <div className="hub-chart-block" data-testid="hub-l10-chart">
+      <div className="hub-chart" role="img" aria-label={`Last ${nums.length} games against a line of ${fmt(target)}`}>
+        {nums.map((value, index) => {
+          const kind = barResult(value, target, side);
+          const color = kind === 'push' ? '#a1a1aa' : kind === 'hit' ? '#22c55e' : '#f87171';
+          return (
+            <span key={`${value}-${index}`} className="hub-bar-col">
+              <span className="hub-bar" style={{ height: `${Math.max(8, (value / max) * 100)}%`, background: color }} />
+            </span>
+          );
+        })}
+        <span className="hub-chart-line" style={{ bottom: `${linePct}%` }}>
+          <span className="hub-line-label hub-num">{sideLetter(side)}{sideLetter(side) ? ' ' : ''}{fmt(target)}</span>
+        </span>
+      </div>
+      {labelBars ? <ChartDateRow bars={labelBars} logoFor={logoFor} /> : null}
     </div>
   );
 }
@@ -657,7 +666,7 @@ export default function MemberCommandCenter({ onEnterSport, onNavigate }) {
                         <Matchup row={active} sport={selected} />
                       </div>
                     </div>
-                    <L10Chart values={active.recent} line={active.line} side={active.side} />
+                    <L10Chart values={active.recent} bars={active.recentBars} line={active.line} side={active.side} logoFor={selected.logo} />
                     <div className="hub-stats">
                       <div>
                         <span>L10</span>
