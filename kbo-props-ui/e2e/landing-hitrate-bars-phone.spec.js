@@ -63,10 +63,12 @@ test.beforeEach(async ({ page }) => {
     contentType: 'application/json',
     body: JSON.stringify({ open: true }),
   }))
+  // Opaque mark. The old 1px webp scaled to 14px and photographed as empty,
+  // so a passing height check could still look like a missing logo.
   const pixel = {
     status: 200,
-    contentType: 'image/webp',
-    body: Uint8Array.from(atob('UklGRiIAAABXRUJQVlA4IBYAAAAwAQCdASoBAAEADsD+JaQAA3AA/vuUAAA='), (char) => char.charCodeAt(0)),
+    contentType: 'image/png',
+    body: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAACXBIWXMAAAPoAAAD6AG1e1JrAAAAIUlEQVR4nGNgoAZ4LGH+nxw8aoD5aBhIjIbBY6qGASUAAH9CrZSVPxzSAAAAAElFTkSuQmCC', 'base64'),
   }
   await page.route('**/api/img**', (route) => route.fulfill(pixel))
   await page.route('https://a.espncdn.com/**', (route) => route.fulfill(pixel))
