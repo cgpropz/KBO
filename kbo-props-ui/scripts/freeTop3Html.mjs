@@ -5,6 +5,7 @@
 // held, pulled and removed lines, rows with no score and started games stay out.
 
 import { rowStartMs } from '../src/etStart.js';
+import { UNPROVEN_RANK_NOTE } from '../src/freePreviewCopy.js';
 import { publicFreeTopRows, rowsFromSnapshot } from '../src/publicBoard.js';
 import { LANDING_SPORTS } from '../src/landingSports.js';
 import { escapeHtml, pageUrl } from './seoShared.mjs';
@@ -115,6 +116,12 @@ function slateStamp(now) {
   return `Game times in ET · as of ${escapeHtml(etStamp(now))} ET`;
 }
 
+// Sits under the free top 3. It names the rest of the ranking and does not
+// attach a cash rate, a lock, or a guarantee to those rows.
+export function unprovenRankHtml() {
+  return `<p class="note free-top3-unproven">${escapeHtml(UNPROVEN_RANK_NOTE)}</p>`;
+}
+
 // One block per sport. data-built is when the rows were read (every built
 // block carries it, so the inline script can age out an empty or failed block
 // too); data-live marks a sport page block that the browser re-reads from the
@@ -124,7 +131,7 @@ function slateStamp(now) {
 // page stay indexable. failed: the read failed, so the block shows the
 // out-of-date note and no rows, never the "nothing posted" claim. The
 // .free-top3-stamp paragraph is the one hide()/hideStale() rewrite.
-export function renderSportFreeTop3({ sport, rows, now = null, heading = 'h2', live = false, failed = false }) {
+export function renderSportFreeTop3({ sport, rows, now = null, heading = 'h2', live = false, failed = false, unproven = true }) {
   const boardLink = `<a href="${pageUrl(`/?sport=${sport.id}`)}">Open the ${escapeHtml(sport.name)} board</a>`;
   // now == null: the committed static fallback (no read at all). It carries
   // no data-built and makes no claim about what is posted, so the page stays
@@ -133,6 +140,7 @@ export function renderSportFreeTop3({ sport, rows, now = null, heading = 'h2', l
   const open = `<div class="free-top3-block" data-sport="${escapeHtml(sport.id)}"${built}${live ? ' data-live' : ''}${failed ? ' data-failed' : ''}>`;
   // A sport whose lines may be off for days (KBO after Oct 21) says when a free
   // top 3 exists instead of promising one today; with rows it is today's.
+  const label = unproven ? unprovenRankHtml() : '';
   const conditional = CONDITIONAL_FREE_TOP3.has(sport.id) && !(rows && rows.length);
   const title = conditional
     ? `<${heading}>Free ${escapeHtml(sport.name)} top 3, when lines are posted</${heading}>`
@@ -143,21 +151,25 @@ export function renderSportFreeTop3({ sport, rows, now = null, heading = 'h2', l
       : `Check the live board for today's free ${escapeHtml(sport.name)} top 3.`;
     return `${open}${title}
       <div data-nosnippet><p class="free-top3-stamp">${fallback}</p></div>
+      ${label}
       <p class="note">${boardLink} for the latest lines.</p></div>`;
   }
   if (failed) {
     return `${open}${title}
       <div data-nosnippet><p class="free-top3-stamp">${escapeHtml(FREE_TOP3_STALE_TEXT)}</p></div>
+      ${label}
       <p class="note">${boardLink} for the current lines.</p></div>`;
   }
   if (!rows.length) {
     return `${open}${title}
       <div data-nosnippet><p class="free-top3-stamp">No ${escapeHtml(sport.name)} free top 3 is posted right now.</p></div>
+      ${label}
       <p class="note">${boardLink} for the latest lines.</p></div>`;
   }
   return `${open}${title}
       <div data-nosnippet><p class="free-top3-stamp">${slateStamp(now)}</p>
       <ol class="free-top3">${rows.map(rowItem).join('')}</ol></div>
+      ${label}
       <p class="note">Standard lines only, ranked by CG Score. Lines can move or come down before the game. ${boardLink} for the current line.</p></div>`;
 }
 

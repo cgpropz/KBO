@@ -74,7 +74,11 @@ export async function buildClientModule(distDir) {
 }
 
 export function homeFreeTop3(bySport, now, failed = {}) {
-  return FREE_TOP3_SPORTS.map((sport) => renderSportFreeTop3({ sport, rows: bySport[sport.id] || [], now, heading: 'h3', failed: failed[sport.id] === true })).join('\n');
+  // The homepage shell already prints the unproven-rank note once, under the
+  // whole free top 3 slot. Sport pages keep the note inside each block.
+  return FREE_TOP3_SPORTS.map((sport) => renderSportFreeTop3({
+    sport, rows: bySport[sport.id] || [], now, heading: 'h3', failed: failed[sport.id] === true, unproven: false,
+  })).join('\n');
 }
 
 export async function writeFreeTop3({

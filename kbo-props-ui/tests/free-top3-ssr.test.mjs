@@ -4,12 +4,13 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import test from 'node:test'
 import vm from 'node:vm'
+import { UNPROVEN_RANK_NOTE } from '../src/freePreviewCopy.js'
 import { FREE_TOP3_END, FREE_TOP3_MAX_AGE_MS, FREE_TOP3_SPORTS, FREE_TOP3_STALE_TEXT, FREE_TOP3_START, freeTop3Rows, previewResult, freeTop3Script, patchFreeTop3, previewRows, renderSportFreeTop3 } from '../scripts/freeTop3Html.mjs'
 import { refreshFreeTop3 } from '../scripts/freeTop3Client.mjs'
 import { homeRootInner } from '../scripts/homeShell.mjs'
 import { renderKboPage } from '../scripts/kboSeoPage.mjs'
 import { renderSportPages } from '../scripts/publicPages.mjs'
-import { writeFreeTop3 } from '../scripts/write-free-top3.mjs'
+import { homeFreeTop3, writeFreeTop3 } from '../scripts/write-free-top3.mjs'
 
 const NOW = Date.parse('2026-10-19T22:00:00Z') // 6:00 PM ET
 const LATER = '2026-10-20T09:30:00Z' // Tue 5:30 AM ET
@@ -59,6 +60,10 @@ test('the rendered block carries a game-day date stamp in ET and escapes names',
   assert.match(html, /data-start="2026-10-20T09:30:00\.000Z"/)
   assert.match(html, /Tue\u00a05:30\u00a0AM\u00a0ET/)
   assert.match(html, /Standard lines only, ranked by CG Score\./)
+  const listEnd = html.indexOf('</ol></div>')
+  assert.ok(html.indexOf('free-top3-unproven') > listEnd)
+  assert.match(html, new RegExp(UNPROVEN_RANK_NOTE.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')))
+  assert.doesNotMatch(html.slice(html.indexOf('<ol'), listEnd), /cash rate/i)
   const empty = renderSportFreeTop3({ sport, rows: [], now: NOW })
   assert.match(empty, /No KBO free top 3 is posted right now\./)
   // With rows KBO's heading says today's; without rows it is conditional.
@@ -72,6 +77,8 @@ test('static pages ship the marker with the empty fallback; the build fills it',
   for (const html of [pages['/nfl-player-props'], pages['/nhl-player-props'], pages['/wnba-player-props'], renderKboPage()]) {
     assert.ok(html.includes(FREE_TOP3_START) && html.includes(FREE_TOP3_END))
     assert.match(html, /<section id="free-top-3">/)
+    assert.match(html, /class="note free-top3-unproven">Ranks outside the free top 3 are model-ranked edges, not a proven cash rate\./)
+    assert.doesNotMatch(html, /cash rate\s*\d|\$\d/)
     // The committed fallback makes no claim and carries no build clock.
     // KBO's fallback is conditional (no promise of a top 3 today); others are unchanged.
     if (html.includes('data-sport="kbo"')) {
@@ -122,6 +129,9 @@ test('static pages ship the marker with the empty fallback; the build fills it',
   assert.equal(/" data-live>/.test(home), false)
   assert.match(home, /<h3>Today's free KBO top 3<\/h3>/)
   assert.match(home, /<h3>Today's free NFL top 3<\/h3>/)
+  // One note under the slot. The baked sport blocks do not repeat it.
+  assert.equal(home.split(UNPROVEN_RANK_NOTE).length - 1, 1)
+  assert.equal(homeFreeTop3({ kbo: [], nfl: [], nhl: [], wnba: [] }, NOW, {}).includes('free-top3-unproven'), false)
 })
 
 test('patching is idempotent and leaves pages without the marker alone', () => {

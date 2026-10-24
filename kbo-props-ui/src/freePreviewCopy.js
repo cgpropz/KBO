@@ -30,6 +30,10 @@ export function freePreviewBannerText(sport, enabled = NFL_FREE_PREVIEW_ENABLED)
   return TOP_3_BANNER
 }
 
+// Ranks past the free top 3 stay on the board as model order. This sentence
+// is the only claim we make about them: no cash rate, no lock, no guarantee.
+export const UNPROVEN_RANK_NOTE = 'Ranks outside the free top 3 are model-ranked edges, not a proven cash rate.'
+
 const FREE_TOP_3_BOARDS = ['kbo', 'nfl', 'wnba', 'nhl']
 
 // The homepage anchor stays mounted even when a board has no rows. An empty
