@@ -81,7 +81,7 @@ test('KBO cards and pitcher lists keep a row with no odds type', () => {
   assert.deepEqual(pitchers.projections.map((row) => row.name), ['A', 'Over', 'C'])
 })
 
-test('WNBA and NBA standard feeds treat a missing type as standard and drop promos', () => {
+test('WNBA and NBA feeds keep a missing type and a demon over, and hide a demon under', () => {
   const players = [
     { name: 'Standard', ppAllProps: [{ stat: 'Points', line: 20 }] },
     { name: 'Mixed', ppAllProps: [{ stat: 'Points', odds_type: 'standard' }, { stat: 'Rebounds', odds_type: 'demon', projection: 1, line: 5 }] },
@@ -94,7 +94,7 @@ test('WNBA and NBA standard feeds treat a missing type as standard and drop prom
   assert.equal(players[1].ppAllProps.length, 2)
 
   const promo = filterStandardBoard('nba_projections_goblin', players)
-  assert.deepEqual(promo.map((player) => player.name), ['Standard', 'Mixed'])
+  assert.deepEqual(promo.map((player) => player.name), ['Standard', 'Mixed', 'Demon Over'])
   assert.equal(promo[0].ppAllProps.length, 1)
   assert.equal(promo[1].ppAllProps.length, 1)
   assert.equal(promo[1].ppAllProps[0].odds_type, 'standard')
