@@ -138,6 +138,20 @@ test('HIGH RISK players never take a free NBA slot', () => {
   assert.equal(onlyRisky.data.flatMap((p) => p.ppAllProps).length, 0)
 })
 
+test('a blank or null NBA projection does not take a free top-3 slot', () => {
+  const board = [
+    player('Blank', [{ stat: 'Points', line: 11.5, projection: '' }], { propProjectionByStat: {} }),
+    player('Null Dunks', [{ stat: 'Dunks', line: 0.5, projection: null }], { propProjectionByStat: {} }),
+    player('Whitespace', [{ stat: 'Rebounds', line: 4.5, projection: '   ' }], { propProjectionByStat: {} }),
+    player('Real', [{ stat: 'Points', line: 10.5, projection: 14 }]),
+  ]
+  const shaped = shapeForTier('nba_projections_standard', board, 'free')
+  const names = shaped.data.flatMap((row) => (row.ppAllProps || []).map(() => row.name))
+  assert.deepEqual(names, ['Real'])
+  const onlyMissing = shapeForTier('nba_projections_standard', board.slice(0, 3), 'free')
+  assert.equal(onlyMissing.data.flatMap((row) => row.ppAllProps || []).length, 0)
+})
+
 test('the server preview keeps 3 standard, live NBA props and nothing else for those players', () => {
   const shaped = shapeForTier('nba_projections_standard', BOARD, 'free')
   assert.equal(shaped.preview, true)

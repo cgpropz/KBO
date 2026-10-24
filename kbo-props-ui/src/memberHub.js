@@ -11,6 +11,7 @@ import { nflCgScore, nflRawScore } from './nfl/nflLineFloors.js'
 import { wnbaCgScore } from './wnba/wnbaScore.js'
 import { chartWindowRate, kboHitPills, kboLoggedValues, nflHitPills, nhlHitPills, pillById, wnbaHitPills, wnbaLoggedValues } from './hitRateStrip.js'
 import { EXCLUDED_PROP_LABELS, nbaHitPills, statValue, storedL10Values } from './nba/nbaPropLines.js'
+import { hasPostedProjection } from './nba/nbaPostedProjection.js'
 import { nbaHighRisk, nbaRiskInput } from './nba/nbaRisk.js'
 import { compareSymmetric, rankable } from './sideRank.js'
 import { EXCLUDED_PROP_LABELS as WNBA_EXCLUDED_PROP_LABELS } from './wnba/excludedProps.js'
@@ -432,6 +433,9 @@ function basketballRows(data, scoreFn, roster, sport) {
     for (const prop of Array.isArray(player?.ppAllProps) ? player.ppAllProps : []) {
       if (!isStandard(prop?.odds_type ?? prop?.oddsType)) continue
       if (prop?.standardLine != null && num(prop.standardLine) !== num(prop.line)) continue
+      // NBA pending props are not hub rows, hit leaders, or game chips.
+      // WNBA still builds a row when the projection is blank.
+      if (sport === 'nba' && !hasPostedProjection(prop?.projection)) continue
       const games = Array.isArray(player?.recentGames) ? player.recentGames : (Array.isArray(player?.gameLogs) ? player.gameLogs : [])
       const logged = wnba
         ? wnbaLoggedValues(games, prop.stat)

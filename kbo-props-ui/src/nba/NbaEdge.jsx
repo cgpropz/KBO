@@ -7,6 +7,7 @@ import { useMemberBoardPhase } from '../useMemberBoardPhase'
 import { useFullBoardRefresh } from '../useFullBoardRefresh'
 import { fitImage } from '../fitImage.js'
 import { nbaLogoUrl } from './nbaPropLines'
+import { nbaEdgeCards, nbaEdgeMatchups, nbaEdgePlayers, nbaEdgePropTypes, nbaEdgeSlateDate } from './nbaEdgeBoard'
 import { opponentLabel } from '../cardMark'
 import { CardTeamLogo } from '../CardTeamLogo'
 
@@ -103,113 +104,24 @@ export default function NbaEdge() {
     setLoadAttempt((current) => current + 1)
   }
 
-  const propTypes = useMemo(() => {
-    if (!data) return ['All']
-    const set = new Set()
-    data.forEach((player) => {
-      (player.ppAllProps || []).forEach((prop) => {
-        if (prop?.stat) set.add(prop.stat)
-      })
-    })
-    return ['All', ...[...set].sort((a, b) => a.localeCompare(b))]
-  }, [data])
+  const propTypes = useMemo(() => nbaEdgePropTypes(data), [data])
 
-  const activeSlateDate = useMemo(() => {
-    if (!data) return null
-    const dates = [...new Set(
-      data.flatMap((player) => (player.ppAllProps || []).map((prop) => prop?.gameDate).filter(Boolean)),
-    )].sort()
-    return dates[0] || null
-  }, [data])
+  const activeSlateDate = useMemo(() => nbaEdgeSlateDate(data), [data])
 
-  const matchups = useMemo(() => {
-    if (!data) return []
-    const seen = new Map()
-    data.forEach((player) => {
-      const teamA = (player.team || '').toUpperCase()
-      if (!teamA) return
-      ;(player.ppAllProps || []).forEach((prop) => {
-        const teamB = (prop.opponent || '').toUpperCase()
-        if (!teamB) return
-        const [t1, t2] = [teamA, teamB].sort()
-        const key = `${t1}_${t2}`
-        if (seen.has(key)) return
-        const gameDate = prop.gameDate || ''
-        let dateLabel = ''
-        if (gameDate) {
-          dateLabel = gameDate === activeSlateDate
-            ? 'Todays slate'
-            : new Date(`${gameDate}T00:00:00`).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-        }
-        seen.set(key, { label: `${t1} vs ${t2}`, dateLabel, dateStr: gameDate || '9999' })
-      })
-    })
-    return [...seen.values()].sort((a, b) => {
-      if (a.dateStr !== b.dateStr) return a.dateStr.localeCompare(b.dateStr)
-      return a.label.localeCompare(b.label)
-    })
-  }, [data, activeSlateDate])
+  const matchups = useMemo(() => nbaEdgeMatchups(data, activeSlateDate), [data, activeSlateDate])
 
-  const filtered = useMemo(() => {
-    if (!data) return []
-    return data.filter((player) => {
-      const nameMatch = !search || player.name.toLowerCase().includes(search.toLowerCase())
-      const posMatch = posFilter === 'All' || player.position === posFilter
-      const minutesKnown = player.avgMins != null
-      const minMinutesMatch = minMinutes === 0 || (minutesKnown && player.avgMins >= minMinutes)
-      const propMatch = propType === 'All'
-        ? (player.ppAllProps || []).length > 0
-        : (player.ppAllProps || []).some((prop) => prop?.stat === propType)
-      let matchupMatch = true
-      if (matchupFilter !== 'All') {
-        const [t1, t2] = matchupFilter.split(' vs ')
-        const teamUp = (player.team || '').toUpperCase()
-        matchupMatch = teamUp === t1 || teamUp === t2
-      }
-      return nameMatch && posMatch && minMinutesMatch && propMatch && matchupMatch
-    })
-  }, [data, search, posFilter, matchupFilter, minMinutes, propType])
+  const filtered = useMemo(() => nbaEdgePlayers(data, {
+    search,
+    posFilter,
+    matchupFilter,
+    minMinutes,
+    propType,
+  }), [data, search, posFilter, matchupFilter, minMinutes, propType])
 
-  const cards = useMemo(() => {
-    const rows = []
-    filtered.forEach((player) => {
-      const props = propType === 'All'
-        ? (player.ppAllProps || [])
-        : (player.ppAllProps || []).filter((prop) => prop.stat === propType)
-      props.forEach((prop) => {
-        rows.push({
-          key: `${player.athleteId || player.name}-${prop.stat}-${prop.line}`,
-          player,
-          stat: prop.stat,
-          line: prop.line,
-          versus: prop.versus || '',
-          opponent: prop.opponent || '',
-          gameDate: prop.gameDate || '',
-          projection: prop.projection,
-          rating: prop.rating,
-          hitRates: prop.hitRates || {},
-        })
-      })
-    })
-    const sortValue = (card) => (
-      hitRateSort === 'score' ? card.rating : card.hitRates?.[hitRateSort]
-    )
-    rows.sort((a, b) => {
-      const left = sortValue(a)
-      const right = sortValue(b)
-      const leftMissing = left == null || Number.isNaN(Number(left))
-      const rightMissing = right == null || Number.isNaN(Number(right))
-      if (leftMissing && rightMissing) {
-        return a.player.name.localeCompare(b.player.name) || a.stat.localeCompare(b.stat)
-      }
-      if (leftMissing) return 1
-      if (rightMissing) return -1
-      const difference = Number(right) - Number(left)
-      if (difference !== 0) return difference
-      return a.player.name.localeCompare(b.player.name) || a.stat.localeCompare(b.stat)
-    })
-    return rows
-  }, [filtered, propType, hitRateSort])
+  const cards = useMemo(
+    () => nbaEdgeCards(filtered, { propType, hitRateSort }),
+    [filtered, propType, hitRateSort],
+  )
 
   return (
     <div className="fade-in edge-board-wrap">
