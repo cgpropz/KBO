@@ -13,7 +13,7 @@ import { publicFaqs } from './publicFaqs';
 import { OPERATOR_DISCLAIMER, STANDARD_LINE } from './responsibleGambling';
 import { DataCredit } from './SiteFooter'
 import { sessionAccessToken } from './supabaseClient';
-import { buildCheckoutUrl, requestOfferCheckoutUrl, requestWeeklyCheckoutUrl } from './tracking';
+import { buildCheckoutUrl, openWeeklyCheckoutUrl, requestOfferCheckoutUrl } from './tracking';
 import { observeVisibleOnce, trackCheckoutClick, trackFreeTop3View } from './analytics';
 import { lineClause, lineWord } from './lineCount';
 import { whenVisibleOrIdle } from './whenVisibleOrIdle';
@@ -248,7 +248,7 @@ export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard, onSi
       if (user) {
         try { token = await sessionAccessToken() || ''; } catch { /* guest checkout still works */ }
       }
-      const url = await requestWeeklyCheckoutUrl(token ? { token } : {});
+      const url = await openWeeklyCheckoutUrl(token ? { token } : {});
       window.location.assign(url);
     } catch {
       window.location.assign(buildCheckoutUrl(STRIPE_LINKS.weekly, user || null));

@@ -2,6 +2,7 @@ import crypto from 'node:crypto';
 import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
 import { WEEKLY_PRICE_ID, XWEEK_PROMOTION_CODE_ID } from '../src/pricingTiers.js';
+import { isAutomatedClient, listOpenCheckoutSessions, reusableCheckoutUrl } from './_checkoutClient.js';
 import { customersForEmail } from './_stripeTier.js';
 
 function cleanEnv(value) {
@@ -102,6 +103,12 @@ async function optionalUser(req, authenticate) {
  * created here.
  *
  * Returns only `{ url }`. The client cannot choose a different price or code.
+ *
+ * Called from a Buy click. Page loads, pricing renders, and prefetch do not
+ * call this. Crawlers and other automated clients get 403 and no session.
+ * A buyer who already has an open session for this weekly price gets that
+ * URL back. An XWEEK session is not reused for the full $9.99 price, and a
+ * full-price session is not reused when XWEEK still applies.
  */
 export async function handleWeeklyCheckoutRequest(req, res, deps = {}) {
   res.setHeader('Cache-Control', 'private, no-store, max-age=0');
@@ -111,12 +118,16 @@ export async function handleWeeklyCheckoutRequest(req, res, deps = {}) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
+  if (isAutomatedClient(req.headers || {})) {
+    return res.status(403).json({ error: 'Checkout unavailable' });
+  }
+
   const client = deps.stripe || getStripe();
   if (!client) return res.status(503).json({ error: 'Checkout unavailable' });
 
   const buyer = deps.user !== undefined ? deps.user : await optionalUser(req, deps.authenticate);
   const body = readBody(req);
-  const metadata = { cg_plan: 'weekly' };
+  const metadata = { cg_plan: 'weekly', price_id: WEEKLY_PRICE_ID, xweek: '1' };
   for (const key of UTM_KEYS) {
     const value = String(body[key] || '').trim();
     if (UTM_VALUE_RE.test(value)) metadata[key] = value;
@@ -144,6 +155,17 @@ export async function handleWeeklyCheckoutRequest(req, res, deps = {}) {
   if (existingCustomerId) params.customer = existingCustomerId;
   else if (email.includes('@')) params.customer_email = email;
 
+  const nowSec = Math.floor((deps.now ? deps.now() : Date.now()) / 1000);
+  const open = await listOpenCheckoutSessions(client, existingCustomerId);
+  const sameWeeklyPrice = (session, xweek) => (
+    session.mode === 'subscription'
+    && session.metadata?.cg_plan === 'weekly'
+    && session.metadata?.price_id === WEEKLY_PRICE_ID
+    && session.metadata?.xweek === xweek
+  );
+  const xweekUrl = reusableCheckoutUrl(open, nowSec, (session) => sameWeeklyPrice(session, '1'));
+  if (xweekUrl) return res.status(200).json({ url: xweekUrl });
+
   let session;
   try {
     session = await client.checkout.sessions.create(params);
@@ -153,8 +175,11 @@ export async function handleWeeklyCheckoutRequest(req, res, deps = {}) {
       return res.status(502).json({ error: 'Checkout unavailable' });
     }
     // XWEEK is not valid for this buyer. Same weekly price, no discount,
-    // so they can still pay $9.99.
+    // so they can still pay $9.99. Reuse an open full-price session first.
+    const fullUrl = reusableCheckoutUrl(open, nowSec, (sessionRow) => sameWeeklyPrice(sessionRow, '0'));
+    if (fullUrl) return res.status(200).json({ url: fullUrl });
     delete params.discounts;
+    params.metadata = { ...metadata, xweek: '0' };
     params.integration_identifier = `cgpropz_weekly_${randomSuffix()}`;
     try {
       session = await client.checkout.sessions.create(params);

@@ -14,6 +14,7 @@ import { handleOfferCheckoutRequest } from '../api/_offerCheckout.js'
 import { countFoundersPurchases } from '../api/_foundersCount.js'
 import { activeFoundersPriceId, activeLifetimePriceId } from '../api/_stripeTier.js'
 
+const BROWSER_UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 Twitter for iPhone'
 const OPEN = Date.parse('2026-10-12T16:00:00.000Z')
 const LAST_SECOND = Date.parse('2026-10-18T23:59:59-04:00')
 const DEADLINE = Date.parse('2026-10-19T00:00:00-04:00')
@@ -139,7 +140,7 @@ async function post(plan, { now, sessions = [], charges = [], invoices = {}, env
   const res = mockRes()
   const stripe = mockStripe(sessions, { charges, invoices })
   await handleOfferCheckoutRequest(
-    { method: 'POST', headers: {}, body: { utm_source: 'x' } },
+    { method: 'POST', headers: { 'user-agent': BROWSER_UA }, body: { utm_source: 'x' } },
     res,
     { plan, stripe, now, env, user: null },
   )
@@ -275,6 +276,48 @@ test('lifetime checkout always uses the $249.99 price', async () => {
   assert.equal(res.body.plan, 'lifetime')
   assert.equal(res.body.fallback, false)
   assert.equal(params.line_items[0].price, LIFETIME)
+  assert.equal(params.metadata.price_id, LIFETIME)
   assert.equal(params.mode, 'payment')
   assert.equal(params.subscription_data, undefined)
+})
+
+test('crawlers do not open a lifetime or founders session', async () => {
+  for (const plan of ['lifetime', 'founders']) {
+    const res = mockRes()
+    const stripe = mockStripe([])
+    await handleOfferCheckoutRequest(
+      { method: 'POST', headers: { 'user-agent': 'Twitterbot/1.0' }, body: {} },
+      res,
+      { plan, stripe, now: OPEN, user: null },
+    )
+    assert.equal(res.statusCode, 403, plan)
+    assert.equal(stripe.calls.length, 0, plan)
+  }
+})
+
+test('an open lifetime session for the same customer and price is reused', async () => {
+  const OPEN_URL = 'https://checkout.stripe.com/c/pay/cs_test_openlife'
+  const calls = []
+  const stripe = {
+    customers: { async list() { return { data: [{ id: 'cus_1', email: 'buyer@example.com' }] } } },
+    checkout: { sessions: {
+      async list(params) { calls.push(['list', params]); return { data: [{
+        url: OPEN_URL,
+        mode: 'payment',
+        expires_at: Math.floor(OPEN / 1000) + 20 * 3600,
+        metadata: { cg_plan: 'lifetime', price_id: LIFETIME, tier: 'combined' },
+      }] } },
+      async create(params) { calls.push(['create', params]); return { url: 'https://checkout.stripe.com/c/pay/cs_test_new' } },
+    } },
+  }
+  const res = mockRes()
+  await handleOfferCheckoutRequest(
+    { method: 'POST', headers: { 'user-agent': BROWSER_UA }, body: {} },
+    res,
+    { plan: 'lifetime', stripe, now: OPEN, user: { id: 'user_1', email: 'buyer@example.com' } },
+  )
+  assert.equal(res.statusCode, 200)
+  assert.equal(res.body.url, OPEN_URL)
+  assert.deepEqual(calls.map((call) => call[0]), ['list'])
+  assert.deepEqual(calls[0][1], { customer: 'cus_1', status: 'open', limit: 20 })
 })

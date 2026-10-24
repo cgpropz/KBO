@@ -71,7 +71,10 @@ test('the public landing features NFL on the hero, phone, and sport tabs', () =>
 
 test('the public landing does not open a Stripe Checkout Session on load', () => {
   assert.equal(landing.includes('prefetchWeeklyCheckoutUrl'), false)
-  assert.match(landing, /requestWeeklyCheckoutUrl/)
+  assert.equal(landing.includes('requestWeeklyCheckoutUrl'), false)
+  const start = landing.slice(landing.indexOf('const startWeekly'), landing.indexOf('const buyLifetime'))
+  assert.match(start, /openWeeklyCheckoutUrl/)
+  assert.ok(start.indexOf('requireAge()') < start.indexOf('openWeeklyCheckoutUrl'))
   assert.match(landing, /HERO_LANDING_SPORT_ID|HERO_SPORT/)
 })
 

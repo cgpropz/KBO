@@ -3,7 +3,7 @@ import { useAuth } from './AuthContext';
 import { sessionAccessToken } from './supabaseClient';
 import { freeTierFaqAnswer } from './freePreviewCopy';
 import { STRIPE_LINKS, TIERS } from './pricingTiers';
-import { buildCheckoutUrl, prefetchWeeklyCheckoutUrl, requestOfferCheckoutUrl } from './tracking';
+import { buildCheckoutUrl, openWeeklyCheckoutUrl, requestOfferCheckoutUrl } from './tracking';
 import { trackCheckoutClick } from './analytics';
 import { useAgeGate } from './ageGateContext';
 import AutoRenewalNote from './AutoRenewalNote';
@@ -87,27 +87,10 @@ function SubscriptionPage() {
     return () => window.removeEventListener('cg-stripe-checkout', onCheckout);
   }, []);
 
-  // Weekly href is the Payment Link until the Checkout Session is ready, so the
-  // click always navigates in this gesture. The session applies XWEEK when the
-  // code is valid and otherwise charges the full weekly price.
-  const [weeklyHref, setWeeklyHref] = useState(() => buildCheckoutUrl(STRIPE_LINKS.weekly, null));
-  const weeklyHrefRef = useRef(weeklyHref);
-  weeklyHrefRef.current = weeklyHref;
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      let token = '';
-      if (user) {
-        try { token = await sessionAccessToken() || ''; } catch { /* guest checkout still works */ }
-      }
-      if (!cancelled) setWeeklyHref(buildCheckoutUrl(STRIPE_LINKS.weekly, user));
-      try {
-        const url = await prefetchWeeklyCheckoutUrl(token ? { token } : {});
-        if (!cancelled && url) setWeeklyHref(url);
-      } catch { /* keep the payment link */ }
-    })();
-    return () => { cancelled = true; };
-  }, [user]);
+  // Weekly Checkout Sessions are created from this click, not when /pricing
+  // renders. The session applies XWEEK when the code is valid and otherwise
+  // charges the full weekly price. A second click reuses that URL.
+  const [weeklyBusy, setWeeklyBusy] = useState(false);
 
   const [offerBusy, setOfferBusy] = useState(false);
   const openOfferCheckout = async (plan) => {
@@ -135,6 +118,39 @@ function SubscriptionPage() {
   };
 
   const handleSubscribe = async (plan) => {
+    if (plan.id === 'weekly') {
+      if (weeklyBusy) return;
+      if (!(await requireAge())) return;
+      trackCheckoutClick('weekly');
+      setWeeklyBusy(true);
+      try {
+        let token = '';
+        if (user) {
+          try { token = await sessionAccessToken() || ''; } catch { /* guest checkout still works */ }
+        }
+        const url = await openWeeklyCheckoutUrl(token ? { token } : {});
+        if (!user) {
+          window.location.assign(url);
+          return;
+        }
+        const opened = window.open(url, '_blank', 'noopener');
+        if (!opened) window.location.assign(url);
+        else setAwaitingPayment(true);
+      } catch {
+        // Same weekly plan, full price, no promo param. Payment Links reject XWEEK.
+        const url = buildCheckoutUrl(STRIPE_LINKS.weekly, user);
+        if (!user) {
+          window.location.assign(url);
+          return;
+        }
+        const opened = window.open(url, '_blank', 'noopener');
+        if (!opened) window.location.assign(url);
+        else setAwaitingPayment(true);
+      } finally {
+        setWeeklyBusy(false);
+      }
+      return;
+    }
     if (!(await requireAge())) return;
     if (plan.checkout === 'session') {
       openOfferCheckout('lifetime');
@@ -145,9 +161,8 @@ function SubscriptionPage() {
     // Logged in: pass Supabase user ID + prefill email so the webhook links the
     // payment instantly. Logged out: Stripe collects the email and access is
     // matched to it when they sign up (webhook + /api/sync-subscription).
-    // Every plan navigates in this click. Weekly uses the prefetched session
-    // when it is ready, otherwise the weekly Payment Link.
-    const url = plan.id === 'weekly' ? weeklyHrefRef.current : buildCheckoutUrl(plan.link, user);
+    // Monthly and yearly stay on their Payment Links. No Checkout Session.
+    const url = buildCheckoutUrl(plan.link, user);
     if (!user) {
       window.location.assign(url);
       return;
@@ -411,9 +426,11 @@ function SubscriptionPage() {
                 e.stopPropagation();
                 handleSubscribe(tier);
               }}
-              disabled={tier.id === 'free' || (!tier.link && tier.checkout !== 'session')}
+              disabled={tier.id === 'free' || (!tier.link && tier.checkout !== 'session') || (tier.id === 'weekly' && weeklyBusy)}
             >
-              {tier.id === 'free' && !user ? 'Free with an account' : tier.cta}
+              {tier.id === 'weekly' && weeklyBusy
+                ? 'Opening checkout…'
+                : (tier.id === 'free' && !user ? 'Free with an account' : tier.cta)}
             </button>
           </div>
         ))}
