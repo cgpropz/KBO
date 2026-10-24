@@ -1,6 +1,6 @@
 // Public board clocks. The file and the database row must never carry prop
 // rows. NHL entries may also carry the five removed_reason counts, and the
-// KBO entry may carry note: 'no_lines'.
+// KBO and WNBA entries may carry note: 'no_lines'.
 
 export const BOARD_STATUS_SPORTS = ['kbo', 'wnba', 'nfl', 'nba', 'nhl']
 
@@ -35,8 +35,9 @@ export function publicBoardStatus(payload) {
     }
     const reasons = removedReasons(row.sport, row.removed_reasons)
     if (reasons) entry.removed_reasons = reasons
-    // PrizePicks had 0 KBO props (pipeline/board_status.py NO_LINES_NOTE).
-    if (row.sport === 'kbo' && row.note === 'no_lines') entry.note = 'no_lines'
+    // PrizePicks had 0 KBO props, or the WNBA ppLines map had no live line
+    // (pipeline/board_status.py NO_LINES_NOTE).
+    if ((row.sport === 'kbo' || row.sport === 'wnba') && row.note === 'no_lines') entry.note = 'no_lines'
     bySport.set(row.sport, entry)
   }
   return {

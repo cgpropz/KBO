@@ -11,6 +11,7 @@ import {
   isBoardStale,
   isoWithEtOffset,
   propCountFor,
+  wnbaLiveLines,
 } from '../src/boardFreshness.js'
 
 const NOW = new Date('2026-10-11T15:00:00Z')
@@ -73,7 +74,7 @@ test('status document is one entry per board and has no prop rows', () => {
         data: { cards: [{ name: 'Secret Batter', props: [{}, {}] }] },
       },
       wnba: {
-        data: [{ name: 'Secret Guard', ppAllProps: [{}] }],
+        data: [{ name: 'Secret Guard', ppLines: { pts: 12.5, reb: null }, ppAllProps: [{}, {}] }],
       },
     },
   })
@@ -96,6 +97,9 @@ test('status document is one entry per board and has no prop rows', () => {
   assert.equal(document.boards[2].prop_count, 40)
   assert.equal(document.boards[2].stale, false)
   assert.equal(propCountFor('nhl', [{}, {}, {}]), 3)
+  assert.equal(wnbaLiveLines({ ppLines: { pts: 12.5, reb: null, oreb: 0.5 } }), 2)
+  assert.equal(propCountFor('wnba', [{ ppLines: {}, ppAllProps: [{ line: 0.5 }, { line: 5.5 }] }]), 0)
+  assert.equal(propCountFor('nba', [{ ppAllProps: [{}, {}] }]), 2)
 })
 
 test('nhl status keeps removed reason counts and other sports do not', () => {

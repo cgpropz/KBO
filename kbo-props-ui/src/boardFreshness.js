@@ -156,13 +156,30 @@ export function cheatsheetWarningLine(payload, sport) {
   return `Cheat sheet is ${Math.round(Number(worst.minutes_older))} min older than this board`
 }
 
+function finiteLine(value) {
+  return typeof value === 'number' && Number.isFinite(value)
+}
+
+// Lines the WNBA card and projections table can show. PlayerCard renders a
+// PrizePicks row only when ppLines has a non-null value, and the table reads
+// ppLines.pts. ppAllProps is a separate list and stays full on the ghost board.
+export function wnbaLiveLines(player) {
+  const lines = player?.ppLines
+  if (!lines || typeof lines !== 'object' || Array.isArray(lines)) return 0
+  return Object.values(lines).filter(finiteLine).length
+}
+
 export function propCountFor(sport, data) {
   if (sport === 'kbo') {
     const cards = data && typeof data === 'object' ? data.cards : null
     if (!Array.isArray(cards)) return 0
     return cards.reduce((total, card) => total + (Array.isArray(card?.props) ? card.props.length : 0), 0)
   }
-  if (sport === 'wnba' || sport === 'nba') {
+  if (sport === 'wnba') {
+    if (!Array.isArray(data)) return 0
+    return data.reduce((total, player) => total + wnbaLiveLines(player), 0)
+  }
+  if (sport === 'nba') {
     if (!Array.isArray(data)) return 0
     return data.reduce((total, player) => total + (Array.isArray(player?.ppAllProps) ? player.ppAllProps.length : 0), 0)
   }
@@ -186,11 +203,14 @@ export function buildBoardStatus({ snapshots = {}, previous = [], now = new Date
     if (!raw && prev) raw = prev.board_updated_at
     if (count == null) count = Number.isInteger(prev?.prop_count) ? prev.prop_count : 0
     if (!injury && !present && prev) injury = prev.injuries_checked_at
-    // PrizePicks had 0 KBO props in the run that wrote prev
-    // (pipeline/board_status.py NO_LINES_NOTE). An empty board keeps that
-    // note and the last real clock, and reads stale; props clear it.
-    const noLines = sport === 'kbo' && prev?.note === 'no_lines' && count === 0
-    if (noLines) raw = prev.board_updated_at || null
+    // KBO: PrizePicks had 0 props in the run that wrote prev
+    // (pipeline/board_status.py NO_LINES_NOTE). WNBA: this snapshot's ppLines
+    // map has no live line. Either note keeps the last real clock and reads
+    // stale. A later snapshot with lines clears it.
+    const wnbaNoLines = sport === 'wnba' && present && count === 0
+    const keptNoLines = (sport === 'kbo' || sport === 'wnba') && prev?.note === 'no_lines' && count === 0
+    const noLines = wnbaNoLines || keptNoLines
+    if (noLines) raw = prev?.board_updated_at || null
     const entry = {
       sport,
       board_updated_at: raw ? isoWithEtOffset(raw) : null,

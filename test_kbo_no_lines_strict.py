@@ -109,11 +109,14 @@ class StatusNoteTest(unittest.TestCase):
         self.assertNotIn("note", kbo)
         self.assertFalse(kbo["stale"])
 
-    def test_note_only_on_kbo(self):
+    def test_note_only_on_kbo_or_wnba(self):
         rows = [{"sport": s, "board_updated_at": None, "injuries_checked_at": None, "prop_count": 0, "stale": True}
                 for s in board_status.SPORTS]
         rows[2]["note"] = "no_lines"
         self.assertIsNotNone(verify.status_document_error({"boards": rows}))
+        rows[2].pop("note")
+        rows[1]["note"] = "no_lines"
+        self.assertIsNone(verify.status_document_error({"boards": rows}))
 
 
 class StrictAllowanceTest(unittest.TestCase):
