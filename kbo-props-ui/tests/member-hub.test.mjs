@@ -134,12 +134,32 @@ test('landing drilldown bars keep the chart values and add the matching game dat
     { value: 18, date: '10/22/2026', team: 'BOS' },
   ])
 
+  // Stored series does not match the log (the phone case: bars draw, the
+  // label row used to return null). Dates and logos still come from the log
+  // window. Bar heights stay the stored values, so the hit rate is unchanged.
   const mismatched = nbaHubRows([{
     athleteId: '7', name: 'Alex Sarr', team: 'WAS',
-    ppAllProps: [{ stat: 'Points', line: 14.5, standardLine: 14.5, projection: 17, rating: 80, odds_type: 'standard', l10Values: [18, 99, 22] }],
+    ppAllProps: [{ stat: 'Points', line: 1.5, standardLine: 1.5, projection: 3.4, rating: 80, odds_type: 'standard', l10Values: [18, 99, 22] }],
   }], [{ athleteId: '7', name: 'Alex Sarr', gameLogs: logs }])
   assert.deepEqual(mismatched[0].recent, [22, 99, 18])
-  assert.ok(mismatched[0].recentBars.every((bar) => bar.date === '' && bar.team === ''))
+  assert.equal(mismatched[0].score, 80)
+  assert.deepEqual(mismatched[0].recentBars.map((bar) => [bar.value, bar.date, bar.team]), [
+    [22, '10/18/2026', 'MIA'],
+    [99, '10/20/2026', 'PHI'],
+    [18, '10/22/2026', 'BOS'],
+  ])
+
+  // One log in that mismatched window has no date. The other dates stay, and
+  // the date row still has a slot for every bar.
+  const hole = logs.map((game, index) => (index === 1 ? { ...game, date: '' } : game))
+  const holed = nbaHubRows([{
+    athleteId: '7', name: 'Alex Sarr', team: 'WAS',
+    ppAllProps: [{ stat: 'Points', line: 1.5, standardLine: 1.5, projection: 3.4, rating: 80, odds_type: 'standard', l10Values: [18, 99, 22] }],
+  }], [{ athleteId: '7', name: 'Alex Sarr', gameLogs: hole }])
+  assert.deepEqual(holed[0].recent, [22, 99, 18])
+  assert.equal(holed[0].score, 80)
+  assert.deepEqual(holed[0].recentBars.map((bar) => bar.date), ['10/18/2026', '', '10/22/2026'])
+  assert.equal(dateRowBars(holed[0].recentBars).length, 3)
 
   const nfl = nflHubRows([{
     player: 'Synth Receiver', prop: 'Receiving Yards', line: 15.5, projection: 20,

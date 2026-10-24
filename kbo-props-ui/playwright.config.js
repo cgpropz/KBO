@@ -32,7 +32,7 @@ export default defineConfig({
       // iPhone Safari width. The NBA Filters sheet has to open here, not only
       // in Chromium: production CSS order differs from the dev server.
       name: 'webkit-iphone',
-      testMatch: ['**/nba-filters-phone.spec.js', '**/dashboard-hitrate-bars-phone.spec.js'],
+      testMatch: ['**/nba-filters-phone.spec.js', '**/dashboard-hitrate-bars-phone.spec.js', '**/landing-hitrate-bars-phone.spec.js'],
       use: {
         ...mobileUse,
         browserName: 'webkit',

@@ -226,6 +226,106 @@
     letter-spacing: -0.05em;
   }
 
+  /* Landing drilldown L10. container-type: inline-size (on .hub-chart-block)
+     makes WebKit treat overflow as clip, so a real phone can paint the bars
+     and drop the date row while Chrome zoom-emulation still shows it. The
+     phone query sets the same narrow layout with no query container. These
+     rules are unlayered, so a later sport sheet cannot collapse the row. */
+  body .hub-drill,
+  body .hub-chart-block {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    height: auto !important;
+    max-height: none !important;
+    min-height: min-content !important;
+    overflow: visible !important;
+    contain: none !important;
+    container-type: normal !important;
+    content-visibility: visible !important;
+    -webkit-mask-image: none !important;
+    mask-image: none !important;
+  }
+
+  body .hub-chart-block .hub-chart {
+    gap: 2px !important;
+    height: 120px !important;
+    min-height: 120px !important;
+    max-height: none !important;
+    padding: 18px 0 0 !important;
+    overflow: visible !important;
+  }
+
+  body .hub-chart-block .hub-chart-line {
+    left: 0 !important;
+    right: 0 !important;
+  }
+
+  body .hub-chart-block .hub-line-label {
+    left: auto !important;
+    right: 0 !important;
+    transform: translateY(-140%) !important;
+    padding-left: 4px !important;
+  }
+
+  body .hub-chart-block .mini-hit-dates {
+    display: flex !important;
+    flex: 0 0 auto !important;
+    flex-shrink: 0 !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    height: auto !important;
+    min-height: 32px !important;
+    max-height: none !important;
+    overflow: visible !important;
+    gap: 0 !important;
+    width: 100% !important;
+    padding: 3px 0 0 !important;
+    position: relative !important;
+    z-index: 1 !important;
+    content-visibility: visible !important;
+    -webkit-line-clamp: none !important;
+    line-clamp: none !important;
+  }
+
+  body .hub-chart-block .mini-hit-dates > span,
+  body .hub-chart-block .hr-game {
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    overflow: visible !important;
+    min-height: 28px !important;
+    max-height: none !important;
+  }
+
+  body .hub-chart-block .hr-game {
+    flex-direction: column !important;
+    align-items: center !important;
+  }
+
+  body .hub-chart-block .hr-game-date {
+    display: block !important;
+    visibility: visible !important;
+    height: auto !important;
+    min-height: 12px !important;
+    max-height: none !important;
+    color: #a1a1aa !important;
+    -webkit-text-fill-color: #a1a1aa !important;
+    -webkit-line-clamp: none !important;
+    line-clamp: none !important;
+  }
+
+  body .hub-chart-block .hr-game-logo {
+    display: block !important;
+    width: 14px !important;
+    height: 14px !important;
+    min-width: 14px !important;
+    min-height: 14px !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    object-fit: contain !important;
+  }
+
   body :is(button, a, summary, [role="button"], [role="tab"]) {
     min-height: 44px;
     min-width: 44px;

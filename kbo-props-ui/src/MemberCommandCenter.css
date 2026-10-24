@@ -364,7 +364,17 @@ button.hub-card {
 .hub-actions button { flex: 1; }
 
 .hub-drill-player { display: flex; gap: 10px; align-items: center; margin-bottom: 12px; }
-.hub-chart-block { container-type: inline-size; margin: 8px 0 12px; min-width: 0; }
+.hub-chart-block {
+  /* Phone widths clear this in mobile.css. WebKit clips a query container. */
+  container-type: inline-size;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  height: auto;
+  overflow: visible;
+  margin: 8px 0 12px;
+  min-width: 0;
+}
 .hub-chart {
   position: relative;
   display: flex;

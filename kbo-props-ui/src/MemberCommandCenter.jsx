@@ -197,9 +197,9 @@ function L10Chart({ values, bars, line, side, logoFor, sportId }) {
   }
   const max = Math.max(target, ...nums, 1);
   const linePct = Math.min(96, Math.max(4, (target / max) * 100));
-  const labelBars = Array.isArray(bars)
-    && bars.length === nums.length
-    && bars.every((bar, index) => Number(bar?.value) === nums[index])
+  // Same count as the bars, and at least one date. One blank date, or a
+  // stored series that does not equal the roster log, used to drop the row.
+  const labelBars = Array.isArray(bars) && bars.length === nums.length && bars.some((bar) => bar?.date)
     ? bars
     : null;
   const scope = sportId === 'nba' ? l10WindowLabel(labelBars) : null;
