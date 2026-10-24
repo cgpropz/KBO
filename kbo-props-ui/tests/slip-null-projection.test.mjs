@@ -7,7 +7,7 @@ import { nbaHubRows } from '../src/memberHub.js'
 
 // Synthetic fixtures only. A pending NBA row (no projection yet) must not
 // show up in the slip builder as PROJ 0 / CG 0 / LESS, and the hub must not
-// give it a side.
+// keep the row. A numeric 0 is still a projection.
 function loadBasketRows() {
   const source = readFileSync(new URL('../src/slipSports.js', import.meta.url), 'utf8')
   const start = source.indexOf('function lineTypePresent')
@@ -57,20 +57,21 @@ test('slip builder skips basketball props with a null, empty or non-numeric proj
   assert.equal(rows.some((row) => row.name === 'Test Rookie'), false)
 })
 
-test('hub gives a pending NBA row no side', () => {
+test('hub drops a pending NBA row and keeps a zero projection', () => {
   const player = (projection) => ({
     name: 'Test Rookie',
     team: 'AAA',
     matched: true,
-    projectionStatus: projection == null ? 'pending' : 'projected',
+    projectionStatus: projection == null || projection === '' ? 'pending' : 'projected',
     gp: 1,
     avgMins: 20,
     ppAllProps: [{ stat: 'Points', line: 5.5, projection, rating: null, opponent: 'BBB', odds_type: 'standard' }],
   })
-  const [pending] = nbaHubRows([player(null)])
-  assert.equal(pending.side, null)
-  const [blank] = nbaHubRows([player('')])
-  assert.equal(blank.side, null)
+  assert.equal(nbaHubRows([player(null)]).length, 0)
+  assert.equal(nbaHubRows([player('')]).length, 0)
+  assert.equal(nbaHubRows([player('   ')]).length, 0)
+  assert.equal(nbaHubRows([player('n/a')]).length, 0)
   const [zero] = nbaHubRows([player(0)])
   assert.equal(zero.side, 'UNDER')
+  assert.equal(zero.stat, 'Points')
 })
