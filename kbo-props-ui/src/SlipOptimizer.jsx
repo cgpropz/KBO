@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import './SlipOptimizer.css';
 import { useAuth } from './AuthContext';
 import { sessionAccessToken } from './supabaseClient';
-import { correlationSuggestions, formatAgreement } from './slipCorrelations';
+import { correlationSectionOpen, correlationSuggestions, formatAgreement } from './slipCorrelations';
 import { loadCorrelations, slipSport, sportDate } from './slipSports';
 import { inferSlipSport, slipGradeLabel } from './slipSportInfer.js';
 import { PICK_SIDE_HINT, savedLegFromProp } from './savedSlipPayload.js';
@@ -65,7 +65,7 @@ function SlipOptimizer({ sport = 'kbo', onNavigate }) {
   const [savedSlips, setSavedSlips] = useState([]);
   const [slipsLoading, setSlipsLoading] = useState(false);
   const [savingSlip, setSavingSlip] = useState(false);
-  const [correlations, setCorrelations] = useState({ pairs: [], minShared: config.minShared });
+  const [correlations, setCorrelations] = useState(() => ({ pairs: [], minShared: config.minShared, unavailable: true }));
 
   const gameDate = useMemo(() => sportDate(config.timeZone), [config.timeZone]);
 
@@ -220,8 +220,9 @@ function SlipOptimizer({ sport = 'kbo', onNavigate }) {
         }
       } catch { /* ignore a bad import */ }
     }).catch((err) => debugLog('Props failed:', err.message));
+    setCorrelations({ pairs: [], minShared: config.minShared, unavailable: true });
     loadCorrelations(config.id).then((doc) => {
-      if (!cancelled) setCorrelations(doc || { pairs: [], minShared: config.minShared });
+      if (!cancelled) setCorrelations(correlationSectionOpen(doc) ? doc : { pairs: [], minShared: config.minShared, unavailable: true });
     });
     return () => { cancelled = true; };
   }, [config]);
@@ -509,7 +510,7 @@ function SlipOptimizer({ sport = 'kbo', onNavigate }) {
                   {savingSlip ? '⏳ Saving...' : !user ? '🔒 Log in to Save' : '💾 Save Slip'}
                 </button>
                 {needsSide(selectedArr) ? <p className="so-side-hint" role="status" data-testid="slip-pick-side">{PICK_SIDE_HINT}</p> : null}
-                <div className="so-corr">
+                {correlationSectionOpen(correlations) ? <div className="so-corr" data-testid="slip-correlations">
                   <div className="so-corr-col" data-testid="slip-pairs-well">
                     <h3 className="so-corr-title">Pairs well</h3>
                     {suggestions.pairsWell.length === 0 ? (
@@ -540,7 +541,7 @@ function SlipOptimizer({ sport = 'kbo', onNavigate }) {
                       </button>
                     ))}
                   </div>
-                </div>
+                </div> : null}
               </>
             )}
           </div>

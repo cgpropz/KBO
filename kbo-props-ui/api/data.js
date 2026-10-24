@@ -12,6 +12,7 @@ import {
   NBA_FREE_TOP3_DATASETS,
   nhlAccessDecision,
   datasetIsFullyPublic,
+  isCorrelationDataset,
   FILTER_STANDARD_BEFORE_FREE_PREVIEW,
   matchupLiveLockedCount,
   memberRecapForTier,
@@ -61,6 +62,47 @@ export function boardForPresentation(data) {
     throw new Error('snapshot chunk manifest is not a board');
   }
   return data;
+}
+
+// Same floors as pipeline/correlations.py MIN_SHARED. The hidden payload
+// carries them so a client can tell a failed read from a real empty file.
+const CORRELATION_MIN_SHARED = {
+  correlations_kbo: 15,
+  correlations_wnba: 8,
+  correlations_nfl: 8,
+  nba_correlations: 15,
+  nhl_correlations: 15,
+};
+
+// Missing table, missing id=1 row, or a chunk set that would not reassemble.
+// 200 with empty pairs, not 502, so a player or slip page can hide the section.
+export function correlationUnavailableBody(ds, tier, { preview, access } = {}) {
+  const spec = Object.hasOwn(DATASETS, ds) ? DATASETS[ds] : null;
+  const resolvedAccess = access || sportAccess(tier || 'free');
+  const open = spec ? resolvedAccess[spec.sport] === true : false;
+  const isPreview = preview === undefined ? !open : preview === true;
+  return {
+    body: {
+      data: {
+        sport: spec?.sport || null,
+        minShared: CORRELATION_MIN_SHARED[ds] ?? null,
+        pairs: [],
+        unavailable: true,
+      },
+      updatedAt: null,
+      preview: isPreview,
+      lockedCount: 0,
+      unavailable: true,
+      tier: tier || 'free',
+      access: resolvedAccess,
+    },
+    memberGated: !isPreview,
+  };
+}
+
+function sendCorrelationUnavailable(req, res, ds, tier, options) {
+  const { body, memberGated } = correlationUnavailableBody(ds, tier, options);
+  return sendData(req, res, body, memberGated);
 }
 
 function withPresentedData(req, shaped, fullData) {
@@ -759,6 +801,12 @@ async function handleNbaRequest(req, res, client, ds) {
       : await readSnapshot(client, spec.table);
   } catch (err) {
     console.error(`[api/data] ${ds} read failed:`, err.message);
+    if (isCorrelationDataset(ds)) {
+      return sendCorrelationUnavailable(req, res, ds, caller.tier, {
+        preview: decision !== 'full',
+        access: sportAccess(caller.tier),
+      });
+    }
     if (err?.code === 'UPSTREAM_TIMEOUT') {
       return res.status(503).json({
         error: 'Dataset temporarily unavailable',
@@ -768,7 +816,15 @@ async function handleNbaRequest(req, res, client, ds) {
     }
     return res.status(502).json({ error: 'Dataset unavailable' });
   }
-  if (!row) return res.status(404).json({ error: 'Dataset not published yet' });
+  if (!row) {
+    if (isCorrelationDataset(ds)) {
+      return sendCorrelationUnavailable(req, res, ds, caller.tier, {
+        preview: decision !== 'full',
+        access: sportAccess(caller.tier),
+      });
+    }
+    return res.status(404).json({ error: 'Dataset not published yet' });
+  }
 
   // sportAccess() has no nba key and must stay that way. Full access returns
   // the snapshot directly. Preview is only the free top 3 dataset when that
@@ -778,6 +834,12 @@ async function handleNbaRequest(req, res, client, ds) {
     board = boardForPresentation(row.data);
   } catch (err) {
     console.error(`[api/data] ${ds} manifest was not reassembled:`, err.message);
+    if (isCorrelationDataset(ds)) {
+      return sendCorrelationUnavailable(req, res, ds, caller.tier, {
+        preview: decision !== 'full',
+        access: sportAccess(caller.tier),
+      });
+    }
     return res.status(502).json({ error: 'Dataset unavailable' });
   }
   const tierShaped = decision === 'full'
@@ -860,7 +922,13 @@ async function handleNhlRequest(req, res, client, ds) {
   // including a paid-tier cache used only on timeout. A lookup blip must not
   // hold the read: the free preview is the fallback.
   const callerPromise = resolveNbaCaller(client, req.headers?.authorization);
-  const rowPromise = readSnapshot(client, spec.table);
+  const correlationRead = isCorrelationDataset(ds);
+  const rowPromise = correlationRead
+    ? readSnapshot(client, spec.table).then(
+        (row) => ({ ok: true, row }),
+        (error) => ({ ok: false, error }),
+      )
+    : readSnapshot(client, spec.table);
   const projectionsPromise = ds === 'nhl_sharp_odds'
     ? readSnapshot(client, 'nhl_projections').then(
       (projRow) => projRow,
@@ -874,9 +942,32 @@ async function handleNhlRequest(req, res, client, ds) {
   let caller = { emailResolved: false, email: null, tierResolved: false, tier: 'free' };
   let row;
   try {
-    [caller, row] = await Promise.all([callerPromise, rowPromise]);
+    const [resolvedCaller, rowResult] = await Promise.all([callerPromise, rowPromise]);
+    caller = resolvedCaller;
+    if (correlationRead) {
+      if (!rowResult.ok || !rowResult.row) {
+        if (!rowResult.ok) {
+          console.error(`[api/data] ${ds} read failed:`, rowResult.error?.message || rowResult.error);
+        }
+        const earlyDecision = nhlAccessDecision({
+          emailResolved: caller.emailResolved,
+          email: caller.email,
+          tierResolved: caller.tierResolved,
+          tier: caller.tier,
+        });
+        if (caller.pending && earlyDecision !== 'full') return sendTierPending(res);
+        const earlyTier = caller.tierResolved === true ? caller.tier : 'free';
+        return sendCorrelationUnavailable(req, res, ds, earlyTier, { preview: earlyDecision !== 'full' });
+      }
+      row = rowResult.row;
+    } else {
+      row = rowResult;
+    }
   } catch (err) {
     console.error(`[api/data] ${ds} read failed:`, err.message);
+    if (correlationRead) {
+      return sendCorrelationUnavailable(req, res, ds, 'free', { preview: true });
+    }
     const fallback = landingFallbackBody(ds, req.headers?.authorization);
     if (fallback) return sendData(req, res, fallback, false);
     if (err?.code === 'UPSTREAM_TIMEOUT') {
@@ -910,6 +1001,10 @@ async function handleNhlRequest(req, res, client, ds) {
     board = boardForPresentation(row.data);
   } catch (err) {
     console.error(`[api/data] ${ds} manifest was not reassembled:`, err.message);
+    if (isCorrelationDataset(ds)) {
+      const hiddenTier = caller.tierResolved === true ? caller.tier : 'free';
+      return sendCorrelationUnavailable(req, res, ds, hiddenTier, { preview: decision !== 'full' });
+    }
     return res.status(502).json({ error: 'Dataset unavailable' });
   }
   // Full access still goes through shapeForTier so demon, goblin, and
@@ -1105,14 +1200,37 @@ export async function handleDataRequest(req, res, client) {
   // A valid token with no resolved tier is not the free preview.
   // This reader does not keep its own tier cache.
   const tierPromise = resolveTier(client, req.headers?.authorization);
-  const rowPromise = readSnapshot(client, spec.table);
+  const correlationRead = isCorrelationDataset(ds);
+  const rowPromise = correlationRead
+    ? readSnapshot(client, spec.table).then(
+        (row) => ({ ok: true, row }),
+        (error) => ({ ok: false, error }),
+      )
+    : readSnapshot(client, spec.table);
 
   let tierResult = { tier: 'free', pending: false };
   let row;
   try {
-    [tierResult, row] = await Promise.all([tierPromise, rowPromise]);
+    const [resolvedTier, rowResult] = await Promise.all([tierPromise, rowPromise]);
+    tierResult = resolvedTier;
+    if (correlationRead) {
+      if (tierResult?.pending) return sendTierPending(res);
+      const tierNow = tierResult?.tier || 'free';
+      if (!rowResult.ok || !rowResult.row) {
+        if (!rowResult.ok) {
+          console.error(`[api/data] ${ds} read failed:`, rowResult.error?.message || rowResult.error);
+        }
+        return sendCorrelationUnavailable(req, res, ds, tierNow);
+      }
+      row = rowResult.row;
+    } else {
+      row = rowResult;
+    }
   } catch (err) {
     console.error(`[api/data] ${ds} read failed:`, err.message);
+    if (correlationRead) {
+      return sendCorrelationUnavailable(req, res, ds, 'free');
+    }
     const fallback = landingFallbackBody(ds, req.headers?.authorization);
     if (fallback) return sendData(req, res, fallback, false);
     if (err?.code === 'UPSTREAM_TIMEOUT') {
@@ -1133,6 +1251,7 @@ export async function handleDataRequest(req, res, client) {
     board = boardForPresentation(row.data);
   } catch (err) {
     console.error(`[api/data] ${ds} manifest was not reassembled:`, err.message);
+    if (correlationRead) return sendCorrelationUnavailable(req, res, ds, tier);
     return res.status(502).json({ error: 'Dataset unavailable' });
   }
   const tierPayload = payloadForTier(ds, spec.table, row, board, tier);

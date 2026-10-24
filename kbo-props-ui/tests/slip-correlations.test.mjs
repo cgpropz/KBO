@@ -1,9 +1,12 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
+import { readFileSync } from 'node:fs'
 import {
+  correlationSectionOpen,
   correlationSuggestions,
   formatAgreement,
   isSmallSample,
+  presentCorrelationDoc,
 } from '../src/slipCorrelations.js'
 
 const board = [
@@ -54,4 +57,19 @@ test('a partner already on the slip is not suggested again', () => {
   const result = correlationSuggestions([board[0], board[1]], board, doc)
   assert.equal(result.pairsWell.some((row) => row.name === 'B'), false)
   assert.equal(result.worksAgainst.some((row) => row.name === 'C'), true)
+})
+
+test('a failed or unpublished correlation file stays hidden and a real empty file does not', () => {
+  const hidden = presentCorrelationDoc(null, 8)
+  assert.equal(hidden.unavailable, true)
+  assert.deepEqual(hidden.pairs, [])
+  assert.equal(correlationSectionOpen(hidden), false)
+  assert.equal(correlationSectionOpen(presentCorrelationDoc({ pairs: [], unavailable: true }, 8)), false)
+  assert.equal(correlationSectionOpen(presentCorrelationDoc({ sport: 'nfl' }, 8)), false)
+  const empty = presentCorrelationDoc({ pairs: [], minShared: 8 }, 8)
+  assert.equal(empty.unavailable, undefined)
+  assert.equal(correlationSectionOpen(empty), true)
+  assert.equal(correlationSectionOpen(presentCorrelationDoc({ pairs: [{ n: 1 }] }, 8)), true)
+  const source = readFileSync(new URL('../src/SlipOptimizer.jsx', import.meta.url), 'utf8')
+  assert.match(source, /correlationSectionOpen\(correlations\) \? <div className="so-corr" data-testid="slip-correlations">/)
 })

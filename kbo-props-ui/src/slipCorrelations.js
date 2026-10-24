@@ -68,6 +68,19 @@ export function correlationSuggestions(legs, board, doc) {
   return { pairsWell: well, worksAgainst: against }
 }
 
+// A failed or unpublished snapshot is hidden. A real file with no pairs that
+// clear the floor still opens, so the empty copy is a result, not an error.
+export function correlationSectionOpen(doc) {
+  return !!doc && doc.unavailable !== true && Array.isArray(doc.pairs)
+}
+
+export function presentCorrelationDoc(data, minShared) {
+  if (!data || typeof data !== 'object' || Array.isArray(data) || data.unavailable === true || !Array.isArray(data.pairs)) {
+    return { pairs: [], minShared, unavailable: true }
+  }
+  return data
+}
+
 export function formatAgreement(rate) {
   const value = Number(rate)
   if (!Number.isFinite(value)) return '—'

@@ -829,6 +829,20 @@ export function memberRecapForTier(recap, tier) {
   };
 }
 
+// Slip-builder pair files. A missing table is PGRST205 ("Could not find the
+// table ... in the schema cache"), which /api/data used to answer as 502.
+export const CORRELATION_DATASETS = new Set([
+  'correlations_kbo',
+  'correlations_wnba',
+  'correlations_nfl',
+  'nba_correlations',
+  'nhl_correlations',
+]);
+
+export function isCorrelationDataset(ds) {
+  return CORRELATION_DATASETS.has(ds);
+}
+
 function previewCorrelations(payload) {
   const obj = payload && typeof payload === 'object' && !Array.isArray(payload) ? payload : {};
   const pairs = Array.isArray(obj.pairs) ? obj.pairs : [];

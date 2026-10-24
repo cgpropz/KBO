@@ -2,6 +2,11 @@
 -- before the first correlations publish. The repo does not apply it.
 -- A missing table is skipped by publish_supabase.py (OPTIONAL_TABLES),
 -- so the rest of a sport refresh still ships.
+--
+-- Until these tables exist, PostgREST returns PGRST205 and /api/data
+-- cannot read a snapshot. Applied to production on 2026-10-24.
+-- Republish after that with PUBLISH_ONLY_PREFIX=correlations, or let the
+-- next sport refresh build and publish its own file.
 
 begin;
 

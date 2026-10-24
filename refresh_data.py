@@ -323,7 +323,13 @@ def publish_optional_snapshot(client, filename, table):
         client.table(table).upsert({"id": 1, "data": payload}).execute()
         print(f"  ✓ {table} updated")
     except Exception as exc:
-        print(f"  ! {table} skipped: {exc}")
+        hint = ""
+        text = str(exc)
+        if table in {"correlations_kbo", "correlations_wnba", "correlations_nfl", "nba_correlations", "nhl_correlations"} and (
+            "PGRST205" in text or "Could not find the table" in text
+        ):
+            hint = " Apply sql/correlations.sql, then republish with PUBLISH_ONLY_PREFIX=correlations."
+        print(f"  ! {table} skipped: {exc}{hint}")
 
 
 def _read_json(path):

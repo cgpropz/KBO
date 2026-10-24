@@ -1,3 +1,4 @@
+import { presentCorrelationDoc } from './slipCorrelations'
 import { fetchData } from './dataUrl'
 import { fetchApiDataset } from './apiData'
 import { fetchWnbaData } from './wnba/wnbaData'
@@ -388,9 +389,9 @@ export async function loadCorrelations(sport) {
   const config = slipSport(sport)
   try {
     const snapshot = await fetchApiDataset(config.dataset, { devStaticPath: config.staticPath })
-    return snapshot.data && typeof snapshot.data === 'object' ? snapshot.data : { pairs: [], minShared: config.minShared }
+    return presentCorrelationDoc(snapshot?.data, config.minShared)
   } catch {
-    return { pairs: [], minShared: config.minShared }
+    return presentCorrelationDoc(null, config.minShared)
   }
 }
 

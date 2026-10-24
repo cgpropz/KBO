@@ -13,7 +13,7 @@ from pipeline.correlations import (
     kbo_logs_ready,
     load_kbo_logs,
 )
-from publish_supabase import TABLES, tables_for_prefix
+from publish_supabase import TABLES, missing_table_message, tables_for_prefix
 
 REPO = Path(__file__).resolve().parent
 
@@ -192,3 +192,17 @@ def test_publish_prefix_includes_the_sport_correlation_file():
     assert "correlations_nhl.json" not in full
     assert "correlations_nba.json" in tables_for_prefix("nba/")
     assert "correlations_nhl.json" in tables_for_prefix("nhl/")
+    repair = tables_for_prefix("correlations")
+    assert set(repair) == {
+        "correlations_kbo.json",
+        "correlations_wnba.json",
+        "correlations_nfl.json",
+        "correlations_nba.json",
+        "correlations_nhl.json",
+    }
+    assert repair["correlations_nba.json"] == "nba_correlations"
+    assert "nba/projections_standard.json" not in repair
+    assert "nhl/projections.json" not in repair
+    message = missing_table_message("nba_correlations")
+    assert "sql/correlations.sql" in message
+    assert "PUBLISH_ONLY_PREFIX=correlations" in message
