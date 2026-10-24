@@ -1,9 +1,17 @@
 """NHL sharp odds keep standard PrizePicks lines only."""
 
 import json
+from pathlib import Path
 
-from nfl.sharp_odds import load_pp_rows
-from nhl.sharp_odds import board_rows, stamp_nhl_line_types
+from nfl.sharp_odds import build_snapshot, load_pp_rows
+from nhl.sharp_odds import (
+    board_rows,
+    load_nhl_projection_board,
+    release_snapshot,
+    snapshot_from_board,
+    stamp_nhl_line_types,
+)
+from pipeline.pp_odds_freshness import sharp_missed_live_board
 
 
 def _projection(pid, player, prop, odds_type, rank_eligible=True):
@@ -165,3 +173,130 @@ def test_load_pp_rows_keeps_tavares_standard_when_goblin_is_first(tmp_path):
     ranked, counts = board_rows(rows, raw)
     assert [row["id"] for row in ranked] == [15852321, 2]
     assert counts["dropped"].get("goblin", 0) == 0
+
+
+def test_empty_snapshot_says_nhl_and_nfl_keeps_nfl():
+    nhl = build_snapshot([], [], sport="NHL")
+    nfl = build_snapshot([], [])
+    assert nhl["message"] == "No NHL PrizePicks lines are posted right now."
+    assert nfl["message"] == "No NFL PrizePicks lines are posted right now."
+    assert "NFL" not in nhl["message"]
+    empty = snapshot_from_board([], [])
+    assert empty["message"] == "No NHL PrizePicks lines are posted right now."
+    assert empty["sport"] == "nhl"
+    assert empty["prizepicks_prop_count"] == 0
+    assert sharp_missed_live_board(0, empty["prizepicks_prop_count"]) is False
+
+
+def test_empty_local_board_uses_the_published_snapshot(tmp_path):
+    empty = tmp_path / "projections.json"
+    empty.write_text("[]", encoding="utf-8")
+    missing = tmp_path / "missing.json"
+    published = [{
+        "id": "100",
+        "player": "Auston Matthews",
+        "prop": "Shots On Goal",
+        "line": 3.5,
+        "oddsType": "standard",
+        "rankEligible": True,
+        "team": "TOR",
+        "projection": 3.2,
+    }]
+    called = {"n": 0}
+
+    def load_published():
+        called["n"] += 1
+        return published
+
+    board = load_nhl_projection_board(local_paths=(empty, missing), load_published=load_published)
+    assert called["n"] == 1
+    assert board == published
+    snapshot = snapshot_from_board(board, [])
+    assert snapshot["prizepicks_prop_count"] == 1
+    assert snapshot["message"].startswith("PrizePicks board loaded.")
+    assert "No NFL" not in snapshot["message"]
+    assert "No NHL" not in snapshot["message"]
+
+
+def test_nonempty_local_board_is_not_replaced(tmp_path):
+    path = tmp_path / "projections.json"
+    local = [{
+        "id": "7",
+        "player": "Local Skater",
+        "prop": "Shots On Goal",
+        "line": 2.5,
+        "oddsType": "standard",
+        "rankEligible": True,
+    }]
+    path.write_text(json.dumps(local), encoding="utf-8")
+
+    def load_published():
+        raise AssertionError("published board must not be read when the local file has rows")
+
+    board = load_nhl_projection_board(local_paths=(path,), load_published=load_published)
+    assert board[0]["player"] == "Local Skater"
+
+
+def test_live_board_with_zero_sharp_lines_is_not_written(tmp_path, monkeypatch):
+    out = tmp_path / "sharp_odds.json"
+    public = tmp_path / "public" / "sharp_odds.json"
+    github_output = tmp_path / "github_output.txt"
+    monkeypatch.setenv("GITHUB_OUTPUT", str(github_output))
+    board = [{
+        "id": "1",
+        "player": "Pulled Skater",
+        "prop": "Points",
+        "line": 0.5,
+        "oddsType": "standard",
+        "removed": True,
+        "pp_status": "removed",
+        "projection": 1.2,
+    }]
+    snapshot = snapshot_from_board(board, [])
+    assert snapshot["prizepicks_prop_count"] == 0
+    assert sharp_missed_live_board(len(board), snapshot["prizepicks_prop_count"]) is True
+    code = release_snapshot(snapshot, len(board), (out, public))
+    assert code == 1
+    assert not out.exists()
+    assert not public.exists()
+    assert "missed_live_board=true" in github_output.read_text(encoding="utf-8")
+
+
+def test_a_real_line_is_written(tmp_path, monkeypatch):
+    out = tmp_path / "sharp_odds.json"
+    github_output = tmp_path / "github_output.txt"
+    monkeypatch.setenv("GITHUB_OUTPUT", str(github_output))
+    snapshot = snapshot_from_board([{
+        "id": "100",
+        "player": "Auston Matthews",
+        "prop": "Shots On Goal",
+        "line": 3.5,
+        "oddsType": "standard",
+        "rankEligible": True,
+        "team": "TOR",
+        "projection": 3.2,
+    }], [])
+    assert snapshot["message"].startswith("PrizePicks board loaded.")
+    assert "No NFL" not in snapshot["message"]
+    code = release_snapshot(snapshot, 1, (out,))
+    assert code == 0
+    written = json.loads(out.read_text(encoding="utf-8"))
+    assert written["message"] == snapshot["message"]
+    assert written["prizepicks_prop_count"] == 1
+    assert "missed_live_board=false" in github_output.read_text(encoding="utf-8")
+
+
+def test_refresh_fails_red_when_sharp_misses_a_live_board():
+    text = Path(".github/workflows/nhl-refresh.yml").read_text(encoding="utf-8")
+    sharp = text[text.index("- name: Match PrizePicks lines to Unabated"):text.index("- name: Build NHL defense vs position")]
+    assert "id: nhl-sharp" in sharp
+    assert "BOARD_READER_DB_URL" in sharp
+    fail = text[text.index("- name: Fail when NHL PP Odds missed a live board"):text.index("- name: Queue the next NHL board")]
+    assert "continue-on-error" not in fail
+    assert "steps.nhl-sharp.outputs.missed_live_board == 'true'" in fail
+    republish = Path(".github/workflows/nhl-pp-odds.yml").read_text(encoding="utf-8")
+    assert "workflow_dispatch:" in republish
+    assert 'PUBLISH_ONLY_PREFIX: "nhl/sharp_odds.json"' in republish
+    assert "github.ref == 'refs/heads/main'" in republish
+    assert "nhl/projections.json" in republish
+    assert "Refusing to publish empty PP Odds." in republish

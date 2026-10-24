@@ -1,6 +1,8 @@
 """Match NHL PrizePicks lines to the public Unabated file. NHL is league 6.
 
 A failed download does not replace nhl/sharp_odds.json.
+A missing or empty nhl/projections.json uses the published nhl_projections
+snapshot instead of publishing prizepicks_prop_count 0.
 
     python -m nhl.sharp_odds
 """
@@ -8,6 +10,8 @@ from __future__ import annotations
 
 import gzip
 import json
+import os
+import tempfile
 import urllib.parse
 import urllib.request
 import uuid
@@ -33,6 +37,8 @@ ROOT = Path(__file__).resolve().parents[1]
 PROJECTIONS = ROOT / "nhl" / "projections.json"
 OUT = ROOT / "nhl" / "sharp_odds.json"
 PUBLIC = ROOT / "kbo-props-ui" / "public" / "data" / "nhl" / "sharp_odds.json"
+# restore_snapshots.py writes the published board here, not under nhl/.
+PUBLIC_PROJECTIONS = PUBLIC.parent / "projections.json"
 NHL_LEAGUE_ID = 6
 NHL_GROUP_PREFIX = f"lg{NHL_LEAGUE_ID}:pt1:"
 BET_TYPE_TO_PROP = {
@@ -236,6 +242,99 @@ def board_rows(pp_rows, projections):
     return ranked, line_type_filter
 
 
+def pp_rows_for_board(board) -> list:
+    """PrizePicks rows from an in-memory board, using the shared loader."""
+    if not board:
+        return []
+    with tempfile.TemporaryDirectory() as tmp:
+        path = Path(tmp) / "projections.json"
+        path.write_text(json.dumps(board), encoding="utf-8")
+        return load_pp_rows(path) or []
+
+
+def load_nhl_projection_board(local_paths=None, load_published=None) -> list:
+    """The board this run wrote, or the published nhl_projections snapshot.
+
+    nhl/projections.json is gitignored. The board build leaves it missing or
+    writes [] when PrizePicks does not return a usable slate, and publish
+    then skips the missing file so the live nhl_projections row stays full.
+    Reading only that local file made sharp odds publish prizepicks_prop_count
+    0 on top of a live board. A non-empty local file still wins, so a board
+    this run just wrote is not replaced by the previous snapshot.
+    """
+    from pipeline.prizepicks_seen import read_local_board
+
+    paths = (PROJECTIONS, PUBLIC_PROJECTIONS) if local_paths is None else tuple(local_paths)
+    for candidate in paths:
+        rows = read_local_board(candidate)
+        if rows:
+            print(f"NHL sharp odds: local board {candidate.name} has {len(rows)} rows.")
+            return rows
+    if load_published is None:
+        from pipeline.prizepicks_seen import previous_board_rows
+        rows = previous_board_rows((), "nhl_projections")
+    else:
+        rows = load_published()
+    if not isinstance(rows, list):
+        rows = []
+    print(f"NHL sharp odds: local board empty; using published nhl_projections ({len(rows)} rows).")
+    return rows
+
+
+def snapshot_from_board(board, book_rows, *, events_scanned=0):
+    """Sharp snapshot for one NHL board. The empty sentence says NHL."""
+    pp_rows = pp_rows_for_board(board)
+    ranked, line_type_filter = board_rows(pp_rows, board if isinstance(board, list) else [])
+    snapshot = build_snapshot(
+        ranked,
+        book_rows,
+        provider="unabated",
+        events_scanned=events_scanned,
+        line_type_filter=line_type_filter,
+        sport="NHL",
+    )
+    snapshot["league_id"] = NHL_LEAGUE_ID
+    snapshot["sport"] = "nhl"
+    snapshot["generated_at"] = datetime.now(timezone.utc).replace(microsecond=0).isoformat()
+    return snapshot
+
+
+def _write_gh_output(**kwargs) -> None:
+    path = os.environ.get("GITHUB_OUTPUT")
+    if not path:
+        return
+    with open(path, "a", encoding="utf-8") as handle:
+        for key, value in kwargs.items():
+            handle.write(f"{key}={value}\n")
+
+
+def release_snapshot(snapshot, board_prop_count, paths) -> int:
+    """Write the snapshot, or leave the previous file when the board was ignored.
+
+    prop_count on the NHL status row is the length of nhl_projections. A
+    positive count with prizepicks_prop_count 0 means this job dropped a live
+    board. Publishing that file is what put "no lines" on the PP Odds tab.
+    """
+    from pipeline.pp_odds_freshness import sharp_missed_live_board
+
+    pp_count = snapshot.get("prizepicks_prop_count") if isinstance(snapshot, dict) else None
+    if sharp_missed_live_board(board_prop_count, pp_count):
+        print(
+            "::error title=NHL PP Odds empty::"
+            f"nhl_projections has {int(board_prop_count)} rows and nhl_sharp_odds "
+            "prizepicks_prop_count is 0. The previous sharp snapshot was left in place."
+        )
+        _write_gh_output(missed_live_board="true")
+        return 1
+    _write_gh_output(missed_live_board="false")
+    text = json.dumps(snapshot, indent=2) + "\n"
+    for path in paths:
+        path = Path(path)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(text, encoding="utf-8")
+    return 0
+
+
 def main() -> int:
     try:
         payload = fetch_unabated()
@@ -243,26 +342,17 @@ def main() -> int:
     except Exception as exc:  # noqa: BLE001
         print(f"Unabated failed, leaving the previous odds file: {exc}")
         return 0
-    pp_rows = load_pp_rows(PROJECTIONS) or []
     # A goalie who is not the confirmed starter is already off projections.
     # When no starter is confirmed, rankEligible false still keeps that goalie off this list.
-    projections = json.loads(PROJECTIONS.read_text(encoding="utf-8")) if PROJECTIONS.exists() else []
-    ranked, line_type_filter = board_rows(pp_rows, projections)
-    snapshot = build_snapshot(
-        ranked,
-        book_rows,
-        provider="unabated",
-        events_scanned=events,
-        line_type_filter=line_type_filter,
+    board = load_nhl_projection_board()
+    snapshot = snapshot_from_board(board, book_rows, events_scanned=events)
+    code = release_snapshot(snapshot, len(board), (OUT, PUBLIC))
+    if code != 0:
+        return code
+    print(
+        f"wrote {OUT} records={len(snapshot.get('records') or [])} "
+        f"books={len(book_rows)} prizepicks_prop_count={snapshot.get('prizepicks_prop_count')}"
     )
-    snapshot["league_id"] = NHL_LEAGUE_ID
-    snapshot["sport"] = "nhl"
-    snapshot["generated_at"] = datetime.now(timezone.utc).replace(microsecond=0).isoformat()
-    text = json.dumps(snapshot, indent=2) + "\n"
-    OUT.write_text(text, encoding="utf-8")
-    PUBLIC.parent.mkdir(parents=True, exist_ok=True)
-    PUBLIC.write_text(text, encoding="utf-8")
-    print(f"wrote {OUT} records={len(snapshot.get('records') or [])} books={len(book_rows)}")
     return 0
 
 

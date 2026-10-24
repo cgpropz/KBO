@@ -5,8 +5,10 @@ name: PP Odds freshness
 # the snapshot stops moving (2026-10-20 to 10-22: nfl_sharp_odds sat for about
 # 35 hours). This separate job reads each snapshot's updated_at and fails,
 # with a ::warning, when it is over 3 hours old while a game is still to
-# start today (ET). Nothing depends on this workflow, so a red run blocks no
-# refresh or publish. Reads only; no writes, commits, or secrets in the log.
+# start today (ET). It also fails when the NHL board still has props and
+# nhl_sharp_odds prizepicks_prop_count is 0. Nothing depends on this
+# workflow, so a red run blocks no refresh or publish. Reads only; no
+# writes, commits, or secrets in the log.
 
 on:
   schedule:

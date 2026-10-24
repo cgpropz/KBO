@@ -70,6 +70,59 @@ class FreshnessTest(unittest.TestCase):
             with mock.patch.object(f, 'run', return_value=unknown):
                 self.assertEqual(f.main(['--fail-stale']), 0)
 
+    def test_nhl_empty_on_a_live_board_fails_red(self):
+        self.assertTrue(f.sharp_missed_live_board(757, 0))
+        self.assertTrue(f.sharp_missed_live_board('757', '0'))
+        self.assertFalse(f.sharp_missed_live_board(0, 0))
+        self.assertFalse(f.sharp_missed_live_board(757, 12))
+        self.assertFalse(f.sharp_missed_live_board(None, 0))
+        status = [{'data': {'boards': [
+            {'sport': 'nfl', 'prop_count': 10},
+            {'sport': 'nhl', 'prop_count': 757},
+        ]}}]
+        sharp = [{'prizepicks_prop_count': '0'}]
+        self.assertEqual(f.board_prop_count_from_status(status, 'nhl'), 757)
+        self.assertEqual(f.prizepicks_prop_count_from_rows(sharp), 0)
+        fresh = {'sport': 'nhl', 'table': 'nhl_sharp_odds', 'state': 'fresh', 'age_hours': 0.4, 'games_left': 3, 'updated_at': NOW.isoformat()}
+        marked = f.annotate_empty_board(fresh, 757, 0)
+        self.assertEqual(marked['state'], 'empty')
+        self.assertEqual(f.annotate_empty_board(fresh, 757, 4)['state'], 'fresh')
+        nfl = {**fresh, 'sport': 'nfl', 'table': 'nfl_sharp_odds'}
+        self.assertEqual(f.annotate_empty_board(nfl, 757, 0)['state'], 'fresh')
+        out = io.StringIO()
+        with redirect_stdout(out):
+            failed = f.report([marked], 3)
+        self.assertEqual(failed, 1)
+        self.assertIn('::error title=NHL PP Odds empty::nhl_sharp_odds', out.getvalue())
+        self.assertIn('757', out.getvalue())
+
+    def test_run_marks_nhl_empty_without_printing_the_key(self):
+        seen = []
+
+        def fetch(url, headers=None):
+            seen.append(url)
+            if 'scoreboard' in url:
+                return TNF
+            if 'board_status' in url:
+                return [{'data': {'boards': [{'sport': 'nhl', 'prop_count': 71}]}}]
+            if 'nhl_sharp_odds' in url and 'prizepicks_prop_count' in url:
+                return [{'prizepicks_prop_count': 0}]
+            return [{'updated_at': NOW.isoformat()}]
+
+        import os
+        from unittest import mock
+        env = {'SUPABASE_URL': 'https://example.supabase.co', 'SUPABASE_SERVICE_ROLE_KEY': 'sekret-value'}
+        with mock.patch.dict(os.environ, env, clear=False):
+            results = f.run(['nhl'], NOW, MAX, fetch=fetch)
+        self.assertEqual(results[0]['state'], 'empty')
+        self.assertTrue(any('board_status' in url for url in seen))
+        self.assertTrue(any('prizepicks_prop_count' in url and 'nhl_sharp_odds' in url for url in seen))
+        self.assertTrue(all('sekret-value' not in url for url in seen))
+        out = io.StringIO()
+        with redirect_stdout(out):
+            self.assertEqual(f.report(results, 3), 1)
+        self.assertNotIn('sekret-value', out.getvalue())
+
 
 if __name__ == '__main__':
     unittest.main()

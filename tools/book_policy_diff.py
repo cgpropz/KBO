@@ -94,6 +94,7 @@ def recompute_snapshot(feed_path, board_path, sport):
             events_scanned=events,
             feed_snapshot_at=feed_at,
             line_type_filter=line_type_filter,
+            sport="NHL",
         )
         snapshot["sport"] = "nhl"
         return snapshot

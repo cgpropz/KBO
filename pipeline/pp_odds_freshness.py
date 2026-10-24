@@ -11,6 +11,10 @@ has not started yet is on today's ET slate and updated_at is older than
 --max-age-hours, it prints a GitHub ::warning. With --fail-stale it then
 exits 1, so the separate freshness workflow shows red without blocking any
 refresh. A read that fails is a warning only ("unknown"), never a failure.
+
+NHL also fails that way when the published board still has props
+(board_status prop_count) and nhl_sharp_odds prizepicks_prop_count is 0.
+A fresh empty odds file on a live board is the same red as a stale file.
 The service role key is sent as a header and never printed.
 """
 from __future__ import annotations
@@ -21,6 +25,7 @@ import os
 import sys
 from datetime import datetime, timedelta, timezone
 from typing import Any, Callable
+from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 from zoneinfo import ZoneInfo
 
@@ -50,6 +55,103 @@ def games_left_today(scoreboard: Any, now: datetime) -> int:
         if start is not None and start.astimezone(ET).date() == today and start > now:
             count += 1
     return count
+
+
+def sharp_missed_live_board(board_prop_count, prizepicks_prop_count) -> bool:
+    """True when the prop board has rows and PP Odds published none of them.
+
+    NHL status prop_count is the length of nhl_projections. Zero sharp lines
+    on that board is a missed publish, not an off night. Counts that are not
+    integers do not fail the check.
+    """
+    if isinstance(board_prop_count, bool) or isinstance(prizepicks_prop_count, bool):
+        return False
+    try:
+        board = int(board_prop_count)
+        sharp = int(prizepicks_prop_count)
+    except (TypeError, ValueError):
+        return False
+    return board > 0 and sharp == 0
+
+
+def _as_int(value):
+    if isinstance(value, bool) or value is None or value == "":
+        return None
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def board_prop_count_from_status(rows, sport="nhl"):
+    """prop_count for one sport from a board_status id=1 response."""
+    if not isinstance(rows, list) or not rows or not isinstance(rows[0], dict):
+        return None
+    data = rows[0].get("data")
+    boards = data.get("boards") if isinstance(data, dict) else None
+    if not isinstance(boards, list):
+        return None
+    for board in boards:
+        if isinstance(board, dict) and board.get("sport") == sport:
+            return _as_int(board.get("prop_count"))
+    return None
+
+
+def prizepicks_prop_count_from_rows(rows):
+    """prizepicks_prop_count from a sharp-odds row, or from a jsonb arrow select."""
+    if not isinstance(rows, list) or not rows or not isinstance(rows[0], dict):
+        return None
+    row = rows[0]
+    if "prizepicks_prop_count" in row:
+        return _as_int(row.get("prizepicks_prop_count"))
+    data = row.get("data")
+    if isinstance(data, dict) and "prizepicks_prop_count" in data:
+        return _as_int(data.get("prizepicks_prop_count"))
+    return None
+
+
+def annotate_empty_board(result, board_prop_count, prizepicks_prop_count):
+    """Mark an NHL freshness row empty when the live board was dropped."""
+    if not isinstance(result, dict) or result.get("sport") != "nhl":
+        return result
+    if not sharp_missed_live_board(board_prop_count, prizepicks_prop_count):
+        return result
+    return {
+        **result,
+        "state": "empty",
+        "board_prop_count": int(board_prop_count),
+        "prizepicks_prop_count": int(prizepicks_prop_count),
+    }
+
+
+def _service_read():
+    base = (os.environ.get("SUPABASE_URL") or os.environ.get("VITE_SUPABASE_URL") or "").strip().rstrip("/")
+    key = (os.environ.get("SUPABASE_SERVICE_ROLE_KEY") or "").strip()
+    if not base or not key:
+        return None, None
+    return base, {"apikey": key, "Authorization": f"Bearer {key}", "Accept": "application/json"}
+
+
+def read_nhl_counts(fetch: Callable[..., Any] | None = None):
+    """(board prop_count, sharp prizepicks_prop_count). None when unreadable.
+
+    Two small reads. The sharp count is a jsonb field, not the records list.
+    """
+    fetch = fetch or _fetch_json
+    base, headers = _service_read()
+    if not base:
+        return None, None
+    status_url = f"{base}/rest/v1/board_status?" + urlencode({"select": "data", "id": "eq.1"})
+    sharp_url = f"{base}/rest/v1/nhl_sharp_odds?" + urlencode({
+        "select": "prizepicks_prop_count:data->>prizepicks_prop_count",
+        "id": "eq.1",
+    })
+    try:
+        status_rows = fetch(status_url, headers)
+        sharp_rows = fetch(sharp_url, headers)
+    except Exception:  # noqa: BLE001 - an unreadable count is not a false red
+        return None, None
+    return board_prop_count_from_status(status_rows, "nhl"), prizepicks_prop_count_from_rows(sharp_rows)
 
 
 def check_sport(sport: str, now: datetime, updated_at: Any, scoreboard: Any, max_age: timedelta) -> dict:
@@ -99,25 +201,39 @@ def run(sports: list[str], now: datetime, max_age: timedelta, fetch: Callable[..
             updated_at = (read or (lambda t: read_updated_at(t, fetch)))(table)
         except Exception:  # noqa: BLE001
             updated_at = None
-        results.append({**check_sport(sport, now, updated_at, scoreboard, max_age), "table": table})
+        result = {**check_sport(sport, now, updated_at, scoreboard, max_age), "table": table}
+        if sport == "nhl":
+            try:
+                board_count, sharp_count = read_nhl_counts(fetch)
+            except Exception:  # noqa: BLE001
+                board_count, sharp_count = None, None
+            result = annotate_empty_board(result, board_count, sharp_count)
+        results.append(result)
     return results
 
 
 def report(results: list[dict], max_age_hours: float) -> int:
-    stale = 0
+    failed = 0
     for r in results:
         when = parse_time(r.get("updated_at"))
         when_et = when.astimezone(ET).strftime("%a %b %d %I:%M %p ET") if when else "unknown"
         line = f"{r['table']}: {r['state']} (updated {when_et}, age {r['age_hours']}h, {r['games_left']} game(s) left today ET)"
         if r["state"] == "stale":
-            stale += 1
+            failed += 1
             print(f"::warning title=PP Odds stale::{r['table']} has not updated in {r['age_hours']}h "
                   f"(over {max_age_hours:g}h) with {r['games_left']} game(s) still to start today ET. "
                   f"Check the {r['sport']} sharp-odds build step; it runs with continue-on-error.")
+        elif r["state"] == "empty":
+            failed += 1
+            print(
+                "::error title=NHL PP Odds empty::"
+                f"{r['table']} prizepicks_prop_count is 0 while the NHL board has "
+                f"{r.get('board_prop_count')} props."
+            )
         elif r["state"] == "unknown":
             print(f"::warning title=PP Odds freshness unknown::{r['table']}: {r.get('reason')}.")
         print(line)
-    return stale
+    return failed
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -131,8 +247,8 @@ def main(argv: list[str] | None = None) -> int:
     if unknown:
         parser.error(f"unknown sport(s): {', '.join(unknown)}")
     results = run(sports, datetime.now(timezone.utc), timedelta(hours=args.max_age_hours))
-    stale = report(results, args.max_age_hours)
-    return 1 if stale and args.fail_stale else 0
+    failed = report(results, args.max_age_hours)
+    return 1 if failed and args.fail_stale else 0
 
 
 if __name__ == "__main__":

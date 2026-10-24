@@ -57,8 +57,26 @@ jobs:
         env:
           BOARD_READER_DB_URL: ${{ secrets.BOARD_READER_DB_URL }}
 
-      - name: Match PrizePicks lines to Unabated
+      # The board file is gitignored. When this run does not write it, restore
+      # the published nhl_projections row into public/data so sharp odds does
+      # not publish prizepicks_prop_count 0 over a live board. An existing
+      # file is left alone. A failed restore is not fatal: the sharp step
+      # also reads the board with BOARD_READER_DB_URL.
+      - name: Restore the published NHL board when this run did not write one
         continue-on-error: true
+        run: python pipeline/restore_snapshots.py --prefix nhl/projections.json
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.VITE_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+
+      - name: Match PrizePicks lines to Unabated
+        id: nhl-sharp
+        continue-on-error: true
+        env:
+          BOARD_READER_DB_URL: ${{ secrets.BOARD_READER_DB_URL }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.VITE_SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
         run: python -m nhl.sharp_odds
 
       # After the board. continue-on-error plus an exit 0 when the files are
@@ -135,6 +153,16 @@ jobs:
         continue-on-error: true
         run: |
           bash pipeline/memory/commit_memory.sh "chore: nhl memory slate freeze"
+
+      # continue-on-error on the sharp step keeps an Unabated miss from
+      # blocking the board. This step is the red: the sharp script sets the
+      # output when the board has rows and prizepicks_prop_count is 0, and
+      # it does not replace the snapshot in that case.
+      - name: Fail when NHL PP Odds missed a live board
+        if: steps.nhl-sharp.outputs.missed_live_board == 'true'
+        run: |
+          echo "::error title=NHL PP Odds empty::nhl_sharp_odds prizepicks_prop_count is 0 while the NHL board has props. The sharp snapshot was not replaced."
+          exit 1
 
       # Holds this runner until the next board is due, then starts it. The
       # cron above only restarts the chain if this handoff dies. During the
