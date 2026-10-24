@@ -16,8 +16,9 @@ import { NHL_LOG_SOURCE_APPROVED, nhlInsights } from '../playerInsights/insights
 import { NhlFilters, NhlPickCard, NhlPropChips, NhlUsageTrends } from './NhlParitySections'
 import {
   anyNarrowed, nhlSeasons, playedOnly, apiWindow, applyFilters, decodeNhlApiLog, filterBounds, filtersFor,
-  nhlApiInsights, nhlApiSectionsOn, playerPropRows, resolveFilters,
+  featuredPlayerRow, nhlApiInsights, nhlApiSectionsOn, playerPropRows, resolveFilters,
 } from './nhlPlayerParity.js'
+import { isStandardBoardLine } from '../standardBoard.js'
 
 // Season labels come from today's date (nhlSeasons), never hard-coded.
 const SEASONS = nhlSeasons()
@@ -315,7 +316,7 @@ function sameNhlRow(row, source) {
 }
 
 export default function NhlPlayerPage({ item: initialItem, onBack }) {
-  const [item, setItem] = useState(initialItem)
+  const [item, setItem] = useState(() => (isStandardBoardLine(initialItem) ? initialItem : null))
   const [range, setRange] = useState('l10')
   // Today's props for this player (stat chips) and the NHL API game log
   // (nhl/ui_game_logs.py puts it on one row per player).
@@ -325,7 +326,9 @@ export default function NhlPlayerPage({ item: initialItem, onBack }) {
   const apiOn = useMemo(() => nhlApiSectionsOn(), [])
 
   useEffect(() => {
-    setItem(initialItem)
+    // A demon or goblin over can be the board row that opened the page.
+    // Hold the sheet until the standard featured line is in.
+    setItem(isStandardBoardLine(initialItem) ? initialItem : null)
     setPropRows([])
     setApiLog(null)
     setFilterPicks({})
@@ -336,12 +339,14 @@ export default function NhlPlayerPage({ item: initialItem, onBack }) {
       .then((snapshot) => {
         if (!active) return
         const rows = Array.isArray(snapshot.data) ? snapshot.data : []
-        const match = rows.find((row) => sameNhlRow(row, initialItem))
+        const featured = featuredPlayerRow(rows, name, initialItem)
+        const match = featured || rows.find((row) => sameNhlRow(row, initialItem))
         if (match) setItem({ ...initialItem, ...match })
+        else if (!isStandardBoardLine(initialItem)) setItem(initialItem)
         setPropRows(playerPropRows(rows, name))
         setApiLog(rows.find((row) => String(row?.player || '') === String(name) && row?.nhlApiLog)?.nhlApiLog || null)
       })
-      .catch(() => {})
+      .catch(() => { if (active) setItem(initialItem) })
     return () => { active = false }
   }, [initialItem])
 

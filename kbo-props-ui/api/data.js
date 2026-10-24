@@ -160,33 +160,40 @@ export function _standardFilterRuns() {
   return standardFilterRuns;
 }
 
+export function showAllLinesFromRequest(req) {
+  return String(req?.query?.lines || '').trim().toLowerCase() === 'all';
+}
+
 // Paid callers, and free or logged-out callers while the preview flag is on,
-// filter once per cache entry. The stored snapshot stays raw.
-function payloadForTier(ds, table, row, raw, tier) {
+// filter once per cache entry and per line mode. The stored snapshot stays raw.
+function payloadForTier(ds, table, row, raw, tier, { showAllLines = false } = {}) {
   const spec = Object.hasOwn(DATASETS, ds) ? DATASETS[ds] : null;
   const paid = spec ? sportAccess(tier)[spec.sport] === true : false;
   const filter = paid || FILTER_STANDARD_BEFORE_FREE_PREVIEW;
   return {
-    payload: filter ? cachedStandardBoard(ds, table, row, raw) : raw,
+    payload: filter ? cachedStandardBoard(ds, table, row, raw, { showAllLines }) : raw,
     alreadyStandard: filter,
+    showAllLines,
   };
 }
 
-// Filter after the cached read, once per cache entry. The stored snapshot
-// stays raw so a player page can still receive full logs. The cache key is
-// unchanged: a standard-line pass must not look like a new publish.
-function cachedStandardBoard(ds, table, row, raw) {
+// Filter after the cached read, once per cache entry and line mode. The
+// stored snapshot stays raw so a player page can still receive full logs.
+// play and all are separate copies so a default board and lines=all do not
+// share one filtered snapshot. The publish version is unchanged.
+function cachedStandardBoard(ds, table, row, raw, { showAllLines = false } = {}) {
+  const key = `${ds}:${showAllLines ? 'all' : 'play'}`;
   const hit = currentBoard(table);
   if (hit?.row === row) {
     if (!hit.standard) hit.standard = new Map();
-    if (hit.standard.has(ds)) return hit.standard.get(ds);
+    if (hit.standard.has(key)) return hit.standard.get(key);
     standardFilterRuns += 1;
-    const filtered = filterStandardBoard(ds, raw);
-    hit.standard.set(ds, filtered);
+    const filtered = filterStandardBoard(ds, raw, { showAllLines });
+    hit.standard.set(key, filtered);
     return filtered;
   }
   standardFilterRuns += 1;
-  return filterStandardBoard(ds, raw);
+  return filterStandardBoard(ds, raw, { showAllLines });
 }
 
 // The snapshot read has to finish, and the last-good copy after it, inside
@@ -851,13 +858,15 @@ async function handleNbaRequest(req, res, client, ds) {
     }
     return res.status(502).json({ error: 'Dataset unavailable' });
   }
+  const showAllLines = showAllLinesFromRequest(req);
+  const filteredBoard = cachedStandardBoard(ds, spec.table, row, board, { showAllLines });
   const tierShaped = decision === 'full'
-    ? { data: cachedStandardBoard(ds, spec.table, row, board), preview: false, lockedCount: 0 }
+    ? { data: filteredBoard, preview: false, lockedCount: 0 }
     : shapeForTier(
       ds,
-      FILTER_STANDARD_BEFORE_FREE_PREVIEW ? cachedStandardBoard(ds, spec.table, row, board) : board,
+      FILTER_STANDARD_BEFORE_FREE_PREVIEW ? filteredBoard : board,
       'free',
-      { alreadyStandard: FILTER_STANDARD_BEFORE_FREE_PREVIEW },
+      { alreadyStandard: FILTER_STANDARD_BEFORE_FREE_PREVIEW, showAllLines },
     );
   // ?player= on a preview reads from the trimmed rows, never the full board:
   // a visible player's other props, per-stat maps and game logs stay
@@ -1016,22 +1025,23 @@ async function handleNhlRequest(req, res, client, ds) {
     }
     return res.status(502).json({ error: 'Dataset unavailable' });
   }
-  // Full access still goes through shapeForTier so demon, goblin, and
-  // unlabeled lines are dropped. An admin whose stored tier does not unlock
-  // NHL still gets the full filtered board.
+  // Full access still goes through shapeForTier so blank and unknown lines
+  // are dropped and demon/goblin unders stay hidden unless lines=all.
+  // An admin whose stored tier does not unlock NHL still gets the full filtered board.
   const tier = caller.tierResolved === true ? caller.tier : 'free';
   const fullTier = sportAccess(tier).nhl ? tier : 'owner';
   const shapingTier = decision === 'full' ? fullTier : 'free';
-  const tierPayload = payloadForTier(ds, spec.table, row, board, shapingTier);
+  const showAllLines = showAllLinesFromRequest(req);
+  const tierPayload = payloadForTier(ds, spec.table, row, board, shapingTier, { showAllLines });
   let payload = tierPayload.payload;
   let presented = board;
   if (ds === 'nhl_sharp_odds') {
-    payload = filterNhlSharpOdds(payload, await nhlProjectionRows(projectionsPromise));
+    payload = filterNhlSharpOdds(payload, await nhlProjectionRows(projectionsPromise), { showAllLines });
     presented = payload;
   }
   const shaped = withPresentedData(
     req,
-    shapeForTier(ds, payload, shapingTier, { alreadyStandard: tierPayload.alreadyStandard }),
+    shapeForTier(ds, payload, shapingTier, { alreadyStandard: tierPayload.alreadyStandard, showAllLines }),
     presented,
   );
   return sendData(req, res, withLineEdges({
@@ -1281,15 +1291,16 @@ export async function handleDataRequest(req, res, client) {
     if (correlationRead) return sendCorrelationUnavailable(req, res, ds, tier);
     return res.status(502).json({ error: 'Dataset unavailable' });
   }
-  const tierPayload = payloadForTier(ds, spec.table, row, board, tier);
+  const showAllLines = showAllLinesFromRequest(req);
+  const tierPayload = payloadForTier(ds, spec.table, row, board, tier, { showAllLines });
   // Manual KBO hold: every KBO prop served as pulled until a fresh pull has
-  // lines or the hold expires. Applied per request, after the cached standard
+  // lines or the hold expires. Applied per request, after the cached playable
   // filter, so an expired hold never lingers in that cache.
   const presented = applyKboHold(ds, board);
   const heldPayload = applyKboHold(ds, tierPayload.payload);
   const shaped = withPresentedData(
     req,
-    shapeForTier(ds, heldPayload, tier, { alreadyStandard: tierPayload.alreadyStandard }),
+    shapeForTier(ds, heldPayload, tier, { alreadyStandard: tierPayload.alreadyStandard, showAllLines }),
     presented,
   );
   if (ds === 'matchup_data' && shaped.preview === true) {

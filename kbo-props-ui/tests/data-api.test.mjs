@@ -451,14 +451,14 @@ test('NFL sharp odds preview prefers Flex PP edge over sportsbook EV', async () 
   }
 })
 
-test('member and logged-out NHL sharp odds stay on standard projection ids', async () => {
+test('member and logged-out NHL sharp odds keep playable projection ids', async () => {
   const demonIds = [15856898, 15857300, 15857317]
   TABLES.nhl_projections = [
     { id: 100, player: 'Standard', prop: 'Shots On Goal', line: 2.5, projection: 3.1, oddsType: 'standard' },
     { id: 101, player: 'Plain', prop: 'Points', line: 1.5, projection: 1.1 },
     { id: demonIds[0], player: 'Ekblad', prop: 'Power Play Points', line: 0.5, projection: 0.8, oddsType: 'demon' },
     { id: demonIds[1], player: 'Newhook', prop: 'Power Play Points', line: 0.5, projection: 0.7, oddsType: 'demon' },
-    { id: demonIds[2], player: 'Texier', prop: 'Power Play Points', line: 0.5, projection: 0.6, oddsType: 'demon' },
+    { id: demonIds[2], player: 'Texier', prop: 'Power Play Points', line: 0.5, projection: 0.2, oddsType: 'demon' },
     { id: 15863634, player: 'Pulled', prop: 'Points', line: 0.5, projection: 0.9, oddsType: 'standard', removed: true, pp_status: 'removed' },
     { id: 104, player: 'Held', prop: 'Points', line: 0.5, projection: 0.74, oddsType: 'standard' },
     { id: 105, player: 'Goalie', prop: 'Goalie Saves', line: 28.5, projection: 30, oddsType: 'standard', rankEligible: false },
@@ -496,23 +496,27 @@ test('member and logged-out NHL sharp odds stay on standard projection ids', asy
     const standardIds = new Set(board.body.data.map((row) => String(row.id)))
     assert.equal(standardIds.has('100'), true)
     assert.equal(standardIds.has('101'), true)
-    for (const id of demonIds) assert.equal(standardIds.has(String(id)), false)
+    assert.equal(standardIds.has(String(demonIds[0])), true)
+    assert.equal(standardIds.has(String(demonIds[1])), true)
+    assert.equal(standardIds.has(String(demonIds[2])), false)
     assert.equal(standardIds.has('15863634'), false)
     assert.equal(standardIds.has('104'), true)
     assert.equal(standardIds.has('105'), true)
 
     assert.equal(paid.body.preview, false)
     const paidIds = paid.body.data.records.map((row) => String(row.id))
-    assert.deepEqual(paidIds, ['100', '101'])
+    assert.deepEqual(paidIds, ['100', '101', String(demonIds[0]), String(demonIds[1])])
     assert.equal(paidIds.includes('15863634'), false)
+    assert.equal(paidIds.includes(String(demonIds[2])), false)
     assert.equal(paidIds.includes('104'), false)
     assert.equal(paidIds.includes('105'), false)
     for (const id of paidIds) assert.equal(standardIds.has(id), true, id)
 
     assert.equal(anon.body.preview, true)
     const anonIds = anon.body.data.records.map((row) => String(row.id))
-    assert.deepEqual(anonIds, ['100', '101'])
-    assert.equal(anon.body.data.records.some((row) => demonIds.includes(row.id) || row.id === 999), false)
+    assert.deepEqual(anonIds, [String(demonIds[0]), String(demonIds[1]), '100'])
+    assert.equal(anon.body.lockedCount, 1)
+    assert.equal(anon.body.data.records.some((row) => row.id === demonIds[2] || row.id === 999), false)
   } finally {
     delete TABLES.nhl_projections
     delete TABLES.nhl_sharp_odds
@@ -1158,16 +1162,19 @@ test('the snapshot read starts before the tier lookup finishes', async () => {
   }
 })
 
-test('shapeForTier walks standard lines only when the cache has not already', () => {
+test('shapeForTier hides a goblin under unless the cache already filtered or lines=all', () => {
   const rows = [
     { player: 'A', line: 1, projection: 2, line_type: 'standard' },
-    { player: 'B', line: 1, projection: 2, line_type: 'goblin' },
+    { player: 'B', line: 3, projection: 1, line_type: 'goblin' },
   ]
   const filtered = shapeForTier('nfl_projections', rows, 'combined')
   assert.equal(filtered.data.length, 1)
   const cached = shapeForTier('nfl_projections', rows, 'combined', { alreadyStandard: true })
   assert.equal(cached.data.length, 2)
   assert.equal(cached.preview, false)
+  const all = shapeForTier('nfl_projections', rows, 'combined', { showAllLines: true })
+  assert.equal(all.data.length, 2)
+  assert.equal(all.data.some((row) => row.player === 'B'), true)
 })
 
 function nflClient({ tier = 'owner', rows = TABLES.nfl_projections } = {}) {
@@ -1195,7 +1202,7 @@ function nflClient({ tier = 'owner', rows = TABLES.nfl_projections } = {}) {
 test('the standard-line filter runs once per cached board', async () => {
   const rows = [
     ...structuredClone(TABLES.nfl_projections),
-    { player: 'Gob', line: 1, projection: 2, line_type: 'goblin' },
+    { player: 'Gob', line: 3, projection: 1, line_type: 'goblin' },
   ]
   const req = { method: 'GET', query: { ds: 'nfl_projections' }, headers: { authorization: bearer('tok-owner') } }
   const first = mockRes()
@@ -1211,12 +1218,20 @@ test('the standard-line filter runs once per cached board', async () => {
   assert.equal(_standardFilterRuns(), 1)
   assert.equal(_tierShapeFilters(), 0)
   assert.equal(second.body.data.length, first.body.data.length)
+  const all = mockRes()
+  await handleDataRequest(
+    { method: 'GET', query: { ds: 'nfl_projections', lines: 'all' }, headers: { authorization: bearer('tok-owner') } },
+    all,
+    nflClient({ rows }),
+  )
+  assert.equal(_standardFilterRuns(), 2)
+  assert.equal(all.body.data.some((row) => row.player === 'Gob'), true)
 })
 
-test('an anonymous strikeout preview is standard lines only', async () => {
+test('an anonymous strikeout preview hides a goblin under', async () => {
   const rows = {
     projections: [
-      { name: 'Naile', line: 17.5, projection: 20, odds_type: 'goblin', prop: 'Strikeouts', rating: 200 },
+      { name: 'Naile', line: 20, projection: 5, odds_type: 'goblin', prop: 'Strikeouts', rating: 200 },
       { name: 'A', line: 5, projection: 4, odds_type: 'standard', prop: 'Strikeouts', rating: 40 },
       { name: 'B', line: 5, projection: 3, odds_type: 'standard', prop: 'Strikeouts', rating: 30 },
       { name: 'C', line: 5, projection: 2, odds_type: 'standard', prop: 'Strikeouts', rating: 20 },
@@ -1241,10 +1256,11 @@ test('an anonymous strikeout preview is standard lines only', async () => {
   assert.equal(_standardFilterRuns(), 1)
 })
 
-test('the NBA full path drops non-standard props', async () => {
+test('the NBA full path hides a demon under and keeps a demon over', async () => {
   const players = [
     { name: 'Std', ppAllProps: [{ stat: 'Points', odds_type: 'standard', line: 20, projection: 22 }] },
-    { name: 'Demon', ppAllProps: [{ stat: 'Points', odds_type: 'demon', line: 15, projection: 30 }] },
+    { name: 'Demon', ppAllProps: [{ stat: 'Points', odds_type: 'demon', line: 40, projection: 10 }] },
+    { name: 'Demon Over', ppAllProps: [{ stat: 'Points', odds_type: 'demon', line: 15, projection: 30 }] },
   ]
   const client = {
     auth: {
@@ -1274,7 +1290,7 @@ test('the NBA full path drops non-standard props', async () => {
   )
   assert.equal(res.statusCode, 200)
   assert.equal(res.body.preview, false)
-  assert.deepEqual(res.body.data.map((row) => row.name), ['Std'])
+  assert.deepEqual(res.body.data.map((row) => row.name), ['Std', 'Demon Over'])
 })
 
 test('a profile timeout with no paid cache returns the free preview', async () => {
@@ -1378,7 +1394,7 @@ test('standard PrizePicks lines are kept and goblin rows are dropped before the 
   const strikeouts = {
     generated_at: NOW,
     projections: [
-      { name: 'James Naile', prop: 'Pitching Outs', line: 16.5, rating: 99, odds_type: 'goblin' },
+      { name: 'James Naile', prop: 'Pitching Outs', line: 16.5, projection: 10, rating: 99, odds_type: 'goblin' },
       { name: 'Standard A', prop: 'Strikeouts', line: 5.5, rating: 40, odds_type: 'standard' },
       { name: 'Standard B', prop: 'Strikeouts', line: 4.5, rating: 30, odds_type: 'standard' },
       { name: 'Standard C', prop: 'Strikeouts', line: 6.5, rating: 20, odds_type: 'standard' },
@@ -1410,16 +1426,16 @@ test('standard PrizePicks lines are kept and goblin rows are dropped before the 
   }
   const kbo = shapeForTier('prizepicks_props', cards, 'free')
   const props = kbo.data.cards.flatMap((card) => card.props)
-  assert.equal(props.some((prop) => prop.odds_type === 'goblin'), false)
-  assert.equal(props.length, 1)
-  assert.equal(props[0].stat, 'Strikeouts')
+  assert.equal(props.some((prop) => prop.odds_type === 'goblin'), true)
+  assert.equal(props.some((prop) => prop.stat === 'Strikeouts'), true)
+  assert.equal(props.length, 2)
 
   const nhl = shapeForTier('nhl_projections', [
     { player: 'Goblin', prop: 'Points', line: 0.5, projection: 2, oddsType: 'goblin', rankEligible: true },
     { player: 'Standard', prop: 'Points', line: 0.5, projection: 1, oddsType: 'standard', rankEligible: true },
   ], 'free')
-  assert.equal(nhl.data.some((row) => row.oddsType === 'goblin'), false)
-  assert.equal(nhl.data[0].player, 'Standard')
+  assert.equal(nhl.data.some((row) => row.oddsType === 'goblin'), true)
+  assert.equal(nhl.data[0].player, 'Goblin')
 
   const markets = {
     generated_at: NOW,

@@ -3,6 +3,7 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { kboRawRating, scoreFor } from '../src/kboBoardScore.js'
 import { kboHubRows, topHubRows } from '../src/memberHub.js'
+import { isPlayableBoardLine } from '../src/standardBoard.js'
 import { selectFreeTop3 } from '../src/freeTopPicks.js'
 import { compareSlipRows, naturalSide, rawSlipCg, shownCg, slipCg } from '../src/slipBoardModel.js'
 import { averageCg, legCg } from '../src/slipRank.js'
@@ -29,17 +30,18 @@ test('(1) member hub / landing KBO rows rank by the CG Score, standard lines onl
   assert.deepEqual(topHubRows(rows, 3).map(key), EXPECTED)
 })
 
-test('(1) FreePicksPreview KBO rows use scoreFor and skip non-standard lines', () => {
+test('(1) FreePicksPreview KBO rows use scoreFor and hide demon and goblin unders', () => {
   const s = readFileSync(new URL('../src/FreePicksPreview.jsx', import.meta.url), 'utf8')
   const body = s.slice(s.indexOf('function kboRows'), s.indexOf('function nflFreeScore'))
   assert.equal(body.includes('prop?.cg_projection'), false)
   assert.match(body, /const cg = scoreFor\(prop\)/)
   assert.match(body, /score: cg == null \? -Infinity : cg/)
   assert.match(body, /rawScore: kboRawRating\(/)
-  assert.match(body, /!== 'standard'\) return;/)
+  assert.match(body, /if \(!isPlayableBoardLine\(prop\)\) return;/)
   // Same rule, applied to the slate: Park TB, Castro FS, Kim FS.
+  // Kim's demon is an under. Park Hae-min's demon over stays, below the top 3.
   const rows = slate.cards.flatMap((card) => card.props
-    .filter((p) => p.odds_type === 'standard')
+    .filter((p) => isPlayableBoardLine(p))
     .map((p) => ({ player: card.name, stat: p.stat, line: p.line, projection: p.projection, score: scoreFor(p) ?? -Infinity, rawScore: kboRawRating(p.projection, p.line, p.stat) })))
   assert.deepEqual(selectFreeTop3(rows, 'kbo', new Date('2026-10-19T23:30:00Z')).map(key), EXPECTED)
 })

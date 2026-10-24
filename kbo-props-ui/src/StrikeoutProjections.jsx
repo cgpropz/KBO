@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import './StrikeoutProjections.css';
 import { fetchData, fetchDataSnapshot } from './dataUrl';
+import { isShownBoardLine } from './standardBoard.js';
+import { ShowAllLinesToggle, useShowAllLines } from './ShowAllLinesToggle';
 import BoardStatus from './BoardStatus';
 import { getCgProjectionColor } from './cgProjectionColor';
 import { prizepicksPulled } from './nhl/pointsGate';
@@ -94,7 +96,6 @@ function StrikeoutProjections({ onNavigate }) {
   const [error, setError] = useState(null);
   const [loadAttempt, setLoadAttempt] = useState(0);
   const [selectedProp, setSelectedProp] = useState('all');
-  const oddsTypeFilter = 'standard';
   const [hitRateFilter, setHitRateFilter] = useState('all');
   const [hitRateMinimum, setHitRateMinimum] = useState('off');
   const [sortField, setSortField] = useState('rating');
@@ -186,6 +187,18 @@ function StrikeoutProjections({ onNavigate }) {
     setLoading(true);
     setLoadAttempt((current) => current + 1);
   };
+  const { showAllLines, setShowAllLines, allPayload } = useShowAllLines(
+    `${loadAttempt}:${updatedAt || ''}`,
+    () => Promise.all([
+      fetchDataSnapshot('strikeout_projections.json', { showAllLines: true }),
+      fetchData('prizepicks_props.json', { showAllLines: true }).catch(() => null),
+    ]).then(([kSnap, pp]) => ({
+      pitchers: kSnap?.data || null,
+      prizepicks: pp,
+    })),
+  );
+  const boardData = showAllLines && allPayload?.pitchers ? allPayload.pitchers : data;
+  const boardProps = showAllLines && allPayload ? allPayload.prizepicks : prizepicksData;
 
   const handleSort = (field) => {
     if (sortField === field) {
@@ -312,7 +325,7 @@ function StrikeoutProjections({ onNavigate }) {
     })
   );
 
-  const scoped = (data.projections || []).filter((p) => {
+  const scoped = (boardData.projections || []).filter((p) => {
     if (slatePairs.size === 0) return true;
     return slatePairs.has(`${canonicalTeam(p.team)}@@${canonicalTeam(p.opponent)}`);
   });
@@ -320,7 +333,7 @@ function StrikeoutProjections({ onNavigate }) {
   const ppVariantsByKey = (() => {
     const map = new Map();
     const teamOppBuckets = new Map();
-    const cards = prizepicksData?.cards || [];
+    const cards = boardProps?.cards || [];
     for (const card of cards) {
       if (card?.type !== 'pitcher') continue;
       const team = canonicalTeam(card?.team || '');
@@ -474,11 +487,7 @@ function StrikeoutProjections({ onNavigate }) {
 
   const filtered = mergedScoped.filter((p) => {
     if (selectedProp !== 'all' && p.prop !== selectedProp) return false;
-    if (oddsTypeFilter !== 'all') {
-      const ot = (p.odds_type || 'standard').toLowerCase();
-      if (oddsTypeFilter === 'promo' && ot !== 'goblin' && ot !== 'demon') return false;
-      if (oddsTypeFilter !== 'promo' && ot !== oddsTypeFilter) return false;
-    }
+    if (!isShownBoardLine(p, { showAllLines })) return false;
     if (hitRateMinimum === 'off') return true;
 
     const minimumRate = Number(hitRateMinimum);
@@ -518,7 +527,7 @@ function StrikeoutProjections({ onNavigate }) {
         : 'Team K Rates (SO/G)';
 
   const contextCards = selectedProp === 'Hits Allowed'
-    ? Object.entries(data.team_h_per_ip || {})
+    ? Object.entries(boardData.team_h_per_ip || {})
         .sort((a, b) => b[1] - a[1])
         .map(([team, rate]) => ({ label: team, value: rate.toFixed(3), color: TEAMS[team] || '#999' }))
     : selectedProp === 'Pitching Outs'
@@ -535,11 +544,11 @@ function StrikeoutProjections({ onNavigate }) {
               value: scoped.filter((p) => p.prop === opt.key).length,
               color: '#fff',
             }))
-        : Object.entries(data.team_so_per_g || {})
+        : Object.entries(boardData.team_so_per_g || {})
             .sort((a, b) => b[1] - a[1])
             .map(([team, rate]) => ({ label: team, value: rate.toFixed(2), color: TEAMS[team] || '#999' }));
 
-  const hasCurrentPitcherMarkets = data.market_status !== 'no_current_pitcher_markets';
+  const hasCurrentPitcherMarkets = boardData.market_status !== 'no_current_pitcher_markets';
 
   const deriveValue = (proj, line) => pregameSide(proj, line);
 
@@ -622,6 +631,7 @@ function StrikeoutProjections({ onNavigate }) {
             <p className="so-description">Compare live lines with opponent context and recent pitcher performance.</p>
           </div>
           <BoardStatus sport="kbo" updatedAt={updatedAt} />
+          <ShowAllLinesToggle pressed={showAllLines} onChange={setShowAllLines} />
         </div>
         <div className="so-filter-shell">
           <div className="so-filter-groups">

@@ -31,8 +31,8 @@ function accessToken({ fresh = false } = {}) {
 
 const inflight = new Map();
 
-function inflightKey(ds, { player, fresh = false } = {}) {
-  return `${ds}\0${player || ''}\0${fresh ? '1' : '0'}`;
+function inflightKey(ds, { player, fresh = false, showAllLines = false } = {}) {
+  return `${ds}\0${player || ''}\0${fresh ? '1' : '0'}\0${showAllLines ? 'all' : 'play'}`;
 }
 
 function cachedMemberPreviewIsDowngrade(ds, body) {
@@ -42,12 +42,13 @@ function cachedMemberPreviewIsDowngrade(ds, body) {
   });
 }
 
-async function fetchDevStatic(ds, staticPath) {
+async function fetchDevStatic(ds, staticPath, { showAllLines = false } = {}) {
   const res = await fetch(`${import.meta.env.BASE_URL}data/${staticPath}?v=${Date.now()}`, { cache: 'no-store' });
   if (!res.ok) throw new Error(`Failed to load ${staticPath}`);
   const data = await res.json();
   return {
-    data: filterStandardBoard(ds, data),
+    data: filterStandardBoard(ds, data, { showAllLines }),
+    showAllLines,
     updatedAt: publishedAtFromPayload(data) || res.headers.get('last-modified') || null,
     source: 'dev_static',
     preview: false,
@@ -67,12 +68,14 @@ async function readErrorBody(res) {
   }
 }
 
-function presentDataset(ds, body) {
+function presentDataset(ds, body, { showAllLines = false } = {}) {
   const preview = !!body.preview;
   return {
     // A free preview is the production payload. Filtering it here would drop
-    // the same rows the server left in the top 3. Full responses are filtered.
-    data: preview ? body.data : filterStandardBoard(ds, body.data),
+    // the same rows the server left in the top 3. Full responses are filtered
+    // in the same mode the request asked for.
+    data: preview ? body.data : filterStandardBoard(ds, body.data, { showAllLines }),
+    showAllLines,
     updatedAt: body.updatedAt || publishedAtFromPayload(body.data) || null,
     source: 'api',
     preview,
@@ -139,7 +142,7 @@ export async function refreshFullBoard(ds, opts, {
       sleepFn,
       attempt: async () => {
         const body = await request(ds, { ...opts, fresh: true, retried: true, player: undefined });
-        const presented = presentDataset(ds, body);
+        const presented = presentDataset(ds, body, { showAllLines: opts.showAllLines === true });
         if (!presented.preview) {
           publishDataset(ds, presented);
           return 'full';
@@ -157,7 +160,7 @@ export async function refreshFullBoard(ds, opts, {
   }
 }
 
-async function requestDataset(ds, { priority, player, fresh = false, timeoutMs, retried = false, suppliedToken } = {}) {
+async function requestDataset(ds, { priority, player, fresh = false, timeoutMs, retried = false, suppliedToken, showAllLines = false } = {}) {
   const budget = Number.isFinite(timeoutMs)
     ? Math.min(FETCH_TIMEOUT_MS, Math.max(1, timeoutMs))
     : FETCH_TIMEOUT_MS;
@@ -166,6 +169,7 @@ async function requestDataset(ds, { priority, player, fresh = false, timeoutMs, 
   const token = suppliedToken !== undefined ? suppliedToken : await accessToken({ fresh });
   const params = new URLSearchParams({ ds });
   if (player) params.set('player', player);
+  if (showAllLines) params.set('lines', 'all');
   const res = await fetch(`/api/data?${params}`, {
     headers: token ? { Authorization: `Bearer ${token}` } : {},
     signal: AbortSignal.timeout(budget),
@@ -200,7 +204,7 @@ async function loadDataset(ds, opts, managed) {
         if (!isTimeoutError(retryErr)) throw retryErr;
       }
     }
-    const presented = presentDataset(ds, body);
+    const presented = presentDataset(ds, body, { showAllLines: opts.showAllLines === true });
     if (!managed && !opts.player && presented.preview && cachedMemberPreviewIsDowngrade(ds, body)) {
       presented.refreshing = true;
       refreshFullBoard(ds, opts);
@@ -212,7 +216,7 @@ async function loadDataset(ds, opts, managed) {
     }
     if (import.meta.env.DEV && opts.devStaticPath) {
       console.warn(`[data] ${ds} API unavailable in dev, using local static file`, err.message);
-      return fetchDevStatic(ds, opts.devStaticPath);
+      return fetchDevStatic(ds, opts.devStaticPath, { showAllLines: opts.showAllLines === true });
     }
     if (isTimeoutError(err)) {
       throw new Error(`Timed out loading ${ds}. The data service may be slow — please refresh.`);
@@ -221,8 +225,8 @@ async function loadDataset(ds, opts, managed) {
   }
 }
 
-export function fetchApiDataset(ds, { devStaticPath, priority, player, fresh = false, timeoutMs, retried = false, accessToken: suppliedToken } = {}) {
-  const opts = { devStaticPath, priority, player, fresh, timeoutMs, retried, suppliedToken };
+export function fetchApiDataset(ds, { devStaticPath, priority, player, fresh = false, timeoutMs, retried = false, accessToken: suppliedToken, showAllLines = false } = {}) {
+  const opts = { devStaticPath, priority, player, fresh, timeoutMs, retried, suppliedToken, showAllLines: showAllLines === true };
   const key = inflightKey(ds, opts);
   const existing = inflight.get(key);
   if (existing) return existing;

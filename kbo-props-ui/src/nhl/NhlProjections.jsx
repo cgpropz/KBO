@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import NhlAvatar from './NhlAvatar.jsx'
 import { fetchNhlProjections } from './nhlData'
+import { ShowAllLinesToggle, useShowAllLines } from '../ShowAllLinesToggle'
 import { MemberPreviewNotice } from '../MemberPreviewNotice'
 import { QuietMemberPreview } from '../QuietMemberPreview'
 import { MemberBoardStatus } from '../MemberBoardStatus'
@@ -122,18 +123,24 @@ export default function NhlProjections({ onSelectPlayer }) {
     setLoadAttempt((current) => current + 1)
   }
 
+  const { showAllLines, setShowAllLines, allPayload } = useShowAllLines(
+    `${loadAttempt}:${updatedAt || ''}`,
+    () => fetchNhlProjections({ showAllLines: true }),
+  )
+  const boardProjections = showAllLines && allPayload ? allPayload.projections : projections
   const rows = useMemo(() => {
     const needle = query.trim().toLowerCase()
-    const filtered = prepareBoardRows(projections).filter((item) => lineMatchesStat(item.prop, item.line) && (tab === 'ALL' || item.prop === tab) && (!needle || item.player.toLowerCase().includes(needle) || item.team.toLowerCase().includes(needle)))
+    const filtered = prepareBoardRows(boardProjections).filter((item) => lineMatchesStat(item.prop, item.line) && (tab === 'ALL' || item.prop === tab) && (!needle || item.player.toLowerCase().includes(needle) || item.team.toLowerCase().includes(needle)))
     return sortBoard(filtered, 'CG Score')
-  }, [projections, tab, query])
+  }, [boardProjections, tab, query])
 
   return (
     <section>
       <div className="nfl-board-header">
         <div><p>NHL / PRIZEPICKS</p><h1>Board</h1><BoardStatus sport="nhl" updatedAt={updatedAt} /></div>
+        <ShowAllLinesToggle pressed={showAllLines} onChange={setShowAllLines} />
       </div>
-      <p className="nhl-note">One card per player and prop. Standard PrizePicks lines only. Probable goalies are tagged and sorted to the bottom. When a starter is confirmed, other goalie lines on that team come off the board.</p>
+      <p className="nhl-note">One card per player and prop. Demon and goblin unders stay hidden until Show all lines. Probable goalies are tagged and sorted to the bottom. When a starter is confirmed, other goalie lines on that team come off the board.</p>
       <div className="nfl-edge-controls">
         <label><span>PLAYER</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search" /></label>
         <div className="nfl-position-tabs">

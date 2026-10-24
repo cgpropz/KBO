@@ -24,18 +24,26 @@ test('kbo hub prefers a manual player photo over the name lookup', () => {
   assert.equal(generic[0].ppImageUrl, asset)
 })
 
-test('hub rows keep standard lines only', () => {
+test('hub rows hide demon and goblin unders and keep their overs', () => {
   const kbo = kboHubRows({ cards: [{ name: 'A', props: [
     { stat: 'Hits', line: 0.5, odds_type: 'goblin', cg_projection: 90 },
     { stat: 'Hits', line: 1.5, odds_type: 'standard', cg_projection: 70, projection: 1.8, recommendation: 'OVER' },
   ] }] })
   assert.equal(kbo.length, 1)
   // KBO hub rows rank by the CG Score (1.8 vs 1.5), not cg_projection.
+  // The goblin row has no model projection, so it is not a hub row.
   assert.equal(kbo[0].score, 60)
-  const nhl = nhlHubRows([{ player: 'B', prop: 'Points', line: 0.5, projection: 1, oddsType: 'demon' }, { player: 'C', prop: 'Points', line: 0.5, projection: 1, oddsType: 'standard' }])
-  assert.deepEqual(nhl.map((r) => r.player), ['C'])
-  const nfl = nflHubRows([{ player: 'D', prop: 'Receptions', line: 4.5, projection: 6, line_type: 'goblin' }])
-  assert.equal(nfl.length, 0)
+  const nhl = nhlHubRows([
+    { player: 'B', prop: 'Points', line: 0.5, projection: 1, oddsType: 'demon' },
+    { player: 'C', prop: 'Points', line: 0.5, projection: 1, oddsType: 'standard' },
+    { player: 'Under', prop: 'Points', line: 1.5, projection: 0.4, oddsType: 'goblin' },
+  ])
+  assert.deepEqual(nhl.map((r) => r.player), ['B', 'C'])
+  const nfl = nflHubRows([
+    { player: 'D', prop: 'Receptions', line: 4.5, projection: 6, line_type: 'goblin' },
+    { player: 'E', prop: 'Receptions', line: 6.5, projection: 4, line_type: 'demon' },
+  ])
+  assert.deepEqual(nfl.map((r) => r.player), ['D'])
   const nba = nbaHubRows([{ name: 'E', ppAllProps: [{ stat: 'Points', line: 9.5, standardLine: 9.5, rating: 60, projection: 11 }, { stat: 'Points', line: 7.5, standardLine: 9.5, rating: 80 }] }])
   assert.deepEqual(nba.map((r) => r.score), [60])
 })

@@ -32,7 +32,7 @@ const BOARD = [
   player('Big Edge', [{ stat: 'Points', line: 10.5, projection: 30 }]),
   player('Small Edge', [{ stat: 'Rebounds', line: 6.5, projection: 7.1 }]),
   player('Mid Edge', [{ stat: 'Assists', line: 5.5, projection: 7.5 }]),
-  player('Goblin', [{ stat: 'Points', line: 2.5, projection: 40, odds_type: 'goblin' }]),
+  player('Goblin', [{ stat: 'Points', line: 40.5, projection: 2, odds_type: 'goblin' }]),
   player('Pulled', [{ stat: 'Points', line: 3.5, projection: 40, pp_status: 'removed' }]),
 ]
 

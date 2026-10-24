@@ -198,8 +198,9 @@ test('All-Access and the admin read full NHL data; Discord, legacy, and logged-o
     assert.equal(res.statusCode, 200, token)
     assert.equal(res.body.preview, false, token)
     assert.equal(res.body.lockedCount, 0, token)
-    assert.equal(res.body.data.length, 4, token)
-    assert.equal(res.body.data.some((row) => row.player === 'Goblin Skater' || row.player === 'Demon Skater'), false, token)
+    assert.equal(res.body.data.length, 6, token)
+    assert.equal(res.body.data.some((row) => row.player === 'Goblin Skater'), true, token)
+    assert.equal(res.body.data.some((row) => row.player === 'Demon Skater'), true, token)
     assert.equal(res.body.access.nhl, token === 'tok-owner' ? false : true, token)
   }
 
@@ -213,8 +214,8 @@ test('All-Access and the admin read full NHL data; Discord, legacy, and logged-o
     assert.equal(preview.statusCode, 200, token)
     assert.equal(preview.body.preview, true, token)
     assert.equal(preview.body.data.length, 3, token)
-    assert.equal(preview.body.lockedCount, 1, token)
-    assert.equal(preview.body.data.some((row) => row.player === 'Goblin Skater'), false, token)
+    assert.equal(preview.body.lockedCount, 3, token)
+    assert.deepEqual(preview.body.data.map((row) => row.player), ['Goblin Skater', 'Demon Skater', 'Mikko Rantanen'], token)
     assert.equal(preview.body.access.nhl, false, token)
   }
 

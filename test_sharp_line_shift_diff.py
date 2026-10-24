@@ -107,18 +107,20 @@ class SharpLineShiftDiffTests(unittest.TestCase):
             {"player": "Mid", "prop": "Rush Yards", "recommendation": "UNDER", "ev_pct": 1, "pp_edge_flex": 3, "line_type": "standard", "line_match": "exact", "pp_line": 4.5, "matched_line": 4.5},
             {"player": "Legacy", "prop": "Pass Yards", "recommendation": "OVER", "ev_pct": 8, "line_match": "exact", "pp_line": 4.5, "matched_line": 4.5},
             {"player": "Goblin", "prop": "Pass Yards", "recommendation": "OVER", "pp_edge_flex": 99, "line_type": "goblin", "line_match": "exact", "pp_line": 4.5, "matched_line": 4.5},
+            {"player": "GoblinUnder", "prop": "Pass Yards", "recommendation": "UNDER", "pp_edge_flex": 100, "line_type": "goblin", "line_match": "exact", "pp_line": 4.5, "matched_line": 4.5},
         ]
         preview = free_preview(rows, "nfl")
-        self.assertEqual([row["player"] for row in preview], ["Legacy", "HighEdge", "Mid"])
+        self.assertEqual([row["player"] for row in preview], ["Goblin", "Legacy", "HighEdge"])
+        self.assertNotIn("GoblinUnder", [row["player"] for row in preview])
         self.assertEqual(preview[0]["side"], "OVER")
-        self.assertEqual(preview[0]["edge"], 8)
-        self.assertEqual(preview[2]["side"], "UNDER")
-        self.assertEqual(preview[2]["prop"], "Rush Yards")
+        self.assertEqual(preview[0]["edge"], 99)
+        self.assertEqual(preview[2]["side"], "OVER")
+        self.assertEqual(preview[2]["prop"], "Receiving Yards")
         held = rows + [
             {"player": "Held", "prop": "Points", "recommendation": "OVER", "pp_edge_flex": 80, "rankEligible": False, "line_type": "standard", "line_match": "exact", "pp_line": 1.5, "matched_line": 1.5},
         ]
-        self.assertEqual(free_preview(held, "nfl")[0]["player"], "Held")
-        self.assertEqual([row["player"] for row in free_preview(held, "nhl")], ["Legacy", "HighEdge", "Mid"])
+        self.assertEqual(free_preview(held, "nfl")[0]["player"], "Goblin")
+        self.assertEqual([row["player"] for row in free_preview(held, "nhl")], ["Goblin", "Legacy", "HighEdge"])
         self.assertEqual(snapshot_sport({"sport": "nhl"}, "odds.json"), "nhl")
         self.assertEqual(snapshot_sport({"sport": "americanfootball_nfl"}, "nfl_sharp_odds.json"), "nfl")
 

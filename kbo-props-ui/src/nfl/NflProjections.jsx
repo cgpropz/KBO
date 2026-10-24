@@ -6,6 +6,7 @@ import { nflBoardDvpRank, nflTodayPick } from './nflPlayerGames.js'
 import { compareSymmetric, displayScoreText, symmetricRankOn } from '../sideRank'
 import { cgSide } from '../cgScore'
 import { fetchNflProjections } from './nflData'
+import { ShowAllLinesToggle, useShowAllLines } from '../ShowAllLinesToggle'
 import BoardStatus from '../BoardStatus'
 import { MemberPreviewNotice } from '../MemberPreviewNotice'
 import { QuietMemberPreview } from '../QuietMemberPreview'
@@ -146,10 +147,15 @@ export default function NflProjections({ onSelectPlayer }) {
     setLoadAttempt((current) => current + 1)
   }
 
+  const { showAllLines, setShowAllLines, allPayload } = useShowAllLines(
+    `${loadAttempt}:${updatedAt || ''}`,
+    () => fetchNflProjections({ showAllLines: true }),
+  )
+  const boardProjections = showAllLines && allPayload ? allPayload.projections : projections
   const matchupKey = (item) => [item.team, item.opponent].sort().join(' vs ')
-  const props = useMemo(() => ['All props', ...new Set(projections.map((item) => item.prop))].sort((a, b) => a === 'All props' ? -1 : a.localeCompare(b)), [projections])
-  const matchups = useMemo(() => ['All matchups', ...new Set(projections.map(matchupKey))].sort((a, b) => a === 'All matchups' ? -1 : a.localeCompare(b)), [projections])
-  const rows = useMemo(() => projections
+  const props = useMemo(() => ['All props', ...new Set(boardProjections.map((item) => item.prop))].sort((a, b) => a === 'All props' ? -1 : a.localeCompare(b)), [boardProjections])
+  const matchups = useMemo(() => ['All matchups', ...new Set(boardProjections.map(matchupKey))].sort((a, b) => a === 'All matchups' ? -1 : a.localeCompare(b)), [boardProjections])
+  const rows = useMemo(() => boardProjections
     .filter((item) => lineMatchesStat(item.prop, item.line))
     .map((item) => { const cgScore = nflTodayPick(item).cg; return { ...item, cgScore, score: nflCgScore(item.projection, item.line, item.prop) ?? 0, rawScore: nflRawScore(item.projection, item.line, item.prop) } })
     .filter((item) => position === 'ALL' || item.position === position)
@@ -159,11 +165,17 @@ export default function NflProjections({ onSelectPlayer }) {
     .sort((a, b) => {
       if (sort !== 'CG Score') return b.hitRate - a.hitRate
       return symmetricRankOn('nfl') ? compareSymmetric(a, b) : compareNflScores(a.score, a.rawScore, b.score, b.rawScore)
-    }), [matchup, position, projections, prop, query, sort])
+    }), [matchup, position, boardProjections, prop, query, sort])
 
   return (
     <section className="nfl-edge-board">
-      <div className="nfl-board-header"><div><p>NFL / PRIZEPICKS</p><h1>Edge Board</h1><BoardStatus sport="nfl" updatedAt={updatedAt} /></div><span>{rows.length} edges</span></div>
+      <div className="nfl-board-header">
+        <div><p>NFL / PRIZEPICKS</p><h1>Edge Board</h1><BoardStatus sport="nfl" updatedAt={updatedAt} /></div>
+        <div className="nfl-lines-header-actions">
+          <ShowAllLinesToggle pressed={showAllLines} onChange={setShowAllLines} />
+          <span>{rows.length} edges</span>
+        </div>
+      </div>
       <section className="nfl-edge-controls" aria-label="NFL projection filters">
         <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search player..." />
         <label><span>SORT</span><select aria-label="Sort" value={sort} onChange={(event) => setSort(event.target.value)}><option>CG Score</option><option>Best hit rate</option></select></label>
@@ -177,9 +189,9 @@ export default function NflProjections({ onSelectPlayer }) {
       {!hold && error && <BoardLoadError error={error} prefix="Unable to load the NFL snapshot:" onRetry={retryLoad} />}
       {showPaywall && <MemberPreviewNotice exhausted={refreshExhausted} onRetry={retryLoad} />}
       {!hold && !error && !loaded && <div className="nfl-notice">Loading the current PrizePicks board.</div>}
-      {!hold && !error && loaded && !projections.length && lockedCount <= 0 && <div className="nfl-notice">No NFL props are on the PrizePicks board right now. Check back closer to kickoff.</div>}
-      {!hold && !error && loaded && !!projections.length && !rows.length && <div className="nfl-notice">No edges match these filters.</div>}
-      {showPaywall && !error && loaded && lockedCount > 0 && <div className="nfl-notice">{projections.length ? `Free preview: showing the top ${projections.length} edge${projections.length === 1 ? '' : 's'}. ${lockedCount} more are locked. Upgrade to see every edge.` : `The NFL board is locked. ${lockedCount} ${lineClause(lockedCount)} locked. Upgrade to see every edge.`}</div>}
+      {!hold && !error && loaded && !boardProjections.length && lockedCount <= 0 && <div className="nfl-notice">No NFL props are on the PrizePicks board right now. Check back closer to kickoff.</div>}
+      {!hold && !error && loaded && !!boardProjections.length && !rows.length && <div className="nfl-notice">No edges match these filters.</div>}
+      {showPaywall && !error && loaded && lockedCount > 0 && <div className="nfl-notice">{boardProjections.length ? `Free preview: showing the top ${boardProjections.length} edge${boardProjections.length === 1 ? '' : 's'}. ${lockedCount} more are locked. Upgrade to see every edge.` : `The NFL board is locked. ${lockedCount} ${lineClause(lockedCount)} locked. Upgrade to see every edge.`}</div>}
       {!hold && <div className="nfl-edge-grid">{rows.map((item) => <ProjectionCard key={item.id} item={item} onSelectPlayer={onSelectPlayer} />)}</div>}
     </section>
   )

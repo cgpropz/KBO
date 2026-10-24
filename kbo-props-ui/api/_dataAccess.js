@@ -5,7 +5,7 @@ import { NFL_FREE_PREVIEW_ENABLED } from '../src/nflPreviewFlag.js';
 import { NBA_FREE_PREVIEW_ENABLED } from '../src/nbaPreviewFlag.js';
 import { hasPostedProjection } from '../src/nba/nbaPostedProjection.js';
 import { applyPointsOverGate, dropPulledRows, pointsOverDisposition, prizepicksPulled } from '../src/nhl/pointsGate.js';
-import { filterStandardBoard, isStandardBoardLine, summaryForGradedRows } from '../src/standardBoard.js';
+import { filterStandardBoard, isShownBoardLine, isStandardBoardLine, summaryForGradedRows } from '../src/standardBoard.js';
 import { lineEdgesFromSnapshot } from '../src/publicBoard.js';
 import { mergeLivePrizePicks } from '../src/kboLiveLines.js';
 import { wnbaCgScore } from '../src/wnba/wnbaScore.js';
@@ -304,9 +304,9 @@ function nhlScore(row) {
 }
 
 // Prop boards a member actually scrolls. The free preview and the paid
-// payload both start from this set: standard lines only, then pulled and
-// removed PrizePicks rows. The NHL Points-over gate runs only for
-// nhl_projections.
+// payload both start from this set: playable lines, then pulled and
+// removed PrizePicks rows. Demon and goblin unders are already hidden.
+// The NHL Points-over gate runs only for nhl_projections.
 const MEMBER_BOARD_DATASETS = new Set([
   'prizepicks_props',
   'wnba_projections_standard',
@@ -557,15 +557,16 @@ function topN(items, scoreFn, n = FREE_ROW_LIMIT, rawFn = null) {
 }
 
 // Rows the free PP Odds preview keeps. nfl_sharp_odds scores with
-// nflSharpScore and nhl_sharp_odds with nhlSharpScore, then topN. Standard
-// lines only, same rule as filterStandardBoard, and only an exact line or a
-// nearest line within half a point. A missing edge and a started game score
-// out. The NFL preview flag hides that board
+// nflSharpScore and nhl_sharp_odds with nhlSharpScore, then topN. Playable
+// lines, same rule as filterStandardBoard: standard, unlabeled, and
+// demon/goblin overs. Demon and goblin unders stay out unless showAllLines.
+// Only an exact line or a nearest line within half a point. A missing edge
+// and a started game score out. The NFL preview flag hides that board
 // the same way shapeForTier does. scripts/sharp_line_shift_diff.py calls
 // this so its before/after list is the preview's list.
-export function selectFreeSharpOddsPreview(records, sport = 'nfl') {
+export function selectFreeSharpOddsPreview(records, sport = 'nfl', options = {}) {
   if (sport !== 'nhl' && !NFL_FREE_PREVIEW_ENABLED) return [];
-  const rows = (Array.isArray(records) ? records : []).filter((row) => isStandardBoardLine(row) && sharpOddsPreviewLine(row));
+  const rows = (Array.isArray(records) ? records : []).filter((row) => isShownBoardLine(row, options) && sharpOddsPreviewLine(row));
   const scoreFn = sport === 'nhl' ? nhlSharpScore : nflSharpScore;
   return topN(rows, scoreFn, FREE_ROW_LIMIT).map(({ item, score }) => ({
     player: item?.player || '',
@@ -609,12 +610,12 @@ function previewObjectList(key, scoreFn) {
 // a locked upgrade.
 function previewSharpOdds(scoreFn) {
   const build = previewObjectList('records', scoreFn);
-  return (payload) => {
+  return (payload, opts = {}) => {
     const preview = build(payload);
     const kept = Array.isArray(preview.data?.records) ? preview.data.records : [];
     if (kept.length > 0) return preview;
     const rows = Array.isArray(payload?.records) ? payload.records : [];
-    const live = rows.filter((row) => isStandardBoardLine(row) && !prizepicksPulled(row));
+    const live = rows.filter((row) => isShownBoardLine(row, opts) && !prizepicksPulled(row));
     if (!live.length || !live.every((row) => gameAlreadyStarted(row))) return preview;
     return {
       data: { ...preview.data, empty_state: 'started' },
@@ -1040,9 +1041,10 @@ function hiddenNflPreview(ds, payload) {
   return { data: { ...obj, [key]: [] }, lockedCount: countList(obj, key) };
 }
 
-// Code Green, 7:53 AM ET on Oct 17, 2026: standard lines only for everyone,
-// including free and logged-out visitors. The filter runs before the
-// free-preview trim. Set this to false only to restore the old preview order.
+// Code Green, 7:53 AM ET on Oct 17, 2026: filter lines before the free trim.
+// Code Green, 6:07 AM ET on Oct 24, 2026: that filter is playable lines.
+// Demon and goblin unders are hidden. Their overs stay. lines=all restores
+// the unders. Set this to false only to restore the old preview order.
 export const FILTER_STANDARD_BEFORE_FREE_PREVIEW = true;
 
 let tierShapeFilters = 0;
@@ -1080,18 +1082,20 @@ function attachLineEdges(ds, payload, shaped, now) {
 // Decide what the caller receives for one dataset snapshot.
 // alreadyStandard means the cached board was filtered once for this entry.
 // The hot path must not walk the rows again.
-export function shapeForTier(ds, payload, tier, { alreadyStandard = false, now = new Date() } = {}) {
+export function shapeForTier(ds, payload, tier, { alreadyStandard = false, showAllLines = false, now = new Date() } = {}) {
   const spec = Object.hasOwn(DATASETS, ds) ? DATASETS[ds] : null;
   if (!spec) throw new Error(`Unknown dataset: ${ds}`);
-  // Standard lines are removed before the trim on paid boards and, while
+  // Playable lines are applied before the trim on paid boards and, while
   // FILTER_STANDARD_BEFORE_FREE_PREVIEW is on, on free and logged-out boards.
+  // alreadyStandard means this cache entry was already filtered in the same mode.
   const paid = sportAccess(tier)[spec.sport] === true;
   if (!alreadyStandard && (paid || FILTER_STANDARD_BEFORE_FREE_PREVIEW)) {
     tierShapeFilters += 1;
-    payload = filterStandardBoard(ds, payload);
+    payload = filterStandardBoard(ds, payload, { showAllLines });
   }
-  // Same row set for the paid board and the free denominator. Pulled,
-  // removed, and non-standard lines are already gone on every paid board.
+  // Same row set for the paid board and the free denominator. Pulled and
+  // removed lines are already gone. Demon and goblin unders are too,
+  // unless this request asked for every line.
   // Only nhl_projections then drops Points overs under 0.69 and leaves
   // overs from 0.69 up to 0.78 on the board with rankEligible false.
   if (MEMBER_BOARD_DATASETS.has(ds)) payload = prepareMemberBoard(ds, payload, now);
@@ -1102,7 +1106,7 @@ export function shapeForTier(ds, payload, tier, { alreadyStandard = false, now =
     const hidden = hiddenNflPreview(ds, payload);
     return { data: hidden.data, preview: true, lockedCount: hidden.lockedCount };
   }
-  const preview = spec.free(payload);
+  const preview = spec.free(payload, { showAllLines });
   const shaped = !MEMBER_BOARD_DATASETS.has(ds)
     ? { data: preview.data, preview: true, lockedCount: preview.lockedCount }
     : {

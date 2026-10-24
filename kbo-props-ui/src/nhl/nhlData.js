@@ -1,7 +1,7 @@
 import { fetchApiDataset } from '../apiData'
 
-export async function fetchNhlProjections() {
-  const snapshot = await fetchApiDataset('nhl_projections', { devStaticPath: 'nhl/projections.json' })
+export async function fetchNhlProjections({ showAllLines = false } = {}) {
+  const snapshot = await fetchApiDataset('nhl_projections', { devStaticPath: 'nhl/projections.json', showAllLines })
   return {
     projections: Array.isArray(snapshot.data) ? snapshot.data : [],
     updatedAt: snapshot.updatedAt,
@@ -35,8 +35,8 @@ export async function fetchNhlDvp(ds, staticPath) {
   }
 }
 
-export async function fetchNhlSharpOdds({ fresh = false } = {}) {
-  const snapshot = await fetchApiDataset('nhl_sharp_odds', { devStaticPath: 'nhl/sharp_odds.json', fresh })
+export async function fetchNhlSharpOdds({ fresh = false, showAllLines = false } = {}) {
+  const snapshot = await fetchApiDataset('nhl_sharp_odds', { devStaticPath: 'nhl/sharp_odds.json', fresh, showAllLines })
   const payload = snapshot.data && typeof snapshot.data === 'object' && !Array.isArray(snapshot.data)
     ? snapshot.data
     : { records: Array.isArray(snapshot.data) ? snapshot.data : [], status: 'ok' }

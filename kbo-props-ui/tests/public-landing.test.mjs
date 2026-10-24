@@ -33,7 +33,7 @@ test('public rows reuse the board filters and do not apply a QA name allowlist',
   assert.equal(visible.includes('Jaxon Smith-Njigba'), true)
   assert.equal(visible.includes('Sam Darnold'), true)
   assert.equal(visible.includes('Out Player'), false)
-  assert.equal(visible.includes('Goblin Only'), false)
+  assert.equal(visible.includes('Goblin Only'), true)
 
   const leaders = publicTopHitRows(nfl).map((row) => row.player)
   assert.equal(leaders.includes('Jaxon Smith-Njigba'), true)
@@ -45,7 +45,7 @@ test('public rows reuse the board filters and do not apply a QA name allowlist',
     { player: 'Skater', prop: 'Points', line: 0.5, projection: 0.9, oddsType: 'standard', recent: [1, 0, 1, 1, 0, 1, 1, 1, 0, 1, 1, 0], rankEligible: true },
     { player: 'Demon Skater', prop: 'Points', line: 0.5, projection: 0.9, oddsType: 'demon', recent: log(12, 1), rankEligible: true },
   ]))
-  assert.deepEqual(nhl.map((row) => row.player), ['Skater'])
+  assert.deepEqual(nhl.map((row) => row.player), ['Skater', 'Demon Skater'])
   assert.equal(publicTopHitRows(nhlHubRows([
     { player: 'Goal Guy', prop: 'Anytime Goal Scorer', line: 0.5, projection: 0.6, oddsType: 'standard', recent: log(12, 1) },
   ])).length, 0)

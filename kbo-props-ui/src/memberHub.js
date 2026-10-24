@@ -18,13 +18,12 @@ import { nbaHighRisk, nbaRiskInput } from './nba/nbaRisk.js'
 import { compareSymmetric, rankable } from './sideRank.js'
 import { EXCLUDED_PROP_LABELS as WNBA_EXCLUDED_PROP_LABELS } from './wnba/excludedProps.js'
 import { playableRecordText } from './playableRecord.js'
+import { explicitBoardOddsType, isPlayableBoardLine } from './standardBoard.js'
 
 const num = (v) => {
   const n = Number(v)
   return Number.isFinite(n) ? n : NaN
 }
-
-const isStandard = (type) => type == null || String(type).toLowerCase() === 'standard'
 
 function sideFor(projection, line, rec) {
   const r = String(rec || '').toUpperCase()
@@ -357,7 +356,7 @@ export function kboHubRows(data, photos = {}) {
   const rows = []
   for (const card of Array.isArray(data?.cards) ? data.cards : []) {
     for (const prop of Array.isArray(card?.props) ? card.props : []) {
-      if (!isStandard(prop?.odds_type)) continue
+      if (!isPlayableBoardLine(prop)) continue
       if (!lineMatchesStat(prop?.stat, prop?.line)) continue
       // No model number: not a hub/landing row (no 0 score, no side from avg).
       if (!hasModelNumber(prop)) continue
@@ -404,7 +403,7 @@ export function kboHubRows(data, photos = {}) {
 
 export function nflHubRows(data) {
   return (Array.isArray(data) ? data : [])
-    .filter((row) => isStandard(row?.line_type ?? row?.oddsType))
+    .filter((row) => isPlayableBoardLine(row))
     .map((row) => {
       const recent = chartValues(row.recent, false)
       const score = num(nflCgScore(row.projection, row.line, row.prop ?? row.stat))
@@ -443,7 +442,7 @@ export function nflHubRows(data) {
 
 export function nhlHubRows(data) {
   return prepareBoardRows(data)
-    .filter((row) => isStandard(row?.oddsType ?? row?.odds_type) && row?.rankEligible !== false)
+    .filter((row) => isPlayableBoardLine(row) && row?.rankEligible !== false)
     .map((row) => {
       const recent = chartValues(row.recent, false)
       const side = sideFor(row.projection, row.line)
@@ -497,8 +496,9 @@ function basketballRows(data, scoreFn, roster, sport) {
   const wnba = sport === 'wnba'
   for (const player of Array.isArray(data) ? data : []) {
     for (const prop of Array.isArray(player?.ppAllProps) ? player.ppAllProps : []) {
-      if (!isStandard(prop?.odds_type ?? prop?.oddsType)) continue
-      if (prop?.standardLine != null && num(prop.standardLine) !== num(prop.line)) continue
+      if (!isPlayableBoardLine(prop)) continue
+      const oddsType = explicitBoardOddsType(prop)
+      if (oddsType !== 'demon' && oddsType !== 'goblin' && prop?.standardLine != null && num(prop.standardLine) !== num(prop.line)) continue
       // NBA pending props are not hub rows, hit leaders, or game chips.
       // WNBA still builds a row when the projection is blank.
       if (sport === 'nba' && !hasPostedProjection(prop?.projection)) continue

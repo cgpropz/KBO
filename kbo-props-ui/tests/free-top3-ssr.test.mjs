@@ -37,11 +37,12 @@ function kboBody() {
   }
 }
 
-test('server rows use the landing CG Score order and drop started, pulled, non-standard and unmodeled props', () => {
+test('server rows use the landing CG Score order and drop started, pulled, demon unders and unmodeled props', () => {
   const rows = freeTop3Rows('kbo', kboBody(), NOW)
   assert.ok(rows.length <= 3)
   const names = rows.map((row) => row.player)
-  for (const out of ['Started', 'Pulled', 'Demon', 'NoModel']) assert.equal(names.includes(out), false, out)
+  for (const out of ['Started', 'Pulled', 'NoModel']) assert.equal(names.includes(out), false, out)
+  assert.equal(names.includes('Demon'), true)
   assert.equal(names[0], 'Top')
   for (let i = 1; i < rows.length; i += 1) assert.ok(rows[i - 1].score >= rows[i].score)
   assert.deepEqual(freeTop3Rows('kbo', { ...kboBody(), preview: false }, NOW), [])
@@ -59,7 +60,7 @@ test('the rendered block carries a game-day date stamp in ET and escapes names',
   assert.match(html, /Hits Over 0\.5 · CG Score 88\.0/)
   assert.match(html, /data-start="2026-10-20T09:30:00\.000Z"/)
   assert.match(html, /Tue\u00a05:30\u00a0AM\u00a0ET/)
-  assert.match(html, /Standard lines only, ranked by CG Score\./)
+  assert.match(html, /Playable lines\. Demon and goblin unders stay off\. Ranked by CG Score\./)
   const listEnd = html.indexOf('</ol></div>')
   assert.ok(html.indexOf('free-top3-unproven') > listEnd)
   assert.match(html, new RegExp(UNPROVEN_RANK_NOTE.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')))

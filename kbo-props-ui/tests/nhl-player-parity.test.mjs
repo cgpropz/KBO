@@ -6,7 +6,7 @@ import { buildSplits, metricWindows } from '../src/playerInsights/insightsCore.j
 import { HISTORY_KEYS, stripBoardHistory } from '../api/_boardPayload.js'
 import {
   NHL_API_SECTIONS_APPROVED, PENDING, MONEYPUCK_ONLY, anyNarrowed, apiWindow, applyFilters, decodeNhlApiLog,
-  filterBounds, filtersFor, formatIceMinutes, nhlApiInsights, nhlApiSectionsOn, nhlTodayPick, nhlTrendSummary,
+  featuredPlayerRow, filterBounds, filtersFor, formatIceMinutes, nhlApiInsights, nhlApiSectionsOn, nhlTodayPick, nhlTrendSummary,
   playerPropRows, resolveFilters, SKATER_TRENDS, GOALIE_TRENDS, nhlSeasonFor, nhlSeasons, nhlPlayed,
 } from '../src/nhl/nhlPlayerParity.js'
 
@@ -69,6 +69,26 @@ test('stat chips are standard lines only; a prop with only goblin/demon lines ha
     { player: 'Someone Else', prop: 'Power Play Points', line: 0.5 },
   ], 'Test Skater')
   assert.deepEqual(rows.map((row) => [row.prop, row.line]), [['Shots On Goal', 2.5], ['Points', 1.5]])
+})
+
+test('a demon over opened from the board features the standard line, not that over', () => {
+  const rows = [
+    { player: 'Synth Center', prop: 'Shots On Goal', line: 2.5, projection: 3, oddsType: 'standard' },
+    { player: 'Synth Center', prop: 'Points', line: 0.5, projection: 0.54, oddsType: 'standard' },
+    { player: 'Synth Center', prop: 'Power Play Points', line: 0.5, projection: 0.9, oddsType: 'demon' },
+    { player: 'Synth Center', prop: 'Points', line: 1.5, projection: 0.54, oddsType: 'goblin' },
+  ]
+  const featured = featuredPlayerRow(rows, 'Synth Center', rows[2])
+  assert.equal(featured.prop, 'Shots On Goal')
+  assert.equal(featured.line, 2.5)
+  const points = featuredPlayerRow(rows, 'Synth Center', rows[1])
+  assert.equal(points.prop, 'Points')
+  assert.equal(points.line, 0.5)
+  const goblinPoints = featuredPlayerRow(rows, 'Synth Center', rows[3])
+  assert.equal(goblinPoints.prop, 'Points')
+  assert.equal(goblinPoints.line, 0.5)
+  assert.equal(goblinPoints.oddsType, 'standard')
+  assert.equal(featuredPlayerRow([rows[2]], 'Synth Center', rows[2]), null)
 })
 
 test('season labels come from the date, not a constant', () => {

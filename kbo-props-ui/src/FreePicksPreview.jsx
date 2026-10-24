@@ -13,6 +13,7 @@ import { selectFreeTop3 } from './freeTopPicks';
 import './FreeFunnel.css';
 import './bootScreen.css';
 import { lineWord } from './lineCount';
+import { explicitBoardOddsType, isPlayableBoardLine } from './standardBoard';
 
 /*
  * Landing-page "today's free picks" card for logged-out visitors.
@@ -33,10 +34,9 @@ const fmt = (v, digits = 1) => {
 function kboRows(data) {
   const rows = [];
   (data?.cards || []).forEach((card) => (card?.props || []).forEach((prop) => {
-    // Standard lines only, ranked by the KBO CG Score (same as the board and
+    // Playable lines, ranked by the KBO CG Score (same as the board and
     // the ledger), not by the cg_projection confidence number.
-    const type = prop?.odds_type;
-    if (type != null && String(type).toLowerCase() !== 'standard') return;
+    if (!isPlayableBoardLine(prop)) return;
     const cg = scoreFor(prop);
     rows.push({
       player: card.name,
@@ -89,7 +89,10 @@ function projectionRows(data, pillsFor, scoreFn = nflFreeScore, noteScore = (row
     line: row.line,
     projection: row.projection,
     l10: l10Display(pillsFor(row)),
-    tag: null,
+    tag: (() => {
+      const type = explicitBoardOddsType(row)
+      return type && type !== 'standard' ? type : null
+    })(),
     score: scoreFn(row),
     rawScore: scoreFn === nflFreeScore ? nflRawScore(row.projection, row.line, row.prop ?? row.stat) : null,
     // NFL pilot rank inputs (src/sideRank.js). Not rendered.
@@ -137,7 +140,10 @@ function wnbaRows(data) {
         line,
         opponent: prop.opponent || prop.versus,
       })),
-      tag: null,
+      tag: (() => {
+        const type = explicitBoardOddsType(prop)
+        return type && type !== 'standard' ? type : null
+      })(),
       score: wnbaCgScore(prop.projection, prop) ?? -Infinity,
       start_time: prop.start_time || player.start_time,
       game_date: prop.gameDate || prop.game_date || player.gameDate,

@@ -2,6 +2,7 @@ import MiniHitBars from '../MiniHitBars'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { fetchNbaData, fetchNbaSnapshot } from './nbaData'
+import { ShowAllLinesToggle, useShowAllLines } from '../ShowAllLinesToggle'
 import BoardStatus from '../BoardStatus'
 import HitRateStrip from '../HitRateStrip'
 import { buildCgScoreExplainer } from '../cgScoreExplainer'
@@ -414,9 +415,16 @@ export default function NbaDashboard({ onSelectPlayer, onNavigate, onNavigatePri
   }
 
   const totalPlayers = players?.length ?? 0
-  const totalGames = projections ? projections.reduce((sum, player) => sum + (player.gp ?? 0), 0) : 0
+  const { showAllLines, setShowAllLines, allPayload } = useShowAllLines(
+    `${loadAttempt}:${updatedAt || ''}`,
+    () => fetchNbaSnapshot('nba/projections_standard.json', { showAllLines: true }),
+  )
+  const boardProjections = showAllLines && allPayload
+    ? (Array.isArray(allPayload.data) ? allPayload.data : [])
+    : projections
+  const totalGames = boardProjections ? boardProjections.reduce((sum, player) => sum + (player.gp ?? 0), 0) : 0
 
-  const allRows = useMemo(() => buildPropRows(projections, players), [projections, players])
+  const allRows = useMemo(() => buildPropRows(boardProjections, players), [boardProjections, players])
 
   const lineBounds = useMemo(() => {
     const lines = allRows.map((item) => item.line).filter((value) => typeof value === 'number')
@@ -497,6 +505,7 @@ export default function NbaDashboard({ onSelectPlayer, onNavigate, onNavigatePri
             <div><p>NBA / PrizePicks</p><h1>Prop Lines</h1><BoardStatus sport="nba" updatedAt={updatedAt} /></div>
             <div className="wnba-lines-header-actions">
               <span>{countedLines(rows.length, { locked: showPaywall ? lockedCount : 0 })} · sorted by {filters.sortBy}</span>
+              <ShowAllLinesToggle pressed={showAllLines} onChange={setShowAllLines} />
               <button className={`wnba-filters-btn${filtersOpen ? ' active' : ''}`} onClick={() => setFiltersOpen(true)}><FilterIcon /> Filters</button>
             </div>
           </div>

@@ -131,6 +131,27 @@ export function playerPropRows(rows, player) {
   })
 }
 
+// The board can open a demon or goblin over (those stay on the playable
+// default). The player page still features a standard line: the standard
+// row of that prop, or the first standard chip. Chips stay standard-only.
+export function featuredPlayerRow(rows, player, source) {
+  const chips = playerPropRows(rows, player)
+  if (!chips.length) return null
+  const prop = source?.prop || source?.stat
+  const line = source?.line ?? source?.pp_line
+  if (source && isStandardBoardLine(source)) {
+    const exact = chips.find((row) => {
+      const rowProp = row.prop || row.stat
+      if (rowProp !== prop) return false
+      if (line == null || row.line == null) return true
+      return Number(row.line) === Number(line)
+    })
+    if (exact) return exact
+  }
+  const sameProp = chips.find((row) => (row.prop || row.stat) === prop)
+  return sameProp || chips[0]
+}
+
 // ---- NHL API game logs ------------------------------------------------------
 
 const SECONDS = new Set(['toi', 'ev', 'pp', 'sh'])

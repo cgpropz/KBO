@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import './BatterProjections.css';
 import { fetchDataSnapshot } from './dataUrl';
+import { isShownBoardLine } from './standardBoard.js';
+import { ShowAllLinesToggle, useShowAllLines } from './ShowAllLinesToggle';
 import BoardStatus from './BoardStatus';
 import { publishedAtFromPayload } from './boardFreshness';
 import { getCgProjectionColor } from './cgProjectionColor';
@@ -95,7 +97,6 @@ function BatterProjections() {
   const [sortField, setSortField] = useState('rating');
   const [sortDir, setSortDir] = useState('desc');
   const [propFilter, setPropFilter] = useState('all');
-  const oddsTypeFilter = 'standard';
   const [hitRateFilter, setHitRateFilter] = useState('all');
   const [hitRateMinimum, setHitRateMinimum] = useState('off');
   const [playerSearch, setPlayerSearch] = useState('');
@@ -266,6 +267,18 @@ function BatterProjections() {
     clearRefreshExhausted();
     loadBatterData(false);
   };
+  const { showAllLines, setShowAllLines, allPayload } = useShowAllLines(
+    `${lastUpdated || ''}`,
+    () => Promise.all([
+      fetchDataSnapshot('batter_projections.json', { showAllLines: true }),
+      fetchDataSnapshot('prizepicks_props.json', { showAllLines: true }).catch(() => null),
+    ]).then(([batterSnap, ppSnap]) => ({
+      batter: batterSnap?.data || null,
+      prizepicks: ppSnap?.data || null,
+    })),
+  );
+  const boardData = showAllLines && allPayload?.batter ? allPayload.batter : data;
+  const boardProps = showAllLines && allPayload ? allPayload.prizepicks : prizepicksData;
 
   if (hold) {
     return (
@@ -315,7 +328,7 @@ function BatterProjections() {
     'Hitter Fantasy Score',
   ]);
 
-  const hasLiveBatterBoard = (prizepicksData?.cards || []).some((card) => {
+  const hasLiveBatterBoard = (boardProps?.cards || []).some((card) => {
     if ((card?.type || '').toLowerCase() !== 'batter') return false;
     return (card?.props || []).some((prop) => (
       validPrizePicksStats.has(prop?.stat)
@@ -328,7 +341,7 @@ function BatterProjections() {
   // variants exist when PP offers standard + goblin/demon for the same prop.
   const ppVariantsByKey = (() => {
     const map = new Map();
-    const cards = prizepicksData?.cards || [];
+    const cards = boardProps?.cards || [];
     for (const card of cards) {
       if (card?.type !== 'batter') continue;
       const team = canonicalTeam(card?.team || '');
@@ -363,7 +376,7 @@ function BatterProjections() {
   // projection snapshots and live PrizePicks cards.
   const ppFallbackEntries = (() => {
     const entries = [];
-    const cards = prizepicksData?.cards || [];
+    const cards = boardProps?.cards || [];
     for (const card of cards) {
       if (card?.type !== 'batter') continue;
       const team = canonicalTeam(card?.team || '');
@@ -450,7 +463,7 @@ function BatterProjections() {
   };
 
   // Pulled PrizePicks lines never show, even from the snapshot fallback.
-  const mergedProjections = (data?.projections || []).filter((p) => !prizepicksPulled(p)).map((p) => {
+  const mergedProjections = (boardData?.projections || []).filter((p) => !prizepicksPulled(p)).map((p) => {
     const ppStats = propToPrizepicksStat[p.prop] || [];
     const team = canonicalTeam(p.team || '');
     const liveCtx = liveCtxByTeam[team] || null;
@@ -569,11 +582,7 @@ function BatterProjections() {
     // Only enforce live-line visibility when a live batter board exists.
     if (hasLiveBatterBoard && p.line == null) return false;
     if (propFilter !== 'all' && p.prop !== propFilter) return false;
-    if (oddsTypeFilter !== 'all') {
-      const ot = (p.odds_type || 'standard').toLowerCase();
-      if (oddsTypeFilter === 'promo' && ot !== 'goblin' && ot !== 'demon') return false;
-      if (oddsTypeFilter !== 'promo' && ot !== oddsTypeFilter) return false;
-    }
+    if (!isShownBoardLine(p, { showAllLines })) return false;
     if (playerSearch.trim()) {
       const query = playerSearch.trim().toLowerCase();
       if (!String(p.name || '').toLowerCase().includes(query)) return false;
@@ -731,6 +740,7 @@ function BatterProjections() {
             <p className="bp-description">Compare live lines with matchup-aware projections and recent performance.</p>
           </div>
           <BoardStatus sport="kbo" updatedAt={lastUpdated} />
+          <ShowAllLinesToggle pressed={showAllLines} onChange={setShowAllLines} />
         </div>
         <div className="bp-filter-shell">
           <div className="bp-filter-groups">
@@ -970,7 +980,7 @@ function BatterProjections() {
           <div className="bp-panel bp-team-rates">
             <h3 className="bp-panel-title">TEAM RATES <span className="bp-panel-subtitle">(per game)</span></h3>
             <div className="bp-team-grid">
-              {data.team_batting && Object.entries(data.team_batting)
+              {boardData.team_batting && Object.entries(boardData.team_batting)
                 .sort((a, b) => {
                   const key = propFilter === 'Total Bases' ? 'tb_per_g' : 'hrr_per_g';
                   return b[1][key] - a[1][key];

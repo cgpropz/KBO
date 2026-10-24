@@ -2,6 +2,7 @@ import MiniHitBars from './MiniHitBars'
 import { headChartBars } from './chartLabels'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { fetchDataSnapshot } from './dataUrl'
+import { ShowAllLinesToggle, useShowAllLines } from './ShowAllLinesToggle'
 import BoardStatus from './BoardStatus'
 import HitRateStrip from './HitRateStrip'
 import { KBO_VALUE, kboHitPills } from './hitRateStrip'
@@ -275,8 +276,13 @@ export default function KboPropBoard({ onNavigatePricing, onSelectPlayer }) {
     setLoadAttempt((current) => current + 1)
   }
 
+  const { showAllLines, setShowAllLines, allPayload } = useShowAllLines(
+    `${loadAttempt}:${updatedAt || ''}`,
+    () => fetchDataSnapshot('prizepicks_props.json', { showAllLines: true }),
+  )
+  const activeSnapshot = showAllLines && allPayload ? allPayload.data : snapshot
   const photoLookup = useMemo(() => Object.fromEntries(Object.entries(photos).map(([name, url]) => [name.toLowerCase(), url])), [photos])
-  const allRows = useMemo(() => (snapshot?.cards || []).flatMap((card) => (card.props || []).map((prop) => ({
+  const allRows = useMemo(() => (activeSnapshot?.cards || []).flatMap((card) => (card.props || []).map((prop) => ({
     card,
     prop,
     score: scoreFor(prop),
@@ -288,7 +294,7 @@ export default function KboPropBoard({ onNavigatePricing, onSelectPlayer }) {
       line: prop.line,
       side: directionFor(prop) === 'under' ? 'under' : 'over',
     }),
-  }))), [snapshot])
+  }))), [activeSnapshot])
   const propTabs = useMemo(() => ['All Props', ...[...new Set(allRows.map(({ prop }) => prop.stat))].sort()], [allRows])
   const rows = useMemo(() => {
     const minimumScore = filters.minScore === '' ? -Infinity : Number(filters.minScore)
@@ -333,7 +339,7 @@ export default function KboPropBoard({ onNavigatePricing, onSelectPlayer }) {
       </nav>}
       <section className="kbo-board-header">
         <div><p>KBO / PRIZEPICKS</p><h1>Prop Lines</h1><BoardStatus sport="kbo" updatedAt={updatedAt} /></div>
-        {!boardEmpty && !hold && <div className="kbo-header-actions"><span>{countedLines(rows.length, { locked: showPaywall ? lockedCount : 0 })} · sorted by {filters.sortBy}</span><button onClick={() => setFiltersOpen(true)}><FilterIcon /> Filters</button></div>}
+        {!hold && !!snapshot && <div className="kbo-header-actions">{!boardEmpty && <span>{countedLines(rows.length, { locked: showPaywall ? lockedCount : 0 })} · sorted by {filters.sortBy}</span>}<ShowAllLinesToggle pressed={showAllLines} onChange={setShowAllLines} />{!boardEmpty && <button onClick={() => setFiltersOpen(true)}><FilterIcon /> Filters</button>}</div>}
       </section>
       {hold && <MemberBoardStatus phase={phase} onRetry={retryLoad} className="kbo-notice" />}
       <QuietMemberPreview phase={phase} preview={memberPreview} refreshing={refreshing} onRetry={retryLoad} className="kbo-notice" />

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { fetchNbaSharpOdds } from './nbaData'
+import { ShowAllLinesToggle, useShowAllLines } from '../ShowAllLinesToggle'
 import { lineWord } from '../lineCount'
 import { fitImage } from '../fitImage.js'
 import { computeCgOdds, lineAdjustDetail, NBA_MAX_LINE_GAP } from '../nfl/cgOdds'
@@ -246,13 +247,21 @@ export default function NbaSharpOdds({ onSelectPlayer }) {
     return () => { active = false }
   }, [])
 
+  const { showAllLines, setShowAllLines, allPayload } = useShowAllLines(
+    records.length,
+    () => fetchNbaSharpOdds({ showAllLines: true }),
+  )
+  const boardRecords = showAllLines && allPayload ? allPayload.records : records
   const baseline = BASELINES[mode] || BASELINES.flex
 
   return (
     <section className="nfl-lines-page nfl-sharp-page">
       <div className="nfl-board-header">
         <div><p>NBA / UNABATED</p><h1>PP Odds</h1></div>
-        <span>{records.length} {lineWord(records.length)}</span>
+        <div className="nfl-lines-header-actions">
+          <ShowAllLinesToggle pressed={showAllLines} onChange={setShowAllLines} />
+          <span>{boardRecords.length} {lineWord(boardRecords.length)}</span>
+        </div>
       </div>
       <p className="nhl-note">NBA prices come from the same public Unabated file as the NFL board. Basketball is league 3. Pregame full game only. PP Edge compares the no-vig book price with PrizePicks Flex or Power. CG odds needs two-sided book prices on the row.</p>
       <div className="nfl-sharp-baseline" role="group" aria-label="PrizePicks baseline">
@@ -270,8 +279,8 @@ export default function NbaSharpOdds({ onSelectPlayer }) {
       </div>
       {error && <div className="nfl-notice">Unable to load odds: {error}</div>}
       {!error && !loaded && <div className="nfl-notice">Loading sportsbook prices.</div>}
-      {!error && loaded && !records.length && <div className="nfl-notice">{note || 'No matched NBA odds right now. The prop board is unchanged.'}</div>}
-      {!!records.length && (
+      {!error && loaded && !boardRecords.length && <div className="nfl-notice">{note || 'No matched NBA odds right now. The prop board is unchanged.'}</div>}
+      {!!boardRecords.length && (
         <div className="nfl-lines-table-wrap">
           <table className="nfl-lines-table nba-sharp-table">
             <thead>
@@ -290,7 +299,7 @@ export default function NbaSharpOdds({ onSelectPlayer }) {
               </tr>
             </thead>
             <tbody>
-              {records.map((item) => {
+              {boardRecords.map((item) => {
                 const id = rowId(item)
                 return (
                   <SharpRow

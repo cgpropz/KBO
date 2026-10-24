@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import NhlAvatar from './NhlAvatar.jsx'
 import { fetchNhlSharpOdds } from './nhlData'
+import { ShowAllLinesToggle, useShowAllLines } from '../ShowAllLinesToggle'
 import { lineWord } from '../lineCount'
 import { computeCgOdds, lineAdjustDetail } from '../nfl/cgOdds'
 import { BookLineLabel, BookLinePct, LineAdjTag } from '../nfl/LineAdjust.jsx'
@@ -245,8 +246,13 @@ export default function NhlSharpOdds({ onSelectPlayer }) {
     return () => { active = false }
   }, [])
 
+  const { showAllLines, setShowAllLines, allPayload } = useShowAllLines(
+    records.length,
+    () => fetchNhlSharpOdds({ showAllLines: true }),
+  )
+  const boardRecords = showAllLines && allPayload ? allPayload.records : records
   const baseline = BASELINES[mode] || BASELINES.flex
-  const emptyNotice = sharpOddsEmptyNotice(records, {
+  const emptyNotice = sharpOddsEmptyNotice(boardRecords, {
     emptyState,
     fallback: note || 'No matched NHL odds right now. The prop board is unchanged.',
   })
@@ -255,7 +261,10 @@ export default function NhlSharpOdds({ onSelectPlayer }) {
     <section className="nfl-lines-page nfl-sharp-page">
       <div className="nfl-board-header">
         <div><p>NHL / UNABATED</p><h1>PP Odds</h1></div>
-        <span>{records.length} {lineWord(records.length)}</span>
+        <div className="nfl-lines-header-actions">
+          <ShowAllLinesToggle pressed={showAllLines} onChange={setShowAllLines} />
+          <span>{boardRecords.length} {lineWord(boardRecords.length)}</span>
+        </div>
       </div>
       <p className="nhl-note">NHL prices come from the same public Unabated file as the NFL board. Hockey is league 6. Full game only. PP Edge compares the no-vig book price with PrizePicks Flex or Power. CG odds needs two-sided book prices on the row.</p>
       <div className="nfl-sharp-baseline" role="group" aria-label="PrizePicks baseline">
@@ -274,7 +283,7 @@ export default function NhlSharpOdds({ onSelectPlayer }) {
       {error && <div className="nfl-notice">Unable to load odds: {error}</div>}
       {!error && !loaded && <div className="nfl-notice">Loading sportsbook prices.</div>}
       {!error && loaded && emptyNotice && <div className="nfl-notice">{emptyNotice}</div>}
-      {!!records.length && (
+      {!!boardRecords.length && (
         <div className="nfl-lines-table-wrap">
           <table className="nfl-lines-table nhl-sharp-table">
             <thead>
@@ -293,7 +302,7 @@ export default function NhlSharpOdds({ onSelectPlayer }) {
               </tr>
             </thead>
             <tbody>
-              {records.map((item) => {
+              {boardRecords.map((item) => {
                 const id = rowId(item)
                 return (
                   <SharpRow

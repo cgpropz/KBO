@@ -2,6 +2,8 @@ import MiniHitBars from '../MiniHitBars'
 import { gameChartBars } from '../chartLabels'
 import { useMemo, useState, useEffect, useRef } from 'react'
 import { fetchWnbaData, fetchWnbaSnapshot } from './wnbaData'
+import { ShowAllLinesToggle, useShowAllLines } from '../ShowAllLinesToggle'
+import { explicitBoardOddsType } from '../standardBoard.js'
 import BoardStatus from '../BoardStatus'
 import { wnbaRecordsAsSharp } from '../boardOdds'
 import { BoardOddsPanel, OddsChevron, boardOddsFor, useBoardOdds } from '../nfl/BoardOddsPanel'
@@ -481,14 +483,21 @@ export default function Dashboard({ onSelectPlayer, onNavigate, onNavigatePricin
   }
 
   const totalPlayers = players?.length ?? 0
-  const totalGames = projections ? projections.reduce((s, p) => s + (p.gp ?? 0), 0) : 0
+  const { showAllLines, setShowAllLines, allPayload } = useShowAllLines(
+    `${loadAttempt}:${updatedAt || ''}`,
+    () => fetchWnbaSnapshot('wnba/projections_standard.json', { showAllLines: true }),
+  )
+  const boardProjections = showAllLines && allPayload
+    ? (Array.isArray(allPayload.data) ? allPayload.data : [])
+    : projections
+  const totalGames = boardProjections ? boardProjections.reduce((s, p) => s + (p.gp ?? 0), 0) : 0
 
   // Flatten every prop into a scored row.
   // The line on the row is the PrizePicks line. See wnbaCgScore.
   const allRows = useMemo(() => {
-    if (!projections) return []
+    if (!boardProjections) return []
     const rows = []
-    projections.forEach(player => {
+    boardProjections.forEach(player => {
       const props = (player.ppAllProps || []).filter(prop => !EXCLUDED_PROP_LABELS.has(prop?.stat))
       props.forEach(prop => {
         const line = Number(prop.line)
@@ -504,8 +513,10 @@ export default function Dashboard({ onSelectPlayer, onNavigate, onNavigatePricin
         const hitPills = wnbaHitPills({ games: recentGames, stat: prop.stat, line, opponent: prop.opponent ?? null })
         const l10 = pillById(hitPills, 'l10')
 
+        const oddsType = explicitBoardOddsType(prop)
         rows.push({
-          id: `${player.name}-${prop.stat}`,
+          id: oddsType && oddsType !== 'standard' ? `${player.name}-${prop.stat}-${oddsType}` : `${player.name}-${prop.stat}`,
+          oddsType: oddsType || null,
           player: player.name,
           team: player.team,
           position: player.position,
@@ -531,7 +542,7 @@ export default function Dashboard({ onSelectPlayer, onNavigate, onNavigatePricin
       })
     })
     return rows
-  }, [projections])
+  }, [boardProjections])
 
   const lineBounds = useMemo(() => {
     const lines = allRows.map(item => item.line).filter(value => typeof value === 'number')
@@ -631,6 +642,7 @@ export default function Dashboard({ onSelectPlayer, onNavigate, onNavigatePricin
             <div><p>WNBA / PrizePicks</p><h1>Prop Lines</h1><BoardStatus sport="wnba" updatedAt={updatedAt} /></div>
             <div className="wnba-lines-header-actions">
               <span>{countedLines(rows.length, { locked: showPaywall ? lockedCount : 0 })} · sorted by {filters.sortBy}</span>
+              <ShowAllLinesToggle pressed={showAllLines} onChange={setShowAllLines} />
               <button className={`wnba-filters-btn${filtersOpen ? ' active' : ''}`} onClick={() => setFiltersOpen(true)}><FilterIcon /> Filters</button>
             </div>
           </div>
