@@ -966,7 +966,7 @@ def _usable_book_row(row):
     return not is_excluded_book(row)
 
 
-def build_snapshot(pp_rows, book_rows, *, provider="unabated", events_scanned=0, feed_snapshot_at=None, line_type_filter=None, max_abs_line_delta=None):
+def build_snapshot(pp_rows, book_rows, *, provider="unabated", events_scanned=0, feed_snapshot_at=None, line_type_filter=None, max_abs_line_delta=None, sport="NFL"):
     book_rows = [row for row in book_rows or [] if _usable_book_row(row)]
     books_by_player_prop = {}
     props_in_feed = set()
@@ -1098,8 +1098,12 @@ def build_snapshot(pp_rows, book_rows, *, provider="unabated", events_scanned=0,
     unmatched_market_props = sorted(
         {row["prop"] for row in records if row.get("unmatched_reason") == "market_not_in_feed"}
     )
+    # `sport` is the league name in the empty-board sentence only. The
+    # snapshot "sport" field below stays the odds-provider key. Callers that
+    # omit it keep the NFL sentence.
+    league_name = str(sport or "NFL").strip() or "NFL"
     if not pp_rows:
-        message = "No NFL PrizePicks lines are posted right now."
+        message = f"No {league_name} PrizePicks lines are posted right now."
     elif matched_count:
         message = f"Matched {matched_count} of {len(pp_rows)} PrizePicks props to Unabated sportsbook lines."
         if unmatched_count:

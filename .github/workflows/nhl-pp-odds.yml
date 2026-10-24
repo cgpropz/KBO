@@ -1,0 +1,80 @@
+name: Refresh NHL PP Odds
+
+# Pregame Unabated lines for the NHL PrizePicks board. Its own workflow, so
+# a missed local nhl/projections.json can be rebuilt from the published
+# nhl_projections snapshot without waiting on the 25-minute board chain.
+# Publishes nhl/sharp_odds.json only. Does not commit odds, status, or
+# memory. A pull request cannot publish.
+#
+# Re-publish after this file is on main:
+#   gh workflow run nhl-pp-odds.yml --ref main
+# The job restores the published board, runs `python -m nhl.sharp_odds`,
+# and publishes with PUBLISH_ONLY_PREFIX=nhl/sharp_odds.json.
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/nhl-pp-odds.yml"
+      - "nhl/sharp_odds.py"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nhl-pp-odds
+  cancel-in-progress: false
+
+jobs:
+  refresh-nhl-pp-odds:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install snapshot dependencies
+        run: pip install requests
+
+      - name: Restore the published NHL board
+        run: python pipeline/restore_snapshots.py --prefix nhl/projections.json --require
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.VITE_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+
+      # Counts only. A restore that did not land the live board must not
+      # publish another prizepicks_prop_count 0 snapshot.
+      - name: Require the published NHL board
+        run: |
+          python - <<'PY'
+          import json
+          import sys
+          from pathlib import Path
+          path = Path("kbo-props-ui/public/data/nhl/projections.json")
+          rows = json.loads(path.read_text(encoding="utf-8")) if path.is_file() else []
+          count = len(rows) if isinstance(rows, list) else 0
+          print(f"restored nhl_projections rows={count}")
+          if count <= 0:
+              print("::error title=NHL board missing::Published nhl_projections did not restore. Refusing to publish empty PP Odds.")
+              sys.exit(1)
+          PY
+
+      - name: Match PrizePicks lines to Unabated
+        id: nhl-sharp
+        run: python -m nhl.sharp_odds
+
+      - name: Publish NHL odds snapshot
+        if: steps.nhl-sharp.outputs.missed_live_board != 'true'
+        timeout-minutes: 10
+        run: python publish_supabase.py
+        env:
+          PUBLISH_ONLY_PREFIX: "nhl/sharp_odds.json"
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.VITE_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
