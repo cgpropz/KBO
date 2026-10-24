@@ -55,6 +55,14 @@ function sendData(req, res, body, memberGated) {
   return res.status(200).json(body);
 }
 
+// Public line-edges slice. Omitted on paid boards and on a ?player= read,
+// which stays limited to that player's trimmed row.
+function withLineEdges(body, shaped, req) {
+  if (req?.query?.player) return body;
+  if (!Array.isArray(shaped?.lineEdges)) return body;
+  return { ...body, lineEdges: shaped.lineEdges };
+}
+
 // Joined board passed to tier shaping and to ?view=hub trimming. A
 // snapshotChunks manifest is not a board; trimming it would publish an empty
 // hub (or the manifest object) instead of the player rows.
@@ -855,14 +863,14 @@ async function handleNbaRequest(req, res, client, ds) {
   // a visible player's other props, per-stat maps and game logs stay
   // full-access only. Full access keeps main's behavior.
   const shaped = withPresentedData(req, tierShaped, decision === 'full' ? board : tierShaped.data);
-  return sendData(req, res, {
+  return sendData(req, res, withLineEdges({
     data: shaped.data,
     updatedAt: row.updated_at || null,
     preview: shaped.preview,
     lockedCount: shaped.lockedCount,
     tier: caller.tier,
     access: sportAccess(caller.tier),
-  }, decision === 'full');
+  }, shaped, req), decision === 'full');
 }
 
 // Landing-card bit only. Same decision as handleNbaRequest, and never a snapshot.
@@ -1026,14 +1034,14 @@ async function handleNhlRequest(req, res, client, ds) {
     shapeForTier(ds, payload, shapingTier, { alreadyStandard: tierPayload.alreadyStandard }),
     presented,
   );
-  return sendData(req, res, {
+  return sendData(req, res, withLineEdges({
     data: shaped.data,
     updatedAt: row.updated_at || null,
     preview: shaped.preview,
     lockedCount: shaped.lockedCount,
     tier: caller.tierResolved === true ? caller.tier : 'free',
     access: sportAccess(caller.tierResolved === true ? caller.tier : 'free'),
-  }, decision === 'full');
+  }, shaped, req), decision === 'full');
 }
 
 export async function nhlSectionOpen(req, client) {
@@ -1295,14 +1303,14 @@ export async function handleDataRequest(req, res, client) {
     }
   }
   const memberGated = shaped.preview === false && !datasetIsFullyPublic(ds);
-  return sendData(req, res, {
+  return sendData(req, res, withLineEdges({
     data: shaped.data,
     updatedAt: row.updated_at || null,
     preview: shaped.preview,
     lockedCount: shaped.lockedCount,
     tier,
     access: sportAccess(tier),
-  }, memberGated);
+  }, shaped, req), memberGated);
 }
 
 // The live KBO board (hold applied) for the free matchup lockedCount. Any

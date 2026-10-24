@@ -7,6 +7,7 @@
 // stat; a row whose stat says "goal scorer" is still left off.
 
 import { rowStartPassed } from './etStart.js'
+import { biggestLineEdges, publicLineEdgeRow } from './lineEdges.js'
 import { confirmedGoalieStarters, isNeutralHubRow, kboHubRows, nflHubRows, nhlHubRows, playableRows, topHitRateRows, topHubRows, unavailableFromLineups, wnbaHubRows } from './memberHub.js'
 import { LANDING_SPORTS } from './landingSports.js'
 import { nbaHubRows } from './memberHub.js'
@@ -43,6 +44,14 @@ export const PUBLIC_SPORTS = LANDING_SPORTS.map((sport) => ({
 }))
 
 export { publicFaqs }
+export { confirmedGoalieStarters, unavailableFromLineups }
+export {
+  LINE_EDGE_LIMIT,
+  biggestLineEdges,
+  formatLineGap,
+  landingLineEdges,
+  publicLineEdgeRow,
+} from './lineEdges.js'
 
 export function rowsFromSnapshot(sportId, data, lineupData) {
   const sport = PUBLIC_SPORTS.find((item) => item.id === sportId)
@@ -52,6 +61,17 @@ export function rowsFromSnapshot(sportId, data, lineupData) {
     unavailableFromLineups(sport.id, lineupData),
     confirmedGoalieStarters(lineupData),
   )
+}
+
+// Top gaps on the full standard board, then the same public field list the
+// free preview is allowed to show. The CG top 3 trim is a separate list.
+export function lineEdgesFromSnapshot(sportId, data, lineupData = null, options = {}) {
+  const rows = rowsFromSnapshot(sportId, data, lineupData)
+  return biggestLineEdges(rows, {
+    ...options,
+    unavailableNames: unavailableFromLineups(sportId, lineupData),
+    starters: confirmedGoalieStarters(lineupData),
+  }).map(publicLineEdgeRow)
 }
 
 export function isGoalScorerStat(stat) {

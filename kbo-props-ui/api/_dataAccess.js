@@ -6,6 +6,7 @@ import { NBA_FREE_PREVIEW_ENABLED } from '../src/nbaPreviewFlag.js';
 import { hasPostedProjection } from '../src/nba/nbaPostedProjection.js';
 import { applyPointsOverGate, dropPulledRows, pointsOverDisposition, prizepicksPulled } from '../src/nhl/pointsGate.js';
 import { filterStandardBoard, isStandardBoardLine, summaryForGradedRows } from '../src/standardBoard.js';
+import { lineEdgesFromSnapshot } from '../src/publicBoard.js';
 import { mergeLivePrizePicks } from '../src/kboLiveLines.js';
 import { wnbaCgScore } from '../src/wnba/wnbaScore.js';
 import { gameAlreadyStarted, startTimePassed } from '../src/gameStarted.js';
@@ -1054,6 +1055,28 @@ export function _resetTierShapeFilters() {
   tierShapeFilters = 0;
 }
 
+// Prop boards that can fill the public line-edges module. The CG top 3
+// trim is unchanged. This list is a second slice of the same playable
+// standard rows, capped at five, with free-preview fields only.
+const LINE_EDGE_SPORT = {
+  nfl_projections: 'nfl',
+  prizepicks_props: 'kbo',
+  wnba_projections_standard: 'wnba',
+  nhl_projections: 'nhl',
+  nba_projections_standard: 'nba',
+};
+
+function attachLineEdges(ds, payload, shaped, now) {
+  const sportId = LINE_EDGE_SPORT[ds];
+  if (!sportId || shaped?.preview !== true) return shaped;
+  try {
+    return { ...shaped, lineEdges: lineEdgesFromSnapshot(sportId, payload, null, { now }) };
+  } catch (err) {
+    console.error(`[api/data] line edges failed for ${ds}: ${err?.message || err}`);
+    return { ...shaped, lineEdges: [] };
+  }
+}
+
 // Decide what the caller receives for one dataset snapshot.
 // alreadyStandard means the cached board was filtered once for this entry.
 // The hot path must not walk the rows again.
@@ -1080,16 +1103,14 @@ export function shapeForTier(ds, payload, tier, { alreadyStandard = false, now =
     return { data: hidden.data, preview: true, lockedCount: hidden.lockedCount };
   }
   const preview = spec.free(payload);
-  if (!MEMBER_BOARD_DATASETS.has(ds)) {
-    return { data: preview.data, preview: true, lockedCount: preview.lockedCount };
-  }
-  // Started games and other rows the top-3 skip are still on the member
-  // board, so they stay in the locked remainder.
-  const memberRows = countMemberBoardRows(ds, payload);
-  const shown = countMemberBoardRows(ds, preview.data);
-  return {
-    data: preview.data,
-    preview: true,
-    lockedCount: Math.max(0, memberRows - shown),
-  };
+  const shaped = !MEMBER_BOARD_DATASETS.has(ds)
+    ? { data: preview.data, preview: true, lockedCount: preview.lockedCount }
+    : {
+      // Started games and other rows the top-3 skip are still on the member
+      // board, so they stay in the locked remainder.
+      data: preview.data,
+      preview: true,
+      lockedCount: Math.max(0, countMemberBoardRows(ds, payload) - countMemberBoardRows(ds, preview.data)),
+    };
+  return attachLineEdges(ds, payload, shaped, now);
 }
