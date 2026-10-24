@@ -10,7 +10,7 @@ import { boundedAccessToken, readCachedSession } from './supabaseClient';
  * Paid datasets are no longer shipped as static files or readable straight
  * from Supabase. The server verifies the caller's access token, looks up their
  * tier, and returns either the full snapshot or a free preview:
- *   { data, updatedAt, preview, lockedCount, tier, access }
+ *   { data, updatedAt, preview, lockedCount, tier, access, lineEdges? }
  *
  * In local `vite dev` there are no serverless functions, so when the API is
  * unreachable we fall back to the developer's local, git-ignored
@@ -78,6 +78,7 @@ function presentDataset(ds, body) {
     preview,
     previewLabel: preview ? FREE_PREVIEW_LABEL : '',
     lockedCount: Number(body.lockedCount) || 0,
+    ...(Array.isArray(body.lineEdges) ? { lineEdges: body.lineEdges } : {}),
     refreshing: false,
   };
 }

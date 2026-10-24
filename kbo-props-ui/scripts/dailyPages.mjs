@@ -11,6 +11,7 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { breadcrumbNode, escapeHtml, faqNode, pageUrl, renderDocument, SITE } from './seoShared.mjs';
+import { XWEEK_PROMO_LINE } from '../src/promoCopy.js';
 
 export const DAILY_DIR = join(dirname(fileURLToPath(import.meta.url)), '../content/daily');
 
@@ -22,7 +23,7 @@ export const DAILY_SPORTS = [
   { id: 'wnba', name: 'WNBA', slug: 'wnba' },
 ];
 
-export const PROMO_LINE = 'First week $4.99 with code XWEEK (auto-fills at checkout), then $9.99/wk, cancel anytime.';
+export const PROMO_LINE = XWEEK_PROMO_LINE;
 export const FOOTER_LINE = '21+ · Play responsibly · Entertainment only';
 const RISK_LINE = 'Pick\'em contests carry financial risk, and no projection or score can promise a result. If you or someone you know has a gambling problem, call or text 1-800-GAMBLER. CGPropz is not affiliated with or endorsed by PrizePicks or Underdog.';
 const CG_TEXT = 'CG Score compares the CGPropz projection with the posted line. The further the score is from 50, the bigger the gap between projection and line. Above 50 leans over, below 50 leans under. It isn\'t a win probability.';

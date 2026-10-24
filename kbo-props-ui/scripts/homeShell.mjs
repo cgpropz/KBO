@@ -9,6 +9,7 @@ import {
 } from '../src/responsibleGambling.js';
 import { UNPROVEN_RANK_NOTE } from '../src/freePreviewCopy.js';
 import { FREE_TOP3_END, FREE_TOP3_START } from './freeTop3Html.mjs';
+import { XWEEK_PROMO_LINE } from '../src/promoCopy.js';
 import { escapeHtml, jsonLdScript, organizationNode, pageUrl, renderDataCredit, websiteNode } from './seoShared.mjs';
 
 const NAV = [
@@ -56,6 +57,11 @@ export function homeRootInner() {
     <main>
       <h1>Every prop line, scored.</h1>
       <p>CG Score rates every standard prop line with our projection, recent hit rates and defense vs position, on one board.</p>
+      <section id="line-edges">
+        <h2>Biggest line edges</h2>
+        <p>Standard lines where our projection sits farthest from the posted number. No login required.</p>
+        <p>${escapeHtml(XWEEK_PROMO_LINE)}</p>
+      </section>
       <section id="free-top-3">
         <h2>Today's free top 3</h2>
         <p>The three standard lines with the highest CG Scores on each board.</p>

@@ -20,6 +20,7 @@ import { whenVisibleOrIdle } from './whenVisibleOrIdle';
 import { rowStartMs } from './etStart';
 import { freeTopEmptyText, kboHoldMessage } from './freeTopEmpty';
 import { UNPROVEN_RANK_NOTE } from './freePreviewCopy';
+import LineEdgesModule from './LineEdgesModule';
 import PlayerMark from './PlayerMark';
 import { playerInitials } from './playerMark';
 import PlayableRecord from './PlayableRecord';
@@ -121,6 +122,7 @@ export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard, onSi
   const [boardApi, setBoardApi] = useState(null);
   const [sportId, setSportId] = useState(HERO_LANDING_SPORT_ID);
   const [hitSportId, setHitSportId] = useState(HERO_LANDING_SPORT_ID);
+  const [edgeSportId, setEdgeSportId] = useState(HERO_LANDING_SPORT_ID);
   const [openFaq, setOpenFaq] = useState(null);
   const [weeklyBusy, setWeeklyBusy] = useState(false);
   const [lifetimeBusy, setLifetimeBusy] = useState(false);
@@ -148,13 +150,24 @@ export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard, onSi
     const publish = async (sport, snap, lineupData) => {
       const mod = await loadBoard();
       if (!active || !snap) return;
+      const preview = !!snap.preview;
+      const lineEdges = Array.isArray(snap.lineEdges)
+        ? mod.landingLineEdges(
+          { preview: true, lineEdges: snap.lineEdges },
+          {
+            unavailableNames: mod.unavailableFromLineups(sport.id, lineupData),
+            starters: mod.confirmedGoalieStarters(lineupData),
+          },
+        )
+        : null;
       setBoards((prev) => ({
         ...prev,
         [sport.id]: {
           status: 'ready',
           rows: mod.rowsFromSnapshot(sport.id, snap.data, lineupData),
           updatedAt: snap.updatedAt,
-          preview: !!snap.preview,
+          preview,
+          lineEdges,
           lockedCount: Number(snap.lockedCount) || 0,
           hold: kboHoldMessage(sport.id, snap.data),
         },
@@ -180,29 +193,34 @@ export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard, onSi
       await publish(sport, snap, lineupData);
     };
 
-    // One /api/data call while the hero paints. Board code and every other
-    // dataset wait until a data section is scrolled into view, or until a
-    // gap after load so they are not part of the initial burst.
-    const heroSnap = loadDataset(HERO_SPORT.ds, HERO_SPORT.dev, 'low').catch(() => 'error');
+    // The edges module sits in the hero, so that one board (and its injury
+    // report) starts with the first paint. Every other dataset still waits
+    // until a section is scrolled into view, or until a gap after load.
+    const heroTask = (async () => {
+      let snap = null;
+      try {
+        snap = await loadDataset(HERO_SPORT.ds, HERO_SPORT.dev, 'low');
+      } catch {
+        if (active) setBoards((prev) => ({ ...prev, [HERO_SPORT.id]: { status: 'error', rows: [], preview: false, lineEdges: null, lockedCount: 0 } }));
+        return;
+      }
+      if (!active || !snap) return;
+      let lineupData = null;
+      if (HERO_SPORT.lineups) {
+        try {
+          const lineupSnap = await loadDataset(HERO_SPORT.lineups, HERO_SPORT.lineupsDev, 'low');
+          lineupData = lineupSnap?.data ?? null;
+        } catch { /* a missing injury report still shows the board */ }
+      }
+      await publish(HERO_SPORT, snap, lineupData);
+    })();
 
-    const stop = whenVisibleOrIdle(['free-top-3', 'matchup', 'boards'], () => {
-      heroSnap.then(async (snap) => {
+    const stop = whenVisibleOrIdle(['line-edges', 'free-top-3', 'matchup', 'boards'], () => {
+      heroTask.then(() => {
         if (!active) return;
-        if (snap === 'error') {
-          setBoards((prev) => ({ ...prev, [HERO_SPORT.id]: { status: 'error', rows: [], preview: false, lockedCount: 0 } }));
-          return;
-        }
-        let lineupData = null;
-        if (HERO_SPORT.lineups) {
-          try {
-            const lineupSnap = await loadDataset(HERO_SPORT.lineups, HERO_SPORT.lineupsDev);
-            lineupData = lineupSnap?.data ?? null;
-          } catch { /* a missing injury report still shows the board */ }
-        }
-        publish(HERO_SPORT, snap, lineupData);
-      });
-      LANDING_SPORTS.forEach((sport) => {
-        if (sport.id !== HERO_SPORT.id) loadSport(sport);
+        LANDING_SPORTS.forEach((sport) => {
+          if (sport.id !== HERO_SPORT.id) loadSport(sport);
+        });
       });
       loadDataset('nfl_game_markets', 'nfl/game_markets.json')
         .then((snap) => { if (active && snap) setMarkets(snap); })
@@ -229,6 +247,15 @@ export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard, onSi
     return observeVisibleOnce(freeBoardRef.current, () => trackFreeTop3View(sport.id));
   }, [freeRowsShown, sport.id]);
   const hitRows = boardApi ? boardApi.publicFreeTopRows(hitState?.rows || []) : [];
+  const edgeSport = LANDING_SPORTS.find((item) => item.id === edgeSportId) || LANDING_SPORTS[0];
+  const edgeState = boards[edgeSport.id];
+  const edgeRows = boardApi && edgeState ? boardApi.landingLineEdges(edgeState) : [];
+  const edgeSettled = !!edgeState;
+  const edgeEmpty = edgeState?.hold
+    ? `${edgeState.hold}. ${edgeSport.name} line edges fill in when lines are posted.`
+    : (edgeSport.id === 'nfl' && !NFL_FREE_PREVIEW_ENABLED && edgeSettled && !edgeState?.rows?.length
+      ? 'NFL free preview is off.'
+      : (edgeSettled ? `No standard line edges are posted for ${edgeSport.name} right now.` : 'Loading today\'s edges…'));
   const phoneRows = switchRows;
   const game = boardApi ? boardApi.featuredGame(markets?.data) : null;
   const gameRows = boardApi ? boardApi.rowsForGame(boards.nfl?.rows || [], game) : [];
@@ -307,7 +334,7 @@ export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard, onSi
 
       <main className="pl-main">
         <section className="pl-hero">
-          <div>
+          <div className="pl-hero-copy">
             <p className="pl-kick">KBO · NBA · NFL · NHL · WNBA</p>
             <h1>Every prop line, <span className="pl-grad">scored.</span></h1>
             <p className="pl-lead">CG Score rates every standard prop line with our projection, recent hit rates and defense vs position, on one board.</p>
@@ -315,12 +342,21 @@ export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard, onSi
               <button type="button" className="pl-cta" onClick={() => scrollTo('pricing')}>Get the board</button>
               <button type="button" className="pl-ghost" onClick={() => scrollTo('boards')}>See today's board</button>
             </div>
-            <ul className="pl-trust">
-              <li><i />Standard lines</li>
-              <li><i />CG Score on every row</li>
-              <li><i />One login, every league</li>
-            </ul>
           </div>
+          <LineEdgesModule
+            sports={LANDING_SPORTS}
+            sportId={edgeSport.id}
+            onSport={setEdgeSportId}
+            rows={edgeRows}
+            emptyText={edgeEmpty}
+            busy={weeklyBusy}
+            onStartWeekly={startWeekly}
+          />
+          <ul className="pl-trust">
+            <li><i />Standard lines</li>
+            <li><i />CG Score on every row</li>
+            <li><i />One login, every league</li>
+          </ul>
           <Phone rows={phoneRows} sport={sport.id} />
         </section>
 
