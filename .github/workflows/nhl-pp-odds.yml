@@ -41,7 +41,7 @@ jobs:
           cache: pip
 
       - name: Install snapshot dependencies
-        run: pip install requests "psycopg[binary]"
+        run: pip install requests
 
       - name: Restore the published NHL board
         run: python pipeline/restore_snapshots.py --prefix nhl/projections.json --require
@@ -68,11 +68,6 @@ jobs:
 
       - name: Match PrizePicks lines to Unabated
         id: nhl-sharp
-        env:
-          BOARD_READER_DB_URL: ${{ secrets.BOARD_READER_DB_URL }}
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.VITE_SUPABASE_URL }}
-          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
-          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
         run: python -m nhl.sharp_odds
 
       - name: Publish NHL odds snapshot

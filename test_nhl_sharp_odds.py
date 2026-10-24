@@ -290,7 +290,10 @@ def test_refresh_fails_red_when_sharp_misses_a_live_board():
     text = Path(".github/workflows/nhl-refresh.yml").read_text(encoding="utf-8")
     sharp = text[text.index("- name: Match PrizePicks lines to Unabated"):text.index("- name: Build NHL defense vs position")]
     assert "id: nhl-sharp" in sharp
-    assert "BOARD_READER_DB_URL" in sharp
+    assert "secrets.BOARD_READER_DB_URL" not in sharp
+    assert text.count("secrets.BOARD_READER_DB_URL") == 1
+    build = text[text.index("- name: Build the NHL board and lineups"):text.index("- name: Restore the published NHL board")]
+    assert "BOARD_READER_DB_URL: ${{ secrets.BOARD_READER_DB_URL }}" in build
     fail = text[text.index("- name: Fail when NHL PP Odds missed a live board"):text.index("- name: Queue the next NHL board")]
     assert "continue-on-error" not in fail
     assert "steps.nhl-sharp.outputs.missed_live_board == 'true'" in fail
@@ -300,3 +303,4 @@ def test_refresh_fails_red_when_sharp_misses_a_live_board():
     assert "github.ref == 'refs/heads/main'" in republish
     assert "nhl/projections.json" in republish
     assert "Refusing to publish empty PP Odds." in republish
+    assert "BOARD_READER_DB_URL" not in republish
