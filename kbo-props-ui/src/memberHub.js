@@ -15,6 +15,7 @@ import { hasPostedProjection } from './nba/nbaPostedProjection.js'
 import { nbaHighRisk, nbaRiskInput } from './nba/nbaRisk.js'
 import { compareSymmetric, rankable } from './sideRank.js'
 import { EXCLUDED_PROP_LABELS as WNBA_EXCLUDED_PROP_LABELS } from './wnba/excludedProps.js'
+import { playableRecordText } from './playableRecord.js'
 
 const num = (v) => {
   const n = Number(v)
@@ -648,8 +649,9 @@ export function sameMatchup(row, game) {
 }
 
 // Status chips the hub can stand behind. Goalie and line wording come from the
-// lineup snapshot. The recap chip is the graded record, not a projection.
-export function statusChips({ sport, rows, lineups, recap, ready = true, now = new Date() }) {
+// lineup snapshot. The playable chip is the ledger record for one slate.
+// The older recap chip stays for callers that still pass a memory recap.
+export function statusChips({ sport, rows, lineups, recap, playable, ready = true, now = new Date() }) {
   const chips = []
   const cards = Array.isArray(lineups) ? lineups : []
   if (sport === 'nhl') {
@@ -675,18 +677,29 @@ export function statusChips({ sport, rows, lineups, recap, ready = true, now = n
   } else if (ready && !(rows || []).length) {
     chips.push({ tone: 'warn', text: 'Lines pending' })
   }
-  const record = formatRecord(recap)
-  if (record && recap?.slate_date_iso) {
-    const label = recapLabel(recap.slate_date_iso, now)
+  const playableText = playableRecordText(playable)
+  if (playableText) {
     chips.push({
       tone: 'neutral',
-      action: 'results',
-      text: `${label} ${record} → Results`,
-      prefix: label,
-      hits: recap.hits,
-      misses: recap.misses,
-      pushes: recap.pushes || 0,
+      kind: 'playable',
+      text: playableText,
+      wins: playable.wins,
+      losses: playable.losses,
     })
+  } else {
+    const record = formatRecord(recap)
+    if (record && recap?.slate_date_iso) {
+      const label = recapLabel(recap.slate_date_iso, now)
+      chips.push({
+        tone: 'neutral',
+        action: 'results',
+        text: `${label} ${record} → Results`,
+        prefix: label,
+        hits: recap.hits,
+        misses: recap.misses,
+        pushes: recap.pushes || 0,
+      })
+    }
   }
   return chips
 }
