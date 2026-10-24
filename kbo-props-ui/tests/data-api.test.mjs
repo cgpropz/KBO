@@ -692,6 +692,85 @@ test('correlation files hide pair rates from free callers and from the wrong spo
   assert.equal(nhlFree.lockedCount, 1)
 })
 
+test('a missing correlation table or row hides the dataset instead of 502', async () => {
+  const missing = await call('nba_correlations', 'tok-owner')
+  assert.equal(missing.statusCode, 200)
+  assert.equal(missing.body.preview, false)
+  assert.equal(missing.body.unavailable, true)
+  assert.equal(missing.body.data.unavailable, true)
+  assert.deepEqual(missing.body.data.pairs, [])
+  assert.equal(missing.body.lockedCount, 0)
+  assert.equal(missing.body.data.sport, 'nba')
+
+  const nhl = await call('nhl_correlations', 'tok-owner')
+  assert.equal(nhl.statusCode, 200)
+  assert.equal(nhl.body.preview, false)
+  assert.equal(nhl.body.data.unavailable, true)
+  assert.deepEqual(nhl.body.data.pairs, [])
+
+  const loggedOutNba = await call('nba_correlations')
+  assert.equal(loggedOutNba.statusCode, 403)
+
+  const loggedOutNhl = await call('nhl_correlations')
+  assert.equal(loggedOutNhl.statusCode, 200)
+  assert.equal(loggedOutNhl.body.preview, true)
+  assert.equal(loggedOutNhl.body.data.unavailable, true)
+  assert.deepEqual(loggedOutNhl.body.data.pairs, [])
+
+  const message = "Could not find the table 'public.correlations_nfl' in the schema cache"
+  const client = mockClient()
+  const originalFrom = client.from.bind(client)
+  client.from = (table) => {
+    if (table === 'correlations_nfl' || table === 'nfl_projections') {
+      const chain = {
+        select() { return chain },
+        eq() { return chain },
+        abortSignal() { return chain },
+        maybeSingle: async () => ({ data: null, error: { message, code: 'PGRST205' } }),
+      }
+      return chain
+    }
+    return originalFrom(table)
+  }
+  const nfl = mockRes()
+  await handleDataRequest(
+    { method: 'GET', query: { ds: 'correlations_nfl' }, headers: { authorization: bearer('tok-owner') } },
+    nfl,
+    client,
+  )
+  assert.equal(nfl.statusCode, 200)
+  assert.equal(nfl.body.preview, false)
+  assert.equal(nfl.body.unavailable, true)
+  assert.deepEqual(nfl.body.data.pairs, [])
+  assert.equal(nfl.body.data.minShared, 8)
+
+  const board = mockRes()
+  await handleDataRequest(
+    { method: 'GET', query: { ds: 'nfl_projections' }, headers: { authorization: bearer('tok-owner') } },
+    board,
+    client,
+  )
+  assert.equal(board.statusCode, 502)
+  assert.equal(board.body.error, 'Dataset unavailable')
+  assert.equal(board.body.data, undefined)
+})
+
+test('a correlation chunk manifest that cannot reassemble is hidden', async () => {
+  const original = TABLES.correlations_nfl
+  TABLES.correlations_nfl = {
+    snapshotChunks: { version: '2026-10-24T00:00:00Z', generated_at: '2026-10-24T00:00:00Z', kind: 'object', ids: [2] },
+  }
+  try {
+    const res = await call('correlations_nfl', 'tok-owner')
+    assert.equal(res.statusCode, 200)
+    assert.equal(res.body.unavailable, true)
+    assert.deepEqual(res.body.data.pairs, [])
+    assert.equal(res.body.preview, false)
+  } finally {
+    TABLES.correlations_nfl = original
+  }
+})
+
 test('unpublished table returns 404', async () => {
   const original = TABLES.nfl_lineups
   delete TABLES.nfl_lineups

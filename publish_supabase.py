@@ -501,12 +501,28 @@ def optional_table_missing(table, response):
     return "PGRST205" in body or "Could not find the table" in body
 
 
+# Same names as TABLES for the slip-builder files. Named here so a missing
+# table can point at sql/correlations.sql before TABLES is defined.
+CORRELATION_SQL_TABLES = frozenset({
+    "correlations_kbo",
+    "correlations_wnba",
+    "correlations_nfl",
+    "nba_correlations",
+    "nhl_correlations",
+})
+
+
 def missing_table_message(table):
     hint = ""
     if table == "wnba_sharp_odds":
         hint = " Apply sql/wnba_sharp_odds.sql in the Supabase SQL editor."
     elif table == "nba_sharp_odds":
         hint = " Apply sql/nba_sharp_odds.sql in the Supabase SQL editor."
+    elif table in CORRELATION_SQL_TABLES:
+        hint = (
+            " Apply sql/correlations.sql in the Supabase SQL editor, then "
+            "republish with PUBLISH_ONLY_PREFIX=correlations."
+        )
     return (
         f"{table} table does not exist (HTTP 404). "
         f"Skipping this snapshot so the rest of the publish can finish.{hint}"
@@ -1015,7 +1031,14 @@ def correlation_file_for_prefix(only_prefix: str) -> str | None:
 
 
 def tables_for_prefix(only_prefix: str) -> dict:
-    """Snapshot files to publish. nba/ is included only for an nba/ prefix."""
+    """Snapshot files to publish. nba/ is included only for an nba/ prefix.
+
+    ``correlations`` republishes the five slip-builder snapshots and no boards.
+    Sport refreshes keep using their own prefix, which already pulls in that
+    sport's correlation file.
+    """
+    if only_prefix in {"correlations", "correlations/"}:
+        return {filename: TABLES[filename] for filename in CORRELATION_FOR_SPORT.values()}
     selected = {}
     for filename, table in TABLES.items():
         gate = CORRELATION_GATES.get(filename)
