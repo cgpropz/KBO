@@ -3,6 +3,7 @@ import { kboRawRating, modelProjection as kboModelNumber, scoreFor as kboBoardSc
 import { nflCgScore, nflHasProjection, nflRawScore } from '../src/nfl/nflLineFloors.js';
 import { NFL_FREE_PREVIEW_ENABLED } from '../src/nflPreviewFlag.js';
 import { NBA_FREE_PREVIEW_ENABLED } from '../src/nbaPreviewFlag.js';
+import { hasPostedProjection } from '../src/nba/nbaPostedProjection.js';
 import { applyPointsOverGate, dropPulledRows, pointsOverDisposition, prizepicksPulled } from '../src/nhl/pointsGate.js';
 import { filterStandardBoard, isStandardBoardLine, summaryForGradedRows } from '../src/standardBoard.js';
 import { mergeLivePrizePicks } from '../src/kboLiveLines.js';
@@ -214,11 +215,20 @@ function wnbaPropScore(player, prop) {
 // server caller. The member board payload, its ranking and the score are
 // unchanged.
 
+// The number the free preview would score. A null prop projection can fall
+// through to propProjectionByStat. Blank, null, and non-numeric stay out:
+// Number('') and Number(null) are 0, and cgScore turns that into a real 0
+// that could fill a free slot. This does not change the CG formula.
+function nbaShownProjection(player, prop) {
+  return prop?.projection ?? player?.propProjectionByStat?.[prop?.stat];
+}
+
 // NBA uses the same preview shape and still divides by the pick's own line.
 // WNBA floors do not apply. Bounded 0-100 like KBO and NFL. Only the free
 // preview calls this; high-risk players never take a free slot.
 function nbaPropScore(player, prop) {
   if (nbaHighRisk(player)) return -Infinity;
+  if (!hasPostedProjection(nbaShownProjection(player, prop))) return -Infinity;
   return boardPropScore(player, prop, (projection, row) => boundCg(cgScore(projection, row?.line, row?.stat ?? row?.prop)));
 }
 
@@ -226,6 +236,7 @@ function nbaPropScore(player, prop) {
 // landing's publicFreeTopRows (and #312 for KBO) do.
 function nbaPropRawScore(player, prop) {
   if (nbaHighRisk(player)) return -Infinity;
+  if (!hasPostedProjection(nbaShownProjection(player, prop))) return -Infinity;
   return boardPropScore(player, prop, (projection, row) => cgScore(projection, row?.line, row?.stat ?? row?.prop));
 }
 

@@ -1,10 +1,9 @@
-// Stat groups for the NBA player chart. The chart's stat buttons are the
-// chips. A prop with no posted projection is not a chip, even when the game
-// log can chart that stat. Scoring is unchanged: todayPick still reads the
-// projection on the rows that remain.
+// Stat groups for the NBA player chart. A logged stat with a line stays
+// here even when the projection is blank. The chart then shows that line
+// and Pending (todayPick), never 0 or NaN. Ranking is elsewhere: the Edge
+// board and the hub skip a prop with no posted projection.
 
 import { logsSupport } from './nbaPropLines.js'
-import { hasPostedProjection } from './nbaPostedProjection.js'
 
 const PROP_ORDER = ['Points', 'Rebounds', 'Assists', '3-PT Made', 'Steals', 'Blocks', 'Turnovers', 'Fantasy Score', 'Pts+Rebs+Asts']
 
@@ -24,7 +23,6 @@ export function groupProps(player, projection) {
   const logs = Array.isArray(player?.gameLogs) ? player.gameLogs : []
   const grouped = new Map()
   ;(Array.isArray(projection?.ppAllProps) ? projection.ppAllProps : []).forEach((prop) => {
-    if (!hasPostedProjection(prop?.projection)) return
     if (!prop?.stat || !logsSupport(logs, prop.stat)) return
     if (postedLineFor([prop]) == null) return
     if (!grouped.has(prop.stat)) grouped.set(prop.stat, [])

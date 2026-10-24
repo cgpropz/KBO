@@ -4,6 +4,7 @@ import { hubGames, nbaHubRows, statusChips, topHitRateRows, wnbaHubRows } from '
 import { nbaEdgeCards, nbaEdgeMatchups, nbaEdgePlayers, nbaEdgePropTypes, nbaEdgeSlateDate } from '../src/nba/nbaEdgeBoard.js'
 import { groupProps } from '../src/nba/nbaPlayerChartProps.js'
 import { hasPostedProjection } from '../src/nba/nbaPostedProjection.js'
+import { todayPick } from '../src/nba/nbaTodayPick.js'
 
 // Synthetic rows only. A Dunks prop with no projection is pending. It must
 // leave the Edge prop tabs, the cards (and the chips those cards render),
@@ -130,21 +131,29 @@ test('WNBA hub rows still keep a blank projection', () => {
   assert.equal(rows[0].side, null)
 })
 
-test('player-chart stat chips omit a logged prop with no projection', () => {
+test('player chart keeps a logged line with no projection so the profile shows Pending', () => {
   const logs = [
     { pts: 22, reb: 6, date: '2026-10-20' },
     { pts: 18, reb: 4, date: '2026-10-18' },
   ]
   const groups = groupProps(
-    { name: 'Christian Braun', gameLogs: logs },
+    { name: 'Synth Rookie', gameLogs: logs },
     {
       ppAllProps: [
         pendingDunk,
-        { stat: 'Points', line: 12.5, projection: null, projectionStatus: 'pending' },
+        { stat: 'Points', line: 11.5, projection: '', projectionStatus: 'pending' },
         { stat: 'Rebounds', line: 4.5, projection: 6.2 },
-        { stat: 'Assists', line: 2.5, projection: '   ' },
       ],
     },
   )
-  assert.deepEqual(groups.map((group) => group.stat), ['Rebounds'])
+  assert.deepEqual(groups.map((group) => group.stat), ['Points', 'Rebounds'])
+  const points = groups.find((group) => group.stat === 'Points')
+  assert.equal(points.posted, 11.5)
+  assert.deepEqual(todayPick(points.rows[0], points.posted, 'Points'), { projection: null, cg: null, side: null })
+  // Dunks is not on the game log, so it was never a chart chip.
+  assert.equal(groups.some((group) => group.stat === 'Dunks'), false)
+  // The same blank Points row still does not take an Edge tab or card.
+  const pendingPoints = { stat: 'Points', line: 11.5, projection: '', opponent: 'DEN' }
+  assert.deepEqual(nbaEdgePropTypes([braun([pendingDunk, pendingPoints])]), ['All'])
+  assert.equal(nbaEdgeCards(nbaEdgePlayers([braun([pendingPoints])])).length, 0)
 })

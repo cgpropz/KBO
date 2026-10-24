@@ -5,7 +5,6 @@ import { lineResult, overHitRate } from '../hitRateStrip'
 import { formatLineValue, offeredLinesForStat, rateTextColor } from '../lineSlider'
 import { logsSupport, nbaLogoUrl, opponentFromMatchup, statValue, storedL10Values } from './nbaPropLines'
 import { groupProps, postedLineFor } from './nbaPlayerChartProps'
-import { postedNbaProps } from './nbaPostedProjection'
 import GameDateLogo from '../GameDateLogo'
 import { boundCg, cgScore } from '../cgScore'
 import { buildCgScoreExplainer } from '../cgScoreExplainer'
@@ -46,7 +45,7 @@ function TodayPick({ pick }) {
 
 // No chartable line today: the header still says so, with no numbers.
 function NoLineToday({ projection }) {
-  const prop = postedNbaProps(projection?.ppAllProps)
+  const prop = (Array.isArray(projection?.ppAllProps) ? projection.ppAllProps : [])
     .find((row) => row?.stat && postedLineFor([row]) != null)
   const posted = prop ? postedLineFor([prop]) : null
   return (
