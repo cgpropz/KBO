@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import { filterNhlSharpOdds, filterStandardBoard } from '../src/standardBoard.js';
 import bundledStatus from '../public/status.json' with { type: 'json' };
 import memberRecapFile from './_memberRecap.json' with { type: 'json' };
+import playableRecordFile from './_playableRecord.json' with { type: 'json' };
 import { publicBoardStatus } from './_boardStatus.js';
 import {
   DATASETS,
@@ -1100,6 +1101,23 @@ export async function handleBoardStatus(req, res, client) {
   return res.status(200).json(publicBoardStatus(bundledStatus));
 }
 
+// Static ledger snapshot. No Supabase read: the file is baked beside the API
+// and refreshed outside 6 AM–midnight ET. Same bytes the UI imports.
+export async function handlePlayableRecord(req, res) {
+  if (req.method !== 'GET') {
+    res.setHeader('Allow', 'GET');
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+  return sendData(req, res, {
+    data: playableRecordFile,
+    updatedAt: playableRecordFile.generated_at || null,
+    preview: false,
+    lockedCount: 0,
+    tier: 'free',
+    access: sportAccess('free'),
+  }, false);
+}
+
 // Paid members only. The file is baked beside the API, never served as a
 // static asset. Free and logged-out callers get an empty sports map.
 export async function handleMemberRecap(req, res, client) {
@@ -1152,6 +1170,7 @@ export async function handleDataRequest(req, res, client) {
   const dsEarly = String(req.query?.ds || '');
   if (dsEarly === 'board_status') return handleBoardStatus(req, res, client);
   if (dsEarly === 'member_recap') return handleMemberRecap(req, res, client);
+  if (dsEarly === 'playable_record') return handlePlayableRecord(req, res);
 
   res.setHeader('Cache-Control', 'private, no-store, max-age=0');
   res.setHeader('Vary', 'Authorization');

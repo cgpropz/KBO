@@ -360,6 +360,21 @@ test('graded history: free and logged-out callers do not receive the record', as
   assert.equal(paid.body.data.graded.length, 20)
 })
 
+test('playable record is the static snapshot and does not query the ledger', async () => {
+  const res = mockRes()
+  const client = { from() { throw new Error('ledger query') } }
+  await handleDataRequest({ method: 'GET', query: { ds: 'playable_record' }, headers: {} }, res, client)
+  assert.equal(res.statusCode, 200)
+  assert.equal(res.headers['cache-control'], 's-maxage=60, stale-while-revalidate=300, stale-if-error=1800')
+  assert.equal(res.body.preview, false)
+  assert.equal(res.body.data.label, 'Playable record')
+  assert.equal(res.body.data.source, 'public.qa_pick_ledger')
+  const nhl = res.body.data.slates.find((row) => row.sport === 'nhl' && row.slate_date === '2026-10-23')
+  assert.equal(nhl.wins, 14)
+  assert.equal(nhl.losses, 16)
+  assert.equal(JSON.stringify(res.body).toLowerCase().includes('board record'), false)
+})
+
 test('member recap is empty for free and logged-out callers', async () => {
   for (const token of [undefined, 'tok-free']) {
     const res = await call('member_recap', token)

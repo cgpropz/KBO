@@ -21,6 +21,7 @@ import { rowStartMs } from './etStart';
 import { freeTopEmptyText, kboHoldMessage } from './freeTopEmpty';
 import PlayerMark from './PlayerMark';
 import { playerInitials } from './playerMark';
+import PlayableRecord from './PlayableRecord';
 import './PublicLanding.css';
 
 // O / U for a row's side. A neutral row (CG exactly 50) has no side and no letter.
@@ -326,6 +327,7 @@ export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard, onSi
           <p className="pl-kick">Free preview</p>
           <h2>Today's free top 3</h2>
           <p className="pl-lead">The three standard lines with the highest CG Scores on each board. Pulled lines stay off this list.</p>
+          <PlayableRecord sport={hitSport.id} />
           <div className="pl-seg" role="tablist" aria-label="Free top 3 sport">
             {LANDING_SPORTS.map((item) => (
               <button

@@ -213,6 +213,25 @@ test('status chips and matchups come from the lineup snapshot', () => {
   assert.equal(pending[0].text, 'Lines pending')
 })
 
+test('the hub chip uses the playable record label', () => {
+  const chips = statusChips({
+    sport: 'nhl',
+    rows: [],
+    lineups: [],
+    playable: {
+      sport: 'nhl',
+      slate_date: '2026-10-23',
+      wins: 14,
+      losses: 16,
+      hit_pct: 14 / 30,
+      free_top3: { wins: 2, losses: 1 },
+    },
+    recap: { slate_date_iso: '2026-10-16', hits: 10, misses: 14, pushes: 5 },
+  })
+  assert.deepEqual(chips.map((chip) => chip.text), ['Playable record Oct 23 14-16 (46.6%) · Free top 3 2-1'])
+  assert.equal(chips.some((chip) => /board record/i.test(chip.text)), false)
+})
+
 test('record counts standard graded lines and labels the slate', () => {
   const r = standardRecord({ props: [
     { odds_type: 'standard', model_result: 'HIT' },

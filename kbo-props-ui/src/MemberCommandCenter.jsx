@@ -21,6 +21,8 @@ import {
   scopeToGameday,
 } from './memberHub';
 import { readMemberSportChoice, rememberMemberSport, selectedHubSport } from './memberSport';
+import playableRecordFile from '../api/_playableRecord.json' with { type: 'json' };
+import { playableSlate } from './playableRecord';
 import './MemberCommandCenter.css';
 import { DataCredit } from './SiteFooter'
 import { displayScore, symmetricRankOn } from './sideRank';
@@ -209,16 +211,6 @@ function L10Chart({ values, line, side }) {
       </span>
     </div>
   );
-}
-
-function useRecap() {
-  const [recap, setRecap] = useState(null);
-  useEffect(() => {
-    fetchApiDataset('member_recap')
-      .then((snap) => setRecap(snap?.preview ? {} : (snap?.data?.sports || {})))
-      .catch(() => setRecap({}));
-  }, []);
-  return recap;
 }
 
 function useBoards(access, nbaOpen, selectedId, planPending, planFailed) {
@@ -426,7 +418,6 @@ export default function MemberCommandCenter({ onEnterSport, onNavigate }) {
     }
     retrySport(id);
   };
-  const recap = useRecap();
   const [matchup, setMatchup] = useState('');
   const [focus, setFocus] = useState(null);
   const [panel, setPanel] = useState('today');
@@ -468,7 +459,7 @@ export default function MemberCommandCenter({ onEnterSport, onNavigate }) {
     sport: selected.id,
     rows: state.all || [],
     lineups: state.lineups,
-    recap: recap?.[selected.id],
+    playable: playableSlate(playableRecordFile, { sport: selected.id }),
     ready: state.status === 'ready' || state.status === 'empty',
   });
 
