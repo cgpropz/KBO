@@ -1,8 +1,11 @@
-// Standard PrizePicks lines only. The same rule as the API: a row with no
-// odds-type field stays (rankings, lineups, totals, unlabeled props). A
-// present type stays only when it is exactly "standard", so goblin, demon,
-// blank, and unknown tokens are dropped.
+// Playable PrizePicks lines on live boards. A row with no odds-type field
+// stays (rankings, lineups, totals, unlabeled props). "standard" stays.
+// Demon and goblin overs stay, because PrizePicks can take those. Demon and
+// goblin unders are hidden until the caller asks for every line. Blank and
+// unknown tokens stay hidden. Graded history and anything that is not a
+// live board still keep standard lines only, via isStandardBoardLine.
 
+import { cgSide } from './cgScore.js'
 import { prepareBoardRows } from './nhl/pointsGate.js'
 
 const LABELS = ['odds_type', 'oddsType', 'line_type', 'lineType']
@@ -34,6 +37,54 @@ export function isStandardBoardLine(row) {
   return type === 'standard'
 }
 
+function finiteNumber(value) {
+  if (value == null || value === '') return null
+  const n = Number(value)
+  return Number.isFinite(n) ? n : null
+}
+
+function explicitPickSide(row) {
+  for (const key of ['recommendation', 'side', 'direction']) {
+    const text = String(row?.[key] ?? '').trim().toUpperCase()
+    if (text === 'OVER' || text === 'UNDER') return text
+  }
+  return null
+}
+
+// Display side only. A projection above the line is OVER, below is UNDER,
+// and a projection on the line is no side. That matches the boards: an under
+// is projection < line. Sharp-odds rows often have a recommendation and no
+// projection. A missing side is not an under.
+export function boardPickSide(row) {
+  if (!row || typeof row !== 'object') return null
+  const projection = finiteNumber(row.projection)
+  const line = finiteNumber(row.line ?? row.pp_line)
+  if (projection != null && line != null) {
+    if (projection > line) return 'OVER'
+    if (projection < line) return 'UNDER'
+    return null
+  }
+  if (projection == null) {
+    const side = explicitPickSide(row)
+    if (side) return side
+  }
+  const score = finiteNumber(row.score ?? row.cgScore ?? row.cg_score)
+  if (score != null) return cgSide(score)
+  return null
+}
+
+export function isShownBoardLine(row, { showAllLines = false } = {}) {
+  const type = explicitBoardOddsType(row)
+  if (type === undefined || type === 'standard') return true
+  if (type !== 'demon' && type !== 'goblin') return false
+  if (showAllLines) return true
+  return boardPickSide(row) !== 'UNDER'
+}
+
+export function isPlayableBoardLine(row) {
+  return isShownBoardLine(row, { showAllLines: false })
+}
+
 const ROW_DATASETS = new Set(['nhl_projections', 'nfl_projections'])
 const PROJECTION_LIST = new Set(['strikeout_projections', 'batter_projections'])
 const PLAYER_STANDARD = new Set(['wnba_projections_standard', 'nba_projections_standard'])
@@ -43,13 +94,32 @@ const PLAYER_PROMO = new Set([
   'nba_projections_demon',
   'nba_projections_goblin',
 ])
+const SHARP_DATASETS = new Set([
+  'nfl_sharp_odds',
+  'nhl_sharp_odds',
+  'nba_sharp_odds',
+  'wnba_sharp_odds',
+])
+const PLAYABLE_DATASETS = new Set([
+  ...ROW_DATASETS,
+  ...PROJECTION_LIST,
+  'prizepicks_props',
+  ...PLAYER_STANDARD,
+  ...PLAYER_PROMO,
+  ...SHARP_DATASETS,
+])
 
-function filterRows(rows) {
+function lineKeep(ds, options) {
+  if (!PLAYABLE_DATASETS.has(ds)) return isStandardBoardLine
+  return (row) => isShownBoardLine(row, options)
+}
+
+function filterRows(rows, keep = isStandardBoardLine) {
   if (!Array.isArray(rows)) return rows
   let changed = false
   const kept = []
   for (const row of rows) {
-    if (!isStandardBoardLine(row)) {
+    if (!keep(row)) {
       changed = true
       continue
     }
@@ -58,10 +128,10 @@ function filterRows(rows) {
   return changed ? kept : rows
 }
 
-function filterPlayer(player) {
+function filterPlayer(player, keep = isStandardBoardLine) {
   if (!player || typeof player !== 'object') return player
   if (!Array.isArray(player.ppAllProps)) return player
-  const props = filterRows(player.ppAllProps)
+  const props = filterRows(player.ppAllProps, keep)
   return props === player.ppAllProps ? player : { ...player, ppAllProps: props }
 }
 
@@ -220,11 +290,13 @@ function filterGeneralPayload(payload) {
 }
 
 // Returns a new payload. The cached snapshot is left untouched.
-export function filterStandardBoard(ds, payload) {
-  if (ROW_DATASETS.has(ds)) return withStandardGradedHistory(filterRows(payload))
+// showAllLines restores demon and goblin unders on live boards only.
+export function filterStandardBoard(ds, payload, options = {}) {
+  const keep = lineKeep(ds, options)
+  if (ROW_DATASETS.has(ds)) return withStandardGradedHistory(filterRows(payload, keep))
   if (PROJECTION_LIST.has(ds)) {
     if (!payload || typeof payload !== 'object' || Array.isArray(payload)) return payload
-    const projections = filterRows(payload.projections)
+    const projections = filterRows(payload.projections, keep)
     const next = projections === payload.projections ? payload : { ...payload, projections }
     return withStandardGradedHistory(next)
   }
@@ -234,7 +306,7 @@ export function filterStandardBoard(ds, payload) {
     const nextCards = []
     let changed = false
     for (const card of cards) {
-      const props = filterRows(Array.isArray(card?.props) ? card.props : [])
+      const props = filterRows(Array.isArray(card?.props) ? card.props : [], keep)
       if (!props.length) {
         changed = true
         continue
@@ -251,7 +323,7 @@ export function filterStandardBoard(ds, payload) {
     const next = []
     let changed = false
     for (const player of players) {
-      const filtered = filterPlayer(player)
+      const filtered = filterPlayer(player, keep)
       if (filtered !== player) changed = true
       // Drop only a player whose list the filter emptied. A player who already
       // had no props (ppAllProps: []) stays, so a paid WNBA board keeps its count.
@@ -263,6 +335,13 @@ export function filterStandardBoard(ds, payload) {
       next.push(filtered)
     }
     return changed ? next : payload
+  }
+  if (SHARP_DATASETS.has(ds)) {
+    if (!payload || typeof payload !== 'object' || Array.isArray(payload)) return payload
+    if (!Array.isArray(payload.records)) return withStandardGradedHistory(payload)
+    const records = filterRows(payload.records, keep)
+    const next = records === payload.records ? payload : { ...payload, records }
+    return withStandardGradedHistory(next)
   }
   return filterGeneralPayload(payload)
 }
@@ -318,18 +397,35 @@ function rowsFromSharpInput(projections) {
   return rows
 }
 
+function sharpProjectionShown(type, record, projectionRow, showAllLines) {
+  if (type === 'standard') return true
+  if (type !== 'demon' && type !== 'goblin') return false
+  if (showAllLines) return true
+  const side = boardPickSide(record) || boardPickSide(projectionRow)
+  return side !== 'UNDER'
+}
+
 // Safety net for a published sharp-odds snapshot whose line_type is null.
-// Only a standard id in the rankable member set stays. That drops PrizePicks
-// pulled lines, Points overs under 0.69, and rankEligible false rows.
-// Unknown and non-standard types are removed before the free top 3 is chosen.
-export function filterNhlSharpOdds(payload, projections) {
+// The odds type comes from the rankable projection with the same id. Standard
+// ids stay. Demon and goblin ids stay when the pick is not an under, unless
+// the caller asked for every line. Unknown ids, pulled lines, Points overs
+// under 0.69, and rankEligible false rows still drop.
+export function filterNhlSharpOdds(payload, projections, { showAllLines = false } = {}) {
   if (!payload || typeof payload !== 'object' || Array.isArray(payload)) return payload
   if (!Array.isArray(payload.records)) return payload
-  const oddsById = nhlProjectionOddsById(rankableSharpRows(rowsFromSharpInput(projections)))
+  const rankable = rankableSharpRows(rowsFromSharpInput(projections))
+  const oddsById = nhlProjectionOddsById(rankable)
+  const rowById = new Map()
+  for (const row of rankable) {
+    const id = projectionRowId(row)
+    if (id && !rowById.has(id)) rowById.set(id, row)
+  }
   let changed = false
   const records = []
   for (const row of payload.records) {
-    if (nhlSharpMatchedType(row, oddsById) !== 'standard') {
+    const id = projectionRowId(row)
+    const type = nhlSharpMatchedType(row, oddsById)
+    if (!sharpProjectionShown(type, row, rowById.get(id), showAllLines)) {
       changed = true
       continue
     }

@@ -2,11 +2,12 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import { shapeForTier } from '../api/_dataAccess.js'
 import { dropPulledRows, prepareBoardRows } from '../src/nhl/pointsGate.js'
-import { isStandardBoardLine } from '../src/standardBoard.js'
+import { isPlayableBoardLine } from '../src/standardBoard.js'
 
 // Free rows plus the locked remainder are the rows a member still sees.
-// Pulled, removed, and non-standard lines are in neither count. The NHL
-// Points gate is part of that set only for nhl_projections.
+// Pulled and removed lines are in neither count. Demon and goblin unders
+// are hidden. Their overs stay. Blank odds types stay out. The NHL Points
+// gate is part of that set only for nhl_projections.
 
 const FUTURE = '2099-01-01T00:00:00.000Z'
 const PAST = '2000-01-01T00:00:00.000Z'
@@ -58,6 +59,7 @@ function boardRows(sport) {
     row(stat, 'pp-removed', { projection: 99, pp_status: 'removed' }),
     row(stat, 'goblin', { projection: 99, odds: 'goblin' }),
     row(stat, 'demon', { projection: 99, odds: 'demon' }),
+    row(stat, 'demon-under', { projection: 1, odds: 'demon' }),
     row(stat, 'blank', { projection: 99, odds: '  ' }),
   ]
 }
@@ -99,7 +101,7 @@ function rowsFrom(ds, data) {
 const STARTED_DROPPED = new Set(['nfl_projections', 'nhl_projections'])
 
 function memberSet(sport, raw) {
-  let standard = raw.filter((line) => isStandardBoardLine(line))
+  let standard = raw.filter((line) => isPlayableBoardLine(line))
   if (STARTED_DROPPED.has(sport.ds)) standard = standard.filter((line) => line.id !== 'started')
   return sport.ds === 'nhl_projections' ? prepareBoardRows(standard) : dropPulledRows(standard)
 }
@@ -129,9 +131,9 @@ for (const sport of SPORTS) {
 
     for (const line of [...freeRows, ...memberRows]) {
       assert.equal(isPulled(line), false, line.id)
-      assert.equal(isStandardBoardLine(line), true, line.id)
+      assert.equal(isPlayableBoardLine(line), true, line.id)
     }
-    for (const id of ['removed', 'suspended', 'pp-held', 'hold', 'onhold', 'pp-removed', 'goblin', 'demon', 'blank']) {
+    for (const id of ['removed', 'suspended', 'pp-held', 'hold', 'onhold', 'pp-removed', 'demon-under', 'blank']) {
       assert.equal(freeRows.some((line) => line.id === id), false, id)
       assert.equal(memberRows.some((line) => line.id === id), false, id)
     }

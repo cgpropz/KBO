@@ -1,8 +1,9 @@
 // Server-rendered free top 3 for the static homepage and sport pages.
 // Rows come from the anonymous /api/data free preview (the same payload the
 // landing reads), go through the same hub row builders, and are ranked by the
-// same CG Score order as the landing (publicFreeTopRows). Standard lines only;
-// held, pulled and removed lines, rows with no score and started games stay out.
+// same CG Score order as the landing (publicFreeTopRows). Playable lines:
+// demon and goblin unders stay off, and their overs stay. Held, pulled and
+// removed lines, rows with no score and started games stay out.
 
 import { rowStartMs } from '../src/etStart.js';
 import { UNPROVEN_RANK_NOTE } from '../src/freePreviewCopy.js';
@@ -170,7 +171,7 @@ export function renderSportFreeTop3({ sport, rows, now = null, heading = 'h2', l
       <div data-nosnippet><p class="free-top3-stamp">${slateStamp(now)}</p>
       <ol class="free-top3">${rows.map(rowItem).join('')}</ol></div>
       ${label}
-      <p class="note">Standard lines only, ranked by CG Score. Lines can move or come down before the game. ${boardLink} for the current line.</p></div>`;
+      <p class="note">Playable lines. Demon and goblin unders stay off. Ranked by CG Score. Lines can move or come down before the game. ${boardLink} for the current line.</p></div>`;
 }
 
 // Sports whose free top 3 copy is conditional ("when lines are posted").

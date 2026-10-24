@@ -2,6 +2,7 @@ import MiniHitBars from '../MiniHitBars'
 import { tailChartBars } from '../chartLabels'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { fetchNflProjections, fetchNflSharpOdds } from './nflData'
+import { ShowAllLinesToggle, useShowAllLines } from '../ShowAllLinesToggle'
 import { MemberPreviewNotice } from '../MemberPreviewNotice'
 import { QuietMemberPreview } from '../QuietMemberPreview'
 import { MemberBoardStatus } from '../MemberBoardStatus'
@@ -334,14 +335,19 @@ export default function NflPropLines({ onSelectPlayer, onNavigatePricing }) {
     rememberBoardSort('nfl', DEFAULT_FILTERS.sortBy)
   }
 
+  const { showAllLines, setShowAllLines, allPayload } = useShowAllLines(
+    `${loadAttempt}:${updatedAt || ''}`,
+    () => fetchNflProjections({ showAllLines: true }),
+  )
+  const boardProjections = showAllLines && allPayload ? allPayload.projections : projections
   const lineBounds = useMemo(() => {
-    const lines = projections.map((item) => item.line).filter((value) => typeof value === 'number')
+    const lines = boardProjections.map((item) => item.line).filter((value) => typeof value === 'number')
     if (!lines.length) return { min: 0, max: 0 }
     return { min: Math.floor(Math.min(...lines) * 10) / 10, max: Math.ceil(Math.max(...lines) * 10) / 10 }
-  }, [projections])
+  }, [boardProjections])
 
   const rows = useMemo(() => {
-    const withScore = projections.filter((item) => lineMatchesStat(item.prop, item.line)).map((item) => {
+    const withScore = boardProjections.filter((item) => lineMatchesStat(item.prop, item.line)).map((item) => {
       const pills = nflHitPills(item)
       const byId = Object.fromEntries(pills.map((pill) => [pill.id, pill]))
       return {
@@ -390,7 +396,7 @@ export default function NflPropLines({ onSelectPlayer, onNavigatePricing }) {
       if (filters.sortBy === 'DVP Rank') return (b.dvpRank ?? 0) - (a.dvpRank ?? 0)
       return b.hitRate - a.hitRate
     })
-  }, [projections, propTab, filters])
+  }, [boardProjections, propTab, filters])
 
   const paintCount = usePhonePaintCount(phone, rows.length)
   const visibleRows = rows.slice(0, paintCount)
@@ -423,6 +429,7 @@ export default function NflPropLines({ onSelectPlayer, onNavigatePricing }) {
         <div><p>NFL / PRIZEPICKS</p><h1>Prop Lines</h1><BoardStatus sport="nfl" updatedAt={updatedAt} /></div>
         <div className="nfl-lines-header-actions">
           <span>{hold ? '' : `${countedLines(rows.length, { locked: showPaywall ? lockedCount : 0 })} · sorted by ${filters.sortBy}`}</span>
+          <ShowAllLinesToggle pressed={showAllLines} onChange={setShowAllLines} />
           <button className={`nfl-filters-btn${filtersOpen ? ' active' : ''}`} onClick={() => setFiltersOpen(true)}><FilterIcon /> Filters</button>
         </div>
       </div>
@@ -435,7 +442,7 @@ export default function NflPropLines({ onSelectPlayer, onNavigatePricing }) {
           <BoardSkeleton />
         </div>
       )}
-      {!hold && !error && loaded && !projections.length && showPaywall && lockedCount > 0 && (
+      {!hold && !error && loaded && !boardProjections.length && showPaywall && lockedCount > 0 && (
         <div className="nfl-lines-lock-card">
           <div className="nfl-lines-lock-icon">🔒</div>
           <h3>Unlock the Full Board</h3>
@@ -443,8 +450,8 @@ export default function NflPropLines({ onSelectPlayer, onNavigatePricing }) {
           <button onClick={onNavigatePricing}>View Plans</button>
         </div>
       )}
-      {!hold && !error && loaded && !projections.length && !showPaywall && <div className="nfl-notice">No NFL prop lines are posted right now. Check back closer to kickoff.</div>}
-      {!hold && !error && loaded && !!projections.length && !rows.length && <div className="nfl-notice">No NFL prop lines match these filters.</div>}
+      {!hold && !error && loaded && !boardProjections.length && !showPaywall && <div className="nfl-notice">No NFL prop lines are posted right now. Check back closer to kickoff.</div>}
+      {!hold && !error && loaded && !!boardProjections.length && !rows.length && <div className="nfl-notice">No NFL prop lines match these filters.</div>}
       {!hold && !!rows.length && (
         <BoardSurface
           phone={phone}

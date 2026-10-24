@@ -17,7 +17,9 @@ export function useFullBoardRefresh(ds, apply) {
       setRefreshExhausted(true)
       return
     }
-    if (snapshot.preview === false) {
+    // lines=all is a separate snapshot for the Show all lines toggle.
+    // Applying it here would put demon and goblin unders on the default board.
+    if (snapshot.preview === false && snapshot.showAllLines !== true) {
       setRefreshExhausted(false)
       applyRef.current(snapshot)
     }

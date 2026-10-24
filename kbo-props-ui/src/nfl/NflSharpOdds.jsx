@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { fetchNflSharpOdds } from './nflData'
+import { ShowAllLinesToggle, useShowAllLines } from '../ShowAllLinesToggle'
 import { MemberBoardStatus } from '../MemberBoardStatus'
 import { QuietMemberPreview } from '../QuietMemberPreview'
 import { useMemberBoardPhase } from '../useMemberBoardPhase'
@@ -373,17 +374,22 @@ export default function NflSharpOdds({ onSelectPlayer }) {
 
   const baseline = BASELINES[mode] || BASELINES.flex
 
+  const { showAllLines, setShowAllLines, allPayload } = useShowAllLines(
+    `${loadAttempt}:${payload?.generated_at || ''}`,
+    () => fetchNflSharpOdds({ showAllLines: true }),
+  )
+  const boardRecords = showAllLines && allPayload ? allPayload.records : records
   const props = useMemo(() => {
-    const present = new Set(records.map((item) => item.prop).filter(Boolean))
+    const present = new Set(boardRecords.map((item) => item.prop).filter(Boolean))
     const ordered = PROP_ORDER.filter((item) => present.has(item))
     const extras = [...present].filter((item) => !PROP_ORDER.includes(item)).sort()
     return ['All', ...ordered, ...extras]
-  }, [records])
+  }, [boardRecords])
 
-  const matchups = useMemo(() => listMatchups(records), [records])
+  const matchups = useMemo(() => listMatchups(boardRecords), [boardRecords])
 
   const rows = useMemo(() => {
-    const filtered = records.filter((item) => {
+    const filtered = boardRecords.filter((item) => {
       if (prop !== 'All' && item.prop !== prop) return false
       if (!rowMatchesMatchup(item, matchup)) return false
       if (side === 'Overs' && item.recommendation !== 'OVER') return false
@@ -410,16 +416,17 @@ export default function NflSharpOdds({ onSelectPlayer }) {
       if (sort === 'L5') return (b.hitRateL5 ?? -1) - (a.hitRateL5 ?? -1)
       return (edge(b) - edge(a)) || (rank(b) - rank(a)) || String(a.player).localeCompare(String(b.player))
     })
-  }, [records, prop, matchup, side, query, sort, mode, plusOnly, showCg])
+  }, [boardRecords, prop, matchup, side, query, sort, mode, plusOnly, showCg])
 
-  const status = payload?.status || 'ok'
-  const showStatus = loaded && !error && payload && status !== 'ok'
-  const startedEmpty = !records.length && payload?.empty_state === 'started'
-  const emptyNotice = sharpOddsEmptyNotice(records, {
-    emptyState: payload?.empty_state,
-    fallback: payload?.message || 'No NFL props are on the PrizePicks board right now. Check back closer to kickoff.',
+  const activePayload = showAllLines && allPayload?.payload ? allPayload.payload : payload
+  const status = activePayload?.status || 'ok'
+  const showStatus = loaded && !error && activePayload && status !== 'ok'
+  const startedEmpty = !boardRecords.length && activePayload?.empty_state === 'started'
+  const emptyNotice = sharpOddsEmptyNotice(boardRecords, {
+    emptyState: activePayload?.empty_state,
+    fallback: activePayload?.message || 'No NFL props are on the PrizePicks board right now. Check back closer to kickoff.',
   })
-  const snapshotLabel = formatSnapshotTime(payload?.generated_at) ? ` · odds ${formatSnapshotTime(payload.generated_at)}` : ''
+  const snapshotLabel = formatSnapshotTime(activePayload?.generated_at) ? ` · odds ${formatSnapshotTime(activePayload.generated_at)}` : ''
 
   return (
     <section className="nfl-lines-page nfl-sharp-page">
@@ -428,7 +435,10 @@ export default function NflSharpOdds({ onSelectPlayer }) {
           <p>NFL / PRIZEPICKS ODDS</p>
           <h1>PrizePicks Odds</h1>
         </div>
-        <span title={payload?.feed_snapshot_at ? `Unabated snapshot ${payload.feed_snapshot_at}` : undefined}>{loaded ? `${rows.length} props${snapshotLabel}` : ''}</span>
+        <div className="nfl-lines-header-actions">
+          <ShowAllLinesToggle pressed={showAllLines} onChange={setShowAllLines} />
+          <span title={activePayload?.feed_snapshot_at ? `Unabated snapshot ${activePayload.feed_snapshot_at}` : undefined}>{loaded ? `${rows.length} props${snapshotLabel}` : ''}</span>
+        </div>
       </div>
       <div className="nfl-lines-tabs" role="tablist" aria-label="Prop type">
         {props.map((item) => (
@@ -485,8 +495,8 @@ export default function NflSharpOdds({ onSelectPlayer }) {
       {!hold && !error && !loaded && <div className="nfl-notice">Loading PrizePicks odds.</div>}
       {!hold && showStatus && <div className="nfl-notice">{payload.message || 'Sportsbook odds are unavailable right now.'}</div>}
       {!hold && !error && loaded && emptyNotice && (lockedCount <= 0 || startedEmpty) && <div className="nfl-notice">{emptyNotice}</div>}
-      {!hold && !error && loaded && !!records.length && !rows.length && <div className="nfl-notice">No props match these filters.</div>}
-      {showPaywall && !error && loaded && lockedCount > 0 && !startedEmpty && <div className="nfl-notice">{records.length ? `Free preview: showing the top ${records.length} by PP Edge. ${lockedCount} more are locked.` : `PrizePicks odds are locked. ${lockedCount} ${lineClause(lockedCount)} locked. Upgrade to see the full board.`}</div>}
+      {!hold && !error && loaded && !!boardRecords.length && !rows.length && <div className="nfl-notice">No props match these filters.</div>}
+      {showPaywall && !error && loaded && lockedCount > 0 && !startedEmpty && <div className="nfl-notice">{boardRecords.length ? `Free preview: showing the top ${boardRecords.length} by PP Edge. ${lockedCount} more are locked.` : `PrizePicks odds are locked. ${lockedCount} ${lineClause(lockedCount)} locked. Upgrade to see the full board.`}</div>}
       {!hold && !!rows.length && (
         <div className="nfl-lines-table-wrap">
           <table className={`nfl-lines-table nfl-sharp-table${showCg ? ' has-cg' : ''}`}>

@@ -17,10 +17,10 @@ const FILE_TO_DATASET = {
 }
 
 // Returns { data, updatedAt, source, preview, lockedCount }.
-export async function fetchWnbaSnapshot(path, { player, fresh = false } = {}) {
+export async function fetchWnbaSnapshot(path, { player, fresh = false, showAllLines = false } = {}) {
   const ds = FILE_TO_DATASET[path]
   if (!ds) throw new Error(`Unknown WNBA data file: ${path}`)
-  return fetchApiDataset(ds, { devStaticPath: path, player, fresh })
+  return fetchApiDataset(ds, { devStaticPath: path, player, fresh, showAllLines })
 }
 
 export async function fetchWnbaData(path, options) {

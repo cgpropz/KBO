@@ -5,6 +5,7 @@
 import { windowPills } from '../hitRateStrip.js'
 import { boundCg, cgScore } from '../cgScore.js'
 import { pickSide } from '../pickSide.js'
+import { explicitBoardOddsType } from '../standardBoard.js'
 import { expectedMinutesPill } from './expectedMinutes.js'
 import { gameChartBars } from '../chartLabels.js'
 import { newestSeasonLogs } from './nbaGameFilters.js'
@@ -316,7 +317,9 @@ export function buildPropRows(projections, players) {
       if (!prop || EXCLUDED_PROP_LABELS.has(prop.stat)) return
       const rawLine = num(prop.line)
       const standard = num(prop.standardLine)
-      const line = standard ?? rawLine
+      const oddsType = explicitBoardOddsType(prop)
+      const promoLine = oddsType === 'demon' || oddsType === 'goblin'
+      const line = promoLine ? rawLine : (standard ?? rawLine)
       const projection = num(prop.projection)
       const score = boundCg(cgScore(projection, line, prop.stat))
       if (projection == null || line == null || line <= 0 || score == null) return
@@ -345,7 +348,10 @@ export function buildPropRows(projections, players) {
         : (storedL10 == null ? 0 : Math.min(10, num(player.gp) || num(rosterPlayer?.gp) || 10))
 
       rows.push({
-        id: `${player.athleteId || player.name}-${prop.stat}-${line}`,
+        id: promoLine
+          ? `${player.athleteId || player.name}-${prop.stat}-${line}-${oddsType}`
+          : `${player.athleteId || player.name}-${prop.stat}-${line}`,
+        oddsType: oddsType || null,
         player: player.name,
         team,
         position,

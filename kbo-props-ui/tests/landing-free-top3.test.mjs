@@ -27,12 +27,12 @@ test('#free-top-3 ranks by CG Score, not by L10 hit rate', () => {
   assert.equal(FREE_TOP_LIMIT, 3)
   assert.equal(top.length, 3)
   const expected = rows
-    .filter((row) => ['Big Edge', 'Mid Edge', 'Small Edge', 'Hit Leader'].includes(row.player))
+    .filter((row) => ['Goblin Line', 'Big Edge', 'Mid Edge', 'Small Edge', 'Hit Leader'].includes(row.player))
     .sort((a, b) => (b.score - a.score) || ((b.rawScore ?? -Infinity) - (a.rawScore ?? -Infinity)))
     .slice(0, 3)
     .map((row) => row.player)
   assert.deepEqual(top.map((row) => row.player), expected)
-  for (const name of ['Goblin Line', 'Out Player', 'Pulled Line']) {
+  for (const name of ['Out Player', 'Pulled Line']) {
     assert.equal(top.some((row) => row.player === name), false, name)
   }
   for (let i = 1; i < top.length; i += 1) assert.ok(top[i - 1].score >= top[i].score)
@@ -50,7 +50,7 @@ test('ties on a capped CG Score break on the raw score, then board order', () =>
   assert.equal(publicFreeTopRows(rows, 10).some((row) => row.player === 'N'), false)
 })
 
-test('KBO free top 3 leaves out pulled and unmodeled props and keeps standard lines only', () => {
+test('KBO free top 3 leaves out pulled and unmodeled props and keeps demon overs', () => {
   const card = (name, props) => ({ name, team: 'LG', opponent: 'KIA', games: [], props })
   const rows = kboHubRows({
     cards: [
@@ -62,7 +62,8 @@ test('KBO free top 3 leaves out pulled and unmodeled props and keeps standard li
   })
   const names = publicFreeTopRows(rows).map((row) => row.player)
   assert.ok(names.includes('Live One'))
-  for (const name of ['Pulled One', 'No Model', 'Demon One']) assert.equal(names.includes(name), false, name)
+  assert.ok(names.includes('Demon One'))
+  for (const name of ['Pulled One', 'No Model']) assert.equal(names.includes(name), false, name)
 })
 
 test('the landing section reads the CG Score ranking and no longer says highest hit rates', () => {

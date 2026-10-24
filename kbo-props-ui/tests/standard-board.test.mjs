@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import { FILTER_STANDARD_BEFORE_FREE_PREVIEW, selectFreeSharpOddsPreview, shapeForTier } from '../api/_dataAccess.js'
 import { SHARP_ODDS_STARTED_EMPTY, sharpOddsEmptyNotice } from '../src/sharpOddsEmpty.js'
-import { filterNhlSharpOdds, filterStandardBoard, isStandardBoardLine, nhlSharpMatchedType, nhlProjectionOddsById, rawOddsType } from '../src/standardBoard.js'
+import { filterNhlSharpOdds, filterStandardBoard, isPlayableBoardLine, isStandardBoardLine, nhlSharpMatchedType, nhlProjectionOddsById, rawOddsType } from '../src/standardBoard.js'
 
 test('raw odds type keeps unknown tokens and blank stays empty', () => {
   assert.equal(rawOddsType({ odds_type: ' Goblin ' }), 'goblin')
@@ -19,24 +19,29 @@ test('raw odds type keeps unknown tokens and blank stays empty', () => {
   assert.equal(isStandardBoardLine({ oddsType: 'demon' }), false)
 })
 
-test('NHL and NFL boards keep a row with no odds type and drop goblin and demon', () => {
+test('NHL and NFL boards hide demon and goblin unders and keep their overs', () => {
   const nhl = [
-    { player: 'A', oddsType: 'standard' },
-    { player: 'B', oddsType: 'goblin' },
-    { player: 'C', oddsType: 'demon' },
+    { player: 'A', oddsType: 'standard', projection: 2, line: 1 },
+    { player: 'B', oddsType: 'goblin', projection: 1, line: 2 },
+    { player: 'C', oddsType: 'demon', projection: 3, line: 1 },
     { player: 'D' },
     { player: 'E', oddsType: 'mystery' },
   ]
   const filtered = filterStandardBoard('nhl_projections', nhl)
-  assert.deepEqual(filtered.map((row) => row.player), ['A', 'D'])
+  assert.deepEqual(filtered.map((row) => row.player), ['A', 'C', 'D'])
+  assert.equal(isPlayableBoardLine(nhl[2]), true)
+  assert.equal(isPlayableBoardLine(nhl[1]), false)
+  const all = filterStandardBoard('nhl_projections', nhl, { showAllLines: true })
+  assert.deepEqual(all.map((row) => row.player), ['A', 'B', 'C', 'D'])
   assert.equal(nhl.length, 5)
 
   const nfl = filterStandardBoard('nfl_projections', [
     { player: 'Std', line_type: 'standard' },
-    { player: 'Gob', line_type: 'goblin' },
+    { player: 'Gob', line_type: 'goblin', projection: 1, line: 4 },
+    { player: 'GobOver', line_type: 'goblin', projection: 8, line: 4 },
     { player: 'Blank' },
   ])
-  assert.deepEqual(nfl.map((row) => row.player), ['Std', 'Blank'])
+  assert.deepEqual(nfl.map((row) => row.player), ['Std', 'GobOver', 'Blank'])
 })
 
 test('KBO cards and pitcher lists keep a row with no odds type', () => {
@@ -46,38 +51,45 @@ test('KBO cards and pitcher lists keep a row with no odds type', () => {
       name: 'Kim',
       props: [
         { stat: 'Hits', odds_type: 'standard' },
-        { stat: 'Hits', odds_type: 'goblin' },
+        { stat: 'Hits', odds_type: 'goblin', projection: 1, line: 2 },
         { stat: 'Hits' },
       ],
     }, {
       name: 'Promo Only',
-      props: [{ stat: 'Strikeouts', odds_type: 'demon' }],
+      props: [{ stat: 'Strikeouts', odds_type: 'demon', projection: 1, line: 2 }],
+    }, {
+      name: 'Demon Over',
+      props: [{ stat: 'Strikeouts', odds_type: 'demon', projection: 8, line: 5 }],
     }],
   }
   const next = filterStandardBoard('prizepicks_props', board)
-  assert.deepEqual(next.cards.map((card) => card.name), ['Kim'])
+  assert.deepEqual(next.cards.map((card) => card.name), ['Kim', 'Demon Over'])
   assert.equal(next.cards[0].props.length, 2)
-  assert.equal(next.total_props, 2)
+  assert.equal(next.total_props, 3)
   assert.equal(board.cards[0].props.length, 3)
+  const restored = filterStandardBoard('prizepicks_props', board, { showAllLines: true })
+  assert.deepEqual(restored.cards.map((card) => card.name), ['Kim', 'Promo Only', 'Demon Over'])
 
   const pitchers = filterStandardBoard('strikeout_projections', {
     projections: [
       { name: 'A', odds_type: 'standard' },
-      { name: 'B', odds_type: 'goblin' },
+      { name: 'B', odds_type: 'goblin', projection: 1, line: 4 },
+      { name: 'Over', odds_type: 'goblin', projection: 6, line: 4 },
       { name: 'C' },
     ],
   })
-  assert.deepEqual(pitchers.projections.map((row) => row.name), ['A', 'C'])
+  assert.deepEqual(pitchers.projections.map((row) => row.name), ['A', 'Over', 'C'])
 })
 
 test('WNBA and NBA standard feeds treat a missing type as standard and drop promos', () => {
   const players = [
     { name: 'Standard', ppAllProps: [{ stat: 'Points', line: 20 }] },
-    { name: 'Mixed', ppAllProps: [{ stat: 'Points', odds_type: 'standard' }, { stat: 'Rebounds', odds_type: 'demon' }] },
-    { name: 'Goblin', ppAllProps: [{ stat: 'Assists', oddsType: 'goblin' }] },
+    { name: 'Mixed', ppAllProps: [{ stat: 'Points', odds_type: 'standard' }, { stat: 'Rebounds', odds_type: 'demon', projection: 1, line: 5 }] },
+    { name: 'Goblin', ppAllProps: [{ stat: 'Assists', oddsType: 'goblin', projection: 1, line: 5 }] },
+    { name: 'Demon Over', ppAllProps: [{ stat: 'Points', odds_type: 'demon', projection: 30, line: 15 }] },
   ]
   const kept = filterStandardBoard('wnba_projections_standard', players)
-  assert.deepEqual(kept.map((player) => player.name), ['Standard', 'Mixed'])
+  assert.deepEqual(kept.map((player) => player.name), ['Standard', 'Mixed', 'Demon Over'])
   assert.equal(kept[1].ppAllProps.length, 1)
   assert.equal(players[1].ppAllProps.length, 2)
 
@@ -94,22 +106,25 @@ test('WNBA and NBA standard feeds treat a missing type as standard and drop prom
   assert.equal(demon.data[0].ppAllProps.length, 1)
 })
 
-test('the paid NHL board and the free preview keep standard lines only', () => {
+test('the paid NHL board and the free preview hide demon and goblin unders', () => {
   assert.equal(FILTER_STANDARD_BEFORE_FREE_PREVIEW, true)
   const rows = [
     { player: 'Goblin', prop: 'Points', line: 0.5, projection: 2, oddsType: 'goblin', rankEligible: true },
+    { player: 'GoblinUnder', prop: 'Points', line: 0.5, projection: 0.2, oddsType: 'goblin', rankEligible: true },
     { player: 'Standard', prop: 'Points', line: 0.5, projection: 0.9, oddsType: 'standard', rankEligible: true },
     { player: 'Missing', prop: 'Shots On Goal', line: 2.5, projection: 3, rankEligible: true },
     { player: 'Unknown', prop: 'Shots On Goal', line: 2.5, projection: 4, oddsType: 'alt', rankEligible: true },
   ]
   const paid = shapeForTier('nhl_projections', rows, 'combined')
   assert.equal(paid.preview, false)
-  assert.deepEqual(paid.data.map((row) => row.player), ['Standard', 'Missing'])
+  assert.deepEqual(paid.data.map((row) => row.player), ['Goblin', 'Standard', 'Missing'])
   const free = shapeForTier('nhl_projections', rows, 'free')
   assert.equal(free.preview, true)
-  assert.deepEqual(free.data.map((row) => row.player), ['Standard', 'Missing'])
+  assert.deepEqual(free.data.map((row) => row.player), ['Goblin', 'Standard', 'Missing'])
   assert.equal(free.lockedCount, 0)
-  assert.equal(rows.length, 4)
+  const all = shapeForTier('nhl_projections', rows, 'combined', { showAllLines: true })
+  assert.deepEqual(all.data.map((row) => row.player), ['Goblin', 'GoblinUnder', 'Standard', 'Missing'])
+  assert.equal(rows.length, 5)
 })
 
 test('paid graded history keeps a row with no odds type and the summary matches', () => {
@@ -166,7 +181,7 @@ test('a paid WNBA standard board keeps all 224 players when most lists are empty
       ? { name: `P${i}`, ppAllProps: [{ stat: 'Points', line: 10 + i }] }
       : { name: `P${i}`, ppAllProps: [] }
   ))
-  players.push({ name: 'Goblin Only', ppAllProps: [{ stat: 'Assists', odds_type: 'goblin' }] })
+  players.push({ name: 'Goblin Only', ppAllProps: [{ stat: 'Assists', odds_type: 'goblin', projection: 1, line: 5 }] })
   const paid = shapeForTier('wnba_projections_standard', players, 'combined')
   assert.equal(paid.preview, false)
   assert.equal(paid.data.length, 224)
@@ -182,15 +197,17 @@ test('NHL sharp odds keep a row only when its id matches a standard projection',
     { id: 15856898, player: 'Ekblad', oddsType: 'demon' },
     { id: 15857300, player: 'Newhook', oddsType: 'demon' },
     { id: 15857317, player: 'Texier', oddsType: 'demon' },
+    { id: 200, player: 'Demon Over', oddsType: 'demon', projection: 4, line: 2.5 },
   ]
   const odds = {
     message: 'matched',
     records: [
       { id: 100, player: 'Standard', line_type: null, pp_edge_flex: 1 },
       { id: 101, player: 'Plain', line_type: null, pp_edge_flex: 1 },
-      { id: 15856898, player: 'Ekblad', prop: 'Power Play Points', line_type: null, pp_edge_flex: 50 },
-      { id: 15857300, player: 'Newhook', prop: 'Power Play Points', line_type: null, pp_edge_flex: 40 },
-      { id: 15857317, player: 'Texier', prop: 'Power Play Points', line_type: null, pp_edge_flex: 30 },
+      { id: 15856898, player: 'Ekblad', prop: 'Power Play Points', recommendation: 'UNDER', line_type: null, pp_edge_flex: 50 },
+      { id: 15857300, player: 'Newhook', prop: 'Power Play Points', recommendation: 'UNDER', line_type: null, pp_edge_flex: 40 },
+      { id: 15857317, player: 'Texier', prop: 'Power Play Points', recommendation: 'UNDER', line_type: null, pp_edge_flex: 30 },
+      { id: 200, player: 'Demon Over', prop: 'Shots On Goal', recommendation: 'OVER', line_type: null, pp_edge_flex: 12 },
       { id: 999, player: 'Unknown', line_type: null, pp_edge_flex: 20 },
       { player: 'NoId', line_type: null, pp_edge_flex: 15 },
     ],
@@ -198,11 +215,14 @@ test('NHL sharp odds keep a row only when its id matches a standard projection',
   const types = nhlProjectionOddsById(projections)
   assert.equal(nhlSharpMatchedType(odds.records[0], types), 'standard')
   assert.equal(nhlSharpMatchedType(odds.records[2], types), 'demon')
-  assert.equal(nhlSharpMatchedType(odds.records[5], types), 'unknown')
+  assert.equal(nhlSharpMatchedType(odds.records[5], types), 'demon')
+  assert.equal(nhlSharpMatchedType(odds.records[6], types), 'unknown')
   const kept = filterNhlSharpOdds(odds, projections)
-  assert.deepEqual(kept.records.map((row) => row.id), [100, 101])
+  assert.deepEqual(kept.records.map((row) => row.id), [100, 101, 200])
   assert.equal(kept.message, 'matched')
-  assert.equal(odds.records.length, 7)
+  const withUnders = filterNhlSharpOdds(odds, projections, { showAllLines: true })
+  assert.deepEqual(withUnders.records.map((row) => row.id), [100, 101, 15856898, 15857300, 15857317, 200])
+  assert.equal(odds.records.length, 8)
 })
 
 test('NHL sharp odds drop a standard id PrizePicks has pulled', () => {
@@ -238,22 +258,24 @@ test('NHL sharp odds apply the pulled and rankable checks to a Map of rows', () 
   assert.deepEqual(kept.records.map((row) => row.id), [100])
 })
 
-test('NFL and NHL sharp odds drop goblin and demon and keep a row with no odds type', () => {
+test('NFL and NHL sharp odds hide demon and goblin unders and keep a row with no odds type', () => {
   const records = [
     { player: 'Std', odds_type: 'standard', ev_pct: 4 },
-    { player: 'Gob', odds_type: 'goblin', ev_pct: 9 },
-    { player: 'Dem', oddsType: 'demon', ev_pct: 8 },
+    { player: 'Gob', odds_type: 'goblin', recommendation: 'UNDER', ev_pct: 9 },
+    { player: 'Dem', oddsType: 'demon', recommendation: 'OVER', ev_pct: 8 },
     { player: 'Plain', ev_pct: 1 },
     { player: 'Blank', odds_type: '  ', ev_pct: 2 },
   ]
   for (const ds of ['nfl_sharp_odds', 'nhl_sharp_odds']) {
     const next = filterStandardBoard(ds, { records, message: 'matched' })
-    assert.deepEqual(next.records.map((row) => row.player), ['Std', 'Plain'], ds)
+    assert.deepEqual(next.records.map((row) => row.player), ['Std', 'Dem', 'Plain'], ds)
     assert.equal(next.message, 'matched')
     const paid = shapeForTier(ds, { records, message: 'matched' }, 'combined')
     assert.equal(paid.preview, false)
-    assert.deepEqual(paid.data.records.map((row) => row.player), ['Std', 'Plain'], ds)
+    assert.deepEqual(paid.data.records.map((row) => row.player), ['Std', 'Dem', 'Plain'], ds)
     assert.equal(paid.data.message, 'matched')
+    const all = shapeForTier(ds, { records, message: 'matched' }, 'combined', { showAllLines: true })
+    assert.deepEqual(all.data.records.map((row) => row.player), ['Std', 'Gob', 'Dem', 'Plain'], ds)
   }
   assert.equal(records.length, 5)
 })

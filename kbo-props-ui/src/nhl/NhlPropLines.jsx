@@ -5,6 +5,7 @@ import NhlAvatar from './NhlAvatar.jsx'
 import { dvpGrade } from '../nfl/matchupGrade'
 import { BoardOddsPanel, OddsChevron, boardOddsFor, useBoardOdds } from '../nfl/BoardOddsPanel'
 import { fetchNhlProjections, fetchNhlSharpOdds } from './nhlData'
+import { ShowAllLinesToggle, useShowAllLines } from '../ShowAllLinesToggle'
 import { MemberPreviewNotice } from '../MemberPreviewNotice'
 import { QuietMemberPreview } from '../QuietMemberPreview'
 import { MemberBoardStatus } from '../MemberBoardStatus'
@@ -203,11 +204,16 @@ export default function NhlPropLines({ onSelectPlayer }) {
     setLoadAttempt((current) => current + 1)
   }
 
+  const { showAllLines, setShowAllLines, allPayload } = useShowAllLines(
+    `${loadAttempt}:${updatedAt || ''}`,
+    () => fetchNhlProjections({ showAllLines: true }),
+  )
+  const boardProjections = showAllLines && allPayload ? allPayload.projections : projections
   const sortKey = SORT_OPTIONS.includes(sortBy) ? sortBy : 'CG Score'
   const rows = useMemo(() => {
-    const filtered = prepareBoardRows(projections).filter((item) => lineMatchesStat(item.prop, item.line) && (tab === 'All Props' || item.prop === tab))
+    const filtered = prepareBoardRows(boardProjections).filter((item) => lineMatchesStat(item.prop, item.line) && (tab === 'All Props' || item.prop === tab))
     return sortBoard(filtered, sortKey)
-  }, [projections, tab, sortKey])
+  }, [boardProjections, tab, sortKey])
 
   return (
     <section className="nfl-lines-page">
@@ -220,6 +226,7 @@ export default function NhlPropLines({ onSelectPlayer }) {
         <div><p>NHL / PRIZEPICKS</p><h1>Prop Lines</h1><BoardStatus sport="nhl" updatedAt={updatedAt} /></div>
         <div className="nfl-lines-header-actions">
           <span>{hold ? 'lines' : countedLines(rows.length, { locked: showPaywall ? lockedCount : 0 })}</span>
+          <ShowAllLinesToggle pressed={showAllLines} onChange={setShowAllLines} />
           <select className="nhl-sort" value={sortKey} onChange={(event) => changeSort(event.target.value)} aria-label="Sort">
             {SORT_OPTIONS.map((option) => <option key={option}>{option}</option>)}
           </select>

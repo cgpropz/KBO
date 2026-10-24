@@ -38,6 +38,16 @@ const fixtures = {
     projection: 20,
     recent,
     line_type: 'goblin',
+  }, {
+    id: 'nfl-demon-under',
+    player: 'Demon Under',
+    team: 'DET',
+    opponent: 'CHI',
+    position: 'WR',
+    prop: 'Receiving Yards',
+    line: 80.5,
+    projection: 10,
+    line_type: 'demon',
   }],
   nhl_projections: [{
     id: 'nhl-0',
@@ -71,6 +81,17 @@ const fixtures = {
     line: 0.5,
     projection: 1.2,
     oddsType: 'goblin',
+    rankEligible: true,
+  }, {
+    id: 'nhl-demon-under',
+    player: 'Demon Under',
+    team: 'EDM',
+    opponent: 'CGY',
+    position: 'C',
+    prop: 'Shots On Goal',
+    line: 4.5,
+    projection: 1,
+    oddsType: 'demon',
     rankEligible: true,
   }],
   prizepicks_props: {
@@ -295,11 +316,12 @@ test('member cards show the player logo and hide model weights', async ({ page }
   await expect(page.locator('.nfl-board-meta')).not.toContainText('Projection =')
 })
 
-test('phone NHL dashboard hides goblin lines and opens on CG Score', async ({ page }) => {
+test('phone NHL dashboard keeps goblin overs and hides demon unders', async ({ page }) => {
   await page.goto('/?sport=nhl&previewTier=owner')
   await expect(page.getByTestId('prop-line-card').first()).toBeVisible()
-  await expect(page.getByText('Goblin Skater')).toHaveCount(0)
-  await expect(page.getByText(/GOBLIN/)).toHaveCount(0)
+  await expect(page.getByText('Goblin Skater')).toBeVisible()
+  await expect(page.getByText('Demon Under')).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'Show all lines' })).toBeVisible()
   await expect(page.getByLabel('Sort')).toHaveValue('CG Score')
 })
 
@@ -307,11 +329,13 @@ test('a deep link opens the NFL and NHL boards as phone cards', async ({ page })
   await page.goto('/?sport=nfl&page=projections&previewTier=owner')
   await expect(page.getByRole('heading', { name: 'Edge Board' })).toBeVisible()
   await expect(page.locator('.nfl-edge-card').first()).toBeVisible()
-  await expect(page.getByText('Goblin Only')).toHaveCount(0)
+  await expect(page.getByText('Goblin Only')).toBeVisible()
+  await expect(page.getByText('Demon Under')).toHaveCount(0)
   await page.goto('/?sport=nhl&page=projections&previewTier=owner')
   await expect(page.getByRole('heading', { name: 'Board' })).toBeVisible()
   await expect(page.locator('.nfl-edge-card').first()).toBeVisible()
-  await expect(page.getByText('Goblin Skater')).toHaveCount(0)
+  await expect(page.getByText('Goblin Skater')).toBeVisible()
+  await expect(page.getByText('Demon Under')).toHaveCount(0)
 })
 
 test('a sport tab opens that sport dashboard', async ({ page }) => {
