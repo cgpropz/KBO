@@ -13,6 +13,7 @@ import crypto from 'node:crypto';
 import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
 import { foundersOfferState } from '../src/foundersOffer.js';
+import { isAutomatedClient, listOpenCheckoutSessions, reusableCheckoutUrl } from './_checkoutClient.js';
 import { customersForEmail, activeFoundersPriceId, activeLifetimePriceId } from './_stripeTier.js';
 import { countFoundersPurchases } from './_foundersCount.js';
 
@@ -102,8 +103,8 @@ export async function foundersOfferStatus(client, env = process.env, now = Date.
   return foundersOfferState({ now, sold });
 }
 
-async function createPaymentSession(client, { priceId, plan, buyer, body }) {
-  const metadata = { cg_plan: plan, tier: 'combined' };
+async function createPaymentSession(client, { priceId, plan, buyer, body, nowSec }) {
+  const metadata = { cg_plan: plan, tier: 'combined', price_id: priceId };
   for (const key of UTM_KEYS) {
     const value = String(body[key] || '').trim();
     if (UTM_VALUE_RE.test(value)) metadata[key] = value;
@@ -126,6 +127,14 @@ async function createPaymentSession(client, { priceId, plan, buyer, body }) {
   const existingCustomerId = email.includes('@') ? await stripeCustomerId(client, email) : null;
   if (existingCustomerId) params.customer = existingCustomerId;
   else if (email.includes('@')) params.customer_email = email;
+
+  const open = await listOpenCheckoutSessions(client, existingCustomerId);
+  const reuse = reusableCheckoutUrl(open, nowSec, (session) => (
+    session.mode === 'payment'
+    && session.metadata?.cg_plan === plan
+    && session.metadata?.price_id === priceId
+  ));
+  if (reuse) return { url: reuse, id: null };
 
   const session = await client.checkout.sessions.create(params);
   const url = String(session?.url || '');
@@ -152,12 +161,19 @@ function foundersClosedBody(offer) {
  * One-time payment mode. No subscription and no free trial.
  * Founders past the cap or the deadline is refused. No Checkout Session
  * is created, and the $249.99 Lifetime price is not substituted.
+ *
+ * Called from a Buy click. Crawlers get 403 and no session. An open session
+ * for the same customer and price is returned instead of creating another.
  */
 export async function handleOfferCheckoutRequest(req, res, deps = {}) {
   res.setHeader('Cache-Control', 'private, no-store, max-age=0');
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST');
     return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  if (isAutomatedClient(req.headers || {})) {
+    return res.status(403).json({ error: 'Checkout unavailable' });
   }
 
   const requested = deps.plan === 'founders' ? 'founders' : 'lifetime';
@@ -188,6 +204,7 @@ export async function handleOfferCheckoutRequest(req, res, deps = {}) {
       plan,
       buyer,
       body: readBody(req),
+      nowSec: Math.floor(now / 1000),
     });
     return res.status(200).json({
       url: session.url,

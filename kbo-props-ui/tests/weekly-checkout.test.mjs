@@ -7,6 +7,7 @@ import { WEEKLY_PRICE_ID, XWEEK_PROMOTION_CODE_ID } from '../src/pricingTiers.js
 
 const SESSION_URL = 'https://checkout.stripe.com/c/pay/cs_live_weeklyxweek'
 const SUCCESS_URL = 'https://www.cgpropz.com/?checkout=success&session_id={CHECKOUT_SESSION_ID}'
+const BROWSER_UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 Twitter for iPhone'
 
 function mockRes() {
   return {
@@ -32,14 +33,14 @@ function mockStripe(result = { url: SESSION_URL, id: 'cs_live_secret', customer:
   }
 }
 
-async function call(body, { method = 'POST', stripe, user, authorization, authenticate } = {}) {
+async function call(body, { method = 'POST', stripe, user, authorization, authenticate, headers = {}, now } = {}) {
   const res = mockRes()
-  const headers = {}
-  if (authorization) headers.authorization = authorization
+  const reqHeaders = { 'user-agent': BROWSER_UA, ...headers }
+  if (authorization) reqHeaders.authorization = authorization
   await handleWeeklyCheckoutRequest(
-    { method, body, headers },
+    { method, body, headers: reqHeaders },
     res,
-    { stripe, user, authenticate },
+    { stripe, user, authenticate, now },
   )
   return res
 }
@@ -72,6 +73,8 @@ test('creates the existing weekly price with XWEEK applied and returns only the 
   assert.equal(params.billing_address_collection, 'auto')
   assert.equal(params.phone_number_collection, undefined)
   assert.equal(params.metadata.cg_plan, 'weekly')
+  assert.equal(params.metadata.price_id, WEEKLY_PRICE_ID)
+  assert.equal(params.metadata.xweek, '1')
   assert.equal(params.metadata.utm_source, 'x')
   assert.equal(params.metadata.utm_medium, 'paid')
   assert.equal(params.metadata.utm_campaign, 'weekly_ads')
@@ -176,8 +179,109 @@ test('a returning customer whose XWEEK code is rejected still gets a payable wee
   assert.equal(calls[0].customer_email, undefined)
   assert.equal(calls[1].customer, 'cus_existing')
   assert.equal(calls[1].discounts, undefined)
+  assert.equal(calls[1].metadata.xweek, '0')
+  assert.equal(calls[1].metadata.price_id, WEEKLY_PRICE_ID)
   assert.equal(calls[1].line_items[0].price, WEEKLY_PRICE_ID)
   assert.equal(calls[1].client_reference_id, 'user_123')
+})
+
+test('crawlers, empty user agents, and prefetch do not create a session', async () => {
+  for (const ua of ['Twitterbot/1.0', 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)', '']) {
+    const calls = []
+    const res = await call({}, { stripe: mockStripe(undefined, calls), headers: { 'user-agent': ua } })
+    assert.equal(res.statusCode, 403, ua || '(empty)')
+    assert.equal(calls.length, 0, ua || '(empty)')
+  }
+  const calls = []
+  const prefetch = await call({}, {
+    stripe: mockStripe(undefined, calls),
+    headers: { 'user-agent': BROWSER_UA, 'sec-purpose': 'prefetch' },
+  })
+  assert.equal(prefetch.statusCode, 403)
+  assert.equal(calls.length, 0)
+})
+
+function customerStripe(calls, openSessions, { create } = {}) {
+  return {
+    customers: { async list() { return { data: [{ id: 'cus_existing', email: 'buyer@example.com' }] } } },
+    checkout: { sessions: {
+      async list(params) { calls.push(['list', params]); return { data: openSessions } },
+      async create(params) {
+        calls.push(['create', params])
+        if (create) return create(params)
+        return { url: SESSION_URL }
+      },
+    } },
+  }
+}
+
+const NOW_MS = 1_800_000_000_000
+const NOW_S = NOW_MS / 1000
+const OPEN_URL = 'https://checkout.stripe.com/c/pay/cs_live_openweekly'
+const buyer = { id: 'user_123', email: 'buyer@example.com' }
+
+function openWeekly(xweek, extras = {}) {
+  return {
+    url: OPEN_URL,
+    mode: 'subscription',
+    expires_at: NOW_S + 20 * 3600,
+    metadata: { cg_plan: 'weekly', price_id: WEEKLY_PRICE_ID, xweek },
+    ...extras,
+  }
+}
+
+test('an open XWEEK session for the same customer and weekly price is reused', async () => {
+  const calls = []
+  const stripe = customerStripe(calls, [openWeekly('1')])
+  const res = await call({}, { stripe, user: buyer, now: () => NOW_MS })
+  assert.equal(res.statusCode, 200)
+  assert.deepEqual(res.body, { url: OPEN_URL })
+  assert.deepEqual(calls.map((c) => c[0]), ['list'])
+  assert.deepEqual(calls[0][1], { customer: 'cus_existing', status: 'open', limit: 20 })
+})
+
+test('a full-price open session is not reused when XWEEK still applies', async () => {
+  const calls = []
+  const stripe = customerStripe(calls, [openWeekly('0')])
+  const res = await call({}, { stripe, user: buyer, now: () => NOW_MS })
+  assert.equal(res.body.url, SESSION_URL)
+  assert.deepEqual(calls.map((c) => c[0]), ['list', 'create'])
+  assert.deepEqual(calls[1][1].discounts, [{ promotion_code: XWEEK_PROMOTION_CODE_ID }])
+  assert.equal(calls[1][1].line_items[0].price, WEEKLY_PRICE_ID)
+  assert.equal(calls[1][1].metadata.xweek, '1')
+})
+
+test('a rejected XWEEK code reuses an open full-price session instead of creating another', async () => {
+  const calls = []
+  const promoError = new Error('This promotion code cannot be redeemed because the associated customer has prior transactions.')
+  const stripe = customerStripe(calls, [openWeekly('0')], {
+    create() { throw promoError },
+  })
+  const res = await call({}, { stripe, user: buyer, now: () => NOW_MS })
+  assert.equal(res.statusCode, 200)
+  assert.deepEqual(res.body, { url: OPEN_URL })
+  assert.deepEqual(calls.map((c) => c[0]), ['list', 'create'])
+})
+
+test('an open session that is about to expire, for another price, or missing the price id is not reused', async () => {
+  const calls = []
+  const stripe = customerStripe(calls, [
+    openWeekly('1', { expires_at: NOW_S + 10 * 60 }),
+    openWeekly('1', { metadata: { cg_plan: 'weekly', price_id: 'price_old', xweek: '1' } }),
+    { url: OPEN_URL, mode: 'subscription', expires_at: NOW_S + 20 * 3600, metadata: { cg_plan: 'weekly', xweek: '1' } },
+  ])
+  const res = await call({}, { stripe, user: buyer, now: () => NOW_MS })
+  assert.equal(res.body.url, SESSION_URL)
+  assert.deepEqual(calls.map((c) => c[0]), ['list', 'create'])
+})
+
+test('guests do not look up open sessions', async () => {
+  const calls = []
+  const stripe = customerStripe(calls, [openWeekly('1')])
+  const res = await call({}, { stripe, user: null, now: () => NOW_MS })
+  assert.equal(res.statusCode, 200)
+  assert.equal(res.body.url, SESSION_URL)
+  assert.deepEqual(calls.map((c) => c[0]), ['create'])
 })
 
 test('returns 502 when Stripe throws or the session URL is not hosted checkout', async () => {

@@ -74,8 +74,8 @@ export function utmParams() {
  *
  * Weekly does not use prefilled_promo_code. Stripe Payment Links reject XWEEK
  * ("This promotion code is invalid") and leave the price at $9.99. The weekly
- * button uses requestWeeklyCheckoutUrl() instead, which opens a Checkout
- * Session for the same weekly price with XWEEK already applied ($4.99).
+ * Buy click uses openWeeklyCheckoutUrl(), which opens a Checkout Session for
+ * the same weekly price with XWEEK already applied ($4.99).
  */
 export function buildCheckoutUrl(link, user) {
   const url = new URL(link);
@@ -87,17 +87,27 @@ export function buildCheckoutUrl(link, user) {
 
 const CHECKOUT_HOST = 'https://checkout.stripe.com/';
 
-// Session URLs fetched before the click, keyed by access token ('' = guest).
-// The weekly button navigates to one of these synchronously. Waiting on the
-// network inside the click drops the navigation in in-app browsers.
-const readyWeeklyUrls = new Map();
+// A URL returned by a Buy click is reused for this long. The server also
+// reuses an open Stripe session for the same customer and price. This map
+// covers a second click (and guests, who have no Stripe customer yet) so
+// the browser does not mint another session.
+export const CHECKOUT_URL_REUSE_MS = 60 * 60 * 1000;
+const clickUrls = new Map();
+const clickInflight = new Map();
 
-export function readyWeeklyCheckoutUrl(token = '') {
-  return readyWeeklyUrls.get(token || '') || null;
+function freshClickUrl(key) {
+  const hit = clickUrls.get(key);
+  if (!hit) return null;
+  if (Date.now() - hit.at >= CHECKOUT_URL_REUSE_MS) {
+    clickUrls.delete(key);
+    return null;
+  }
+  return hit.value;
 }
 
 // Ask the server for the live weekly Checkout Session (XWEEK applied when the
 // code is valid for this buyer; otherwise the full $9.99 weekly checkout).
+// Callers are Buy clicks. Do not call this on page load.
 export async function requestWeeklyCheckoutUrl({ token, utm = utmParams(), fetchImpl = globalThis.fetch } = {}) {
   const headers = { 'Content-Type': 'application/json' };
   if (token) headers.Authorization = `Bearer ${token}`;
@@ -113,24 +123,22 @@ export async function requestWeeklyCheckoutUrl({ token, utm = utmParams(), fetch
   return url;
 }
 
-// Start the weekly Checkout Session request as soon as the page is shown, so
-// the button's href is a real checkout URL by the time it's clicked.
-const inflightWeekly = new Map();
-
-export function prefetchWeeklyCheckoutUrl(options = {}) {
-  const key = options.token || '';
-  const ready = readyWeeklyUrls.get(key);
-  if (ready) return Promise.resolve(ready);
-  if (!inflightWeekly.has(key)) {
+// Weekly Buy click. Reuses the URL from an earlier click in this tab, and
+// shares one in-flight request if the button is hit twice before it returns.
+export async function openWeeklyCheckoutUrl(options = {}) {
+  const key = `weekly:${options.token || ''}`;
+  const cached = freshClickUrl(key);
+  if (cached) return cached;
+  if (!clickInflight.has(key)) {
     const pending = requestWeeklyCheckoutUrl(options).then((url) => {
-      readyWeeklyUrls.set(key, url);
+      clickUrls.set(key, { value: url, at: Date.now() });
       return url;
     }).finally(() => {
-      inflightWeekly.delete(key);
+      clickInflight.delete(key);
     });
-    inflightWeekly.set(key, pending);
+    clickInflight.set(key, pending);
   }
-  return inflightWeekly.get(key);
+  return clickInflight.get(key);
 }
 
 // Discord-only Checkout Session. The server picks the price from env; the
@@ -151,17 +159,10 @@ export async function requestDiscordCheckoutUrl({ plan, token, utm = utmParams()
   return url;
 }
 
-// URL the weekly button can open immediately. Prefers the Checkout Session.
-// If that isn't ready, the weekly Payment Link (no promo param) still charges
-// the same plan.
-export function weeklyCheckoutHref(user, token = '') {
-  return readyWeeklyCheckoutUrl(token) || buildCheckoutUrl(STRIPE_LINKS.weekly, user);
-}
-
 // Lifetime ($249.99) and Founders ($99.99) Checkout Sessions. Founders past
 // the cap or the deadline is refused: the response has no URL, and reason is
-// 'sold_out' or 'expired'. Lifetime is not substituted.
-export async function requestOfferCheckoutUrl({ plan, token, utm = utmParams(), fetchImpl = globalThis.fetch } = {}) {
+// 'sold_out' or 'expired'. Lifetime is not substituted. Buy clicks only.
+async function fetchOfferCheckoutUrl({ plan, token, utm = utmParams(), fetchImpl = globalThis.fetch } = {}) {
   const headers = { 'Content-Type': 'application/json' };
   if (token) headers.Authorization = `Bearer ${token}`;
   const path = plan === 'founders' ? '/api/checkout/founders' : '/api/checkout/lifetime';
@@ -180,6 +181,22 @@ export async function requestOfferCheckoutUrl({ plan, token, utm = utmParams(), 
   const url = String(data?.url || '');
   if (!url.startsWith(CHECKOUT_HOST)) throw new Error('unexpected checkout url');
   return { url, plan: data.plan || plan, fallback: Boolean(data.fallback), reason: data.reason || null };
+}
+
+export async function requestOfferCheckoutUrl(options = {}) {
+  const key = `offer:${options.plan || ''}:${options.token || ''}`;
+  const cached = freshClickUrl(key);
+  if (cached) return cached;
+  if (!clickInflight.has(key)) {
+    const pending = fetchOfferCheckoutUrl(options).then((result) => {
+      clickUrls.set(key, { value: result, at: Date.now() });
+      return result;
+    }).finally(() => {
+      clickInflight.delete(key);
+    });
+    clickInflight.set(key, pending);
+  }
+  return clickInflight.get(key);
 }
 
 // Weekly goes to the XWEEK Checkout Session. If that call fails, fall back to

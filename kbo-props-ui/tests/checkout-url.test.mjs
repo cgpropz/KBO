@@ -11,7 +11,7 @@ globalThis.localStorage = {
   removeItem(key) { memory.delete(key) },
 }
 
-const { buildCheckoutUrl, captureAttribution, requestWeeklyCheckoutUrl, resolvePlanCheckoutUrl, prefetchWeeklyCheckoutUrl, weeklyCheckoutHref } = await import('../src/tracking.js')
+const { buildCheckoutUrl, captureAttribution, requestWeeklyCheckoutUrl, resolvePlanCheckoutUrl, openWeeklyCheckoutUrl } = await import('../src/tracking.js')
 
 const USER = { id: 'user-1', email: 'buyer@example.com' }
 const SESSION_URL = 'https://checkout.stripe.com/c/pay/cs_live_weeklyxweek'
@@ -120,32 +120,45 @@ test('resolvePlanCheckoutUrl sends weekly to the session and falls back to the w
   assert.equal(query.get('prefilled_email'), 'buyer@example.com')
 })
 
-test('weeklyCheckoutHref navigates immediately and upgrades to the session once it is ready', async () => {
+test('openWeeklyCheckoutUrl reuses the first click and does not request again', async () => {
   memory.clear()
-  const before = weeklyCheckoutHref(USER, 'token-href')
-  assert.equal(before.startsWith(STRIPE_LINKS.weekly), true)
-  assert.equal(new URL(before).searchParams.get('prefilled_promo_code'), null)
-  assert.equal(new URL(before).searchParams.get('client_reference_id'), 'user-1')
+  let calls = 0
+  const fetchImpl = async () => {
+    calls += 1
+    return jsonResponse({ url: SESSION_URL })
+  }
+  const first = await openWeeklyCheckoutUrl({ token: 'token-click', utm: {}, fetchImpl })
+  const second = await openWeeklyCheckoutUrl({ token: 'token-click', utm: {}, fetchImpl })
+  assert.equal(first, SESSION_URL)
+  assert.equal(second, SESSION_URL)
+  assert.equal(calls, 1)
 
-  const got = await prefetchWeeklyCheckoutUrl({
-    token: 'token-href',
-    utm: {},
-    fetchImpl: async () => jsonResponse({ url: SESSION_URL }),
-  })
-  assert.equal(got, SESSION_URL)
-  assert.equal(weeklyCheckoutHref(USER, 'token-href'), SESSION_URL)
+  const other = await openWeeklyCheckoutUrl({ token: 'token-other', utm: {}, fetchImpl })
+  assert.equal(other, SESSION_URL)
+  assert.equal(calls, 2)
 })
 
-test('a failed weekly prefetch leaves the payment link without a promo code', async () => {
+test('a failed weekly click is not cached, and the payment link still has no promo code', async () => {
   memory.clear()
-  await assert.rejects(() => prefetchWeeklyCheckoutUrl({
+  await assert.rejects(() => openWeeklyCheckoutUrl({
     token: 'token-fail',
     utm: {},
     fetchImpl: async () => jsonResponse({}, false),
   }))
-  const href = weeklyCheckoutHref(null, 'token-fail')
-  assert.equal(href.startsWith(STRIPE_LINKS.weekly), true)
-  assert.equal(new URL(href).searchParams.get('prefilled_promo_code'), null)
+  let calls = 0
+  const url = await openWeeklyCheckoutUrl({
+    token: 'token-fail',
+    utm: {},
+    fetchImpl: async () => {
+      calls += 1
+      return jsonResponse({ url: SESSION_URL })
+    },
+  })
+  assert.equal(calls, 1)
+  assert.equal(url, SESSION_URL)
+  const fallback = buildCheckoutUrl(STRIPE_LINKS.weekly, null)
+  assert.equal(fallback.startsWith(STRIPE_LINKS.weekly), true)
+  assert.equal(new URL(fallback).searchParams.get('prefilled_promo_code'), null)
 })
 
 test('lifetime uses a checkout session and yearly stays on its payment link', async () => {
