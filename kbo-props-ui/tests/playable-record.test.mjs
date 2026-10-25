@@ -8,6 +8,7 @@ import {
   isPulled,
   oddsKey,
   playablePicks,
+  playableRecordDetail,
   playableRecordText,
   playableSlate,
   playableTotals,
@@ -104,6 +105,13 @@ test('the baked NHL Oct 23 snapshot is the Board QA check', () => {
     'Tyler Bertuzzi Miss',
   ])
   assert.equal(playableRecordText(slate), 'Playable record Oct 23 14-16 (46.6%) · Free top 3 2-1')
+  const detail = playableRecordDetail(slate)
+  assert.equal(detail.line, playableRecordText(slate))
+  assert.equal(detail.n, 30)
+  assert.match(detail.note, /30 decided standard lines/)
+  assert.match(detail.note, /Push, Void, and Ungraded are excluded/)
+  assert.match(detail.note, /Demon and goblin lines, including unders/)
+  assert.match(detail.note, /not a record versus the book/)
   assert.equal(playableSlate(file, { sport: 'NHL' }).slate_date, '2026-10-23')
   const day = playableTotals(file, { sport: 'nhl', slateDate: '2026-10-23' })
   assert.equal(day.wins, 14)
@@ -115,7 +123,11 @@ test('the landing and the hub label the ledger record Playable record', () => {
   const hub = readFileSync(new URL('../src/MemberCommandCenter.jsx', import.meta.url), 'utf8')
   const line = readFileSync(new URL('../src/PlayableRecord.jsx', import.meta.url), 'utf8')
   assert.match(landing, /PlayableRecord/)
+  assert.ok(landing.indexOf('id="free-top-3"') < landing.indexOf('id="boards"'))
+  assert.ok(landing.indexOf('id="boards"') < landing.indexOf('<PlayableRecord'))
+  assert.match(landing, /detailed/)
   assert.match(line, /playableRecordText/)
+  assert.match(line, /playableRecordDetail/)
   assert.match(hub, /playableSlate/)
   for (const source of [landing, hub, line]) {
     assert.equal(/board record/i.test(source), false)

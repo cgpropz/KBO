@@ -10,6 +10,7 @@ import { STRIPE_LINKS } from './pricingTiers';
 import { HERO_LANDING_SPORT_ID, LANDING_SPORTS } from './landingSports';
 import { NFL_FREE_PREVIEW_ENABLED } from './nflPreviewFlag';
 import { publicFaqs } from './publicFaqs';
+import { XWEEK_PROMO_LINE } from './promoCopy';
 import { OPERATOR_DISCLAIMER, STANDARD_LINE } from './responsibleGambling';
 import { DataCredit } from './SiteFooter'
 import { sessionAccessToken } from './supabaseClient';
@@ -93,7 +94,37 @@ function BoardTable({ rows, showHitRate, sport, showKickoff = false }) {
   );
 }
 
-function Phone({ rows, sport }) {
+function PhoneSkeleton() {
+  return (
+    <div className="pl-skel pl-skel-phone">
+      {Array.from({ length: 5 }, (_, index) => (
+        <div className="pl-skel-row" key={index}>
+          <span className="pl-skel-dot" />
+          <span className="pl-skel-bar is-wide" />
+          <span className="pl-skel-bar" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function BoardSkeleton({ rows = 3 }) {
+  return (
+    <div className="pl-skel pl-skel-board" aria-hidden="true">
+      {Array.from({ length: rows }, (_, index) => (
+        <div className="pl-skel-row" key={index}>
+          <span className="pl-skel-dot" />
+          <span className="pl-skel-bar is-wide" />
+          <span className="pl-skel-bar" />
+          <span className="pl-skel-bar" />
+          <span className="pl-skel-bar" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function Phone({ rows, sport, loading }) {
   return (
     <div className="pl-phone" aria-hidden="true">
       <div className="pl-phone-top"><i /><b>cgpropz</b><i /></div>
@@ -109,7 +140,7 @@ function Phone({ rows, sport }) {
           <em>{fmtScore(row.score)}</em>
         </div>
       ))}
-      {!rows.length && <p className="pl-phone-empty">Board preview</p>}
+      {!rows.length && (loading ? <PhoneSkeleton /> : <p className="pl-phone-empty">No preview rows yet</p>)}
     </div>
   );
 }
@@ -123,6 +154,7 @@ export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard, onSi
   const [sportId, setSportId] = useState(HERO_LANDING_SPORT_ID);
   const [hitSportId, setHitSportId] = useState(HERO_LANDING_SPORT_ID);
   const [edgeSportId, setEdgeSportId] = useState(HERO_LANDING_SPORT_ID);
+  const [recordSportId, setRecordSportId] = useState(HERO_LANDING_SPORT_ID);
   const [openFaq, setOpenFaq] = useState(null);
   const [weeklyBusy, setWeeklyBusy] = useState(false);
   const [lifetimeBusy, setLifetimeBusy] = useState(false);
@@ -255,12 +287,11 @@ export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard, onSi
     ? `${edgeState.hold}. ${edgeSport.name} line edges fill in when lines are posted.`
     : (edgeSport.id === 'nfl' && !NFL_FREE_PREVIEW_ENABLED && edgeSettled && !edgeState?.rows?.length
       ? 'NFL free preview is off.'
-      : (edgeSettled ? `No standard line edges are posted for ${edgeSport.name} right now.` : 'Loading today\'s edges…'));
+      : (edgeSettled ? `No standard line edges are posted for ${edgeSport.name} right now.` : ''));
   const phoneRows = switchRows;
   const game = boardApi ? boardApi.featuredGame(markets?.data) : null;
   const gameRows = boardApi ? boardApi.rowsForGame(boards.nfl?.rows || [], game) : [];
   const dvpRows = (gameRows.length ? gameRows : (boardApi ? boardApi.publicSwitcherRows(boards.nfl?.rows || [], 4) : [])).filter((row) => row.oppRank != null);
-  const settled = LANDING_SPORTS.every((item) => boards[item.id]);
 
   const scrollTo = (id) => {
     menu.close();
@@ -318,7 +349,7 @@ export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard, onSi
             <a href="/nba-player-props">NBA</a>
             <a href="#matchup" onClick={(event) => { event.preventDefault(); scrollTo('matchup'); }}>Matchup sheets</a>
             <a href="#free-top-3" onClick={(event) => { event.preventDefault(); scrollTo('free-top-3'); }}>Results</a>
-            <a href="#pricing" onClick={(event) => { event.preventDefault(); scrollTo('pricing'); }}>Pricing</a>
+            <a href="/pricing">Pricing</a>
             <a href="#faq" onClick={(event) => { event.preventDefault(); scrollTo('faq'); }}>FAQ</a>
           </nav>
           <div className="pl-header-actions">
@@ -327,7 +358,7 @@ export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard, onSi
             ) : (
               <button type="button" className="pl-text" onClick={onLogin}>Log in</button>
             )}
-            <button type="button" className="pl-cta pl-cta-small" onClick={() => scrollTo('pricing')}>Get the board</button>
+            <a className="pl-cta pl-cta-small" href="/pricing">All-Access</a>
           </div>
         </PageMenu>
       </header>
@@ -339,8 +370,17 @@ export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard, onSi
             <h1>Every prop line, <span className="pl-grad">scored.</span></h1>
             <p className="pl-lead">CG Score rates every standard prop line with our projection, recent hit rates and defense vs position, on one board.</p>
             <div className="pl-cta-row">
-              <button type="button" className="pl-cta" onClick={() => scrollTo('pricing')}>Get the board</button>
-              <button type="button" className="pl-ghost" onClick={() => scrollTo('boards')}>See today's board</button>
+              <a className="pl-cta" href="/pricing">All-Access pricing</a>
+              <button type="button" className="pl-ghost" onClick={() => scrollTo('boards')}>Today's boards</button>
+            </div>
+            <p className="pl-hero-offer">{XWEEK_PROMO_LINE}</p>
+            <p className="pl-hero-rg">{STANDARD_LINE}</p>
+            <div className="pl-hero-sports" role="group" aria-label="Open today's board">
+              {LANDING_SPORTS.map((item) => (
+                <button key={item.id} type="button" onClick={() => onOpenBoard?.(item.id)}>
+                  {item.name} board
+                </button>
+              ))}
             </div>
           </div>
           <LineEdgesModule
@@ -349,6 +389,7 @@ export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard, onSi
             onSport={setEdgeSportId}
             rows={edgeRows}
             emptyText={edgeEmpty}
+            loading={!edgeSettled}
             busy={weeklyBusy}
             onStartWeekly={startWeekly}
           />
@@ -357,14 +398,13 @@ export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard, onSi
             <li><i />CG Score on every row</li>
             <li><i />One login, every league</li>
           </ul>
-          <Phone rows={phoneRows} sport={sport.id} />
+          <Phone rows={phoneRows} sport={sport.id} loading={!sportState} />
         </section>
 
         <section id="free-top-3">
           <p className="pl-kick">Free preview</p>
           <h2>Today's free top 3</h2>
-          <p className="pl-lead">The three standard lines with the highest CG Scores on each board. Pulled lines stay off this list.</p>
-          <PlayableRecord sport={hitSport.id} />
+          <p className="pl-lead">The three standard lines with the highest CG Scores on each board. Pulled lines stay off this list. Each row keeps its CG grade.</p>
           <div className="pl-seg" role="tablist" aria-label="Free top 3 sport">
             {LANDING_SPORTS.map((item) => (
               <button
@@ -380,8 +420,10 @@ export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard, onSi
             ))}
           </div>
           <div className="pl-card">
-            {hitRows.length ? <BoardTable rows={hitRows} showHitRate showKickoff sport={hitSport.id} /> : (
-              <p className="pl-empty">{freeTopEmptyText({ sportName: hitSport.name, settled: settled || !!hitState?.hold, hold: hitState?.hold })}</p>
+            {hitRows.length ? <BoardTable rows={hitRows} showHitRate showKickoff sport={hitSport.id} /> : hitState ? (
+              <p className="pl-empty">{freeTopEmptyText({ sportName: hitSport.name, settled: true, hold: hitState?.hold })}</p>
+            ) : (
+              <BoardSkeleton />
             )}
             <p className="pl-unproven" role="note">{UNPROVEN_RANK_NOTE}</p>
             {hitState?.preview && hitState.lockedCount > 0 && (
@@ -413,13 +455,13 @@ export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard, onSi
                     <p className="pl-empty">Player props for this game are on the full board.</p>
                   )}
                 </>
+              ) : !markets ? (
+                <BoardSkeleton rows={3} />
               ) : (
                 <p className="pl-empty">
-                  {!markets
-                    ? 'Loading the game card…'
-                    : (markets.preview && !NFL_FREE_PREVIEW_ENABLED && Number(markets.lockedCount) > 0
-                      ? `NFL free preview is off. ${markets.lockedCount} game cards are on the full board.`
-                      : 'No game card is posted right now.')}
+                  {markets.preview && !NFL_FREE_PREVIEW_ENABLED && Number(markets.lockedCount) > 0
+                    ? `NFL free preview is off. ${markets.lockedCount} game cards are on the full board.`
+                    : 'No game card is posted right now.'}
                 </p>
               )}
             </div>
@@ -462,13 +504,13 @@ export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard, onSi
               </div>
               <p className="pl-sw-meta"><b>{sport.sportName}</b> · {boardApi ? boardApi.slateLabel(sportState?.rows || []) : 'Board'} · {sport.props}</p>
             </div>
-            {switchRows.length ? <BoardTable rows={switchRows} sport={sport.id} /> : (
+            {switchRows.length ? <BoardTable rows={switchRows} sport={sport.id} /> : !sportState ? (
+              <BoardSkeleton rows={4} />
+            ) : (
               <p className="pl-empty">
-                {settled
-                  ? (sport.id === 'nfl' && !NFL_FREE_PREVIEW_ENABLED && !sportState?.rows?.length
-                    ? `NFL free preview is off.${sportState?.lockedCount ? ` ${sportState.lockedCount} ${lineClause(sportState.lockedCount)} on the full board.` : ''}`
-                    : `No scored standard lines in the ${sport.name} public preview right now.`)
-                  : 'Loading the board…'}
+                {sport.id === 'nfl' && !NFL_FREE_PREVIEW_ENABLED && !sportState?.rows?.length
+                  ? `NFL free preview is off.${sportState?.lockedCount ? ` ${sportState.lockedCount} ${lineClause(sportState.lockedCount)} on the full board.` : ''}`
+                  : `No scored standard lines in the ${sport.name} public preview right now.`}
               </p>
             )}
             <p className="pl-unproven" role="note">{UNPROVEN_RANK_NOTE}</p>
@@ -486,6 +528,27 @@ export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard, onSi
               </button>
             ))}
           </div>
+        </section>
+
+        <section id="playable-record">
+          <p className="pl-kick">Playable record</p>
+          <h2>Last graded slate</h2>
+          <p className="pl-lead">The free top 3 above still shows each CG grade. This count is the decided standard lines from the last graded slate, with the sample size next to the rate.</p>
+          <div className="pl-seg" role="tablist" aria-label="Playable record sport">
+            {LANDING_SPORTS.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                role="tab"
+                aria-selected={item.id === recordSportId}
+                className={item.id === recordSportId ? 'on' : ''}
+                onClick={() => setRecordSportId(item.id)}
+              >
+                {item.name}
+              </button>
+            ))}
+          </div>
+          <PlayableRecord sport={recordSportId} detailed />
         </section>
 
         <section id="pricing">
@@ -562,7 +625,7 @@ export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard, onSi
 
         <section className="pl-close">
           <h2>Score tonight's board in seconds.</h2>
-          <button type="button" className="pl-cta" onClick={() => scrollTo('pricing')}>Get the board</button>
+          <a className="pl-cta" href="/pricing">All-Access pricing</a>
         </section>
       </main>
 

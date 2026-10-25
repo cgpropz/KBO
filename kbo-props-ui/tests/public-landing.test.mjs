@@ -69,6 +69,24 @@ test('the public landing features NFL on the hero, phone, and sport tabs', () =>
   assert.equal(/setHitSportId\(withHits\.id\)/.test(landing), false)
 })
 
+test('the homepage hero links to pricing and boards without a bare loading shell', () => {
+  assert.match(landing, /href="\/pricing"/)
+  assert.match(landing, /All-Access pricing/)
+  assert.match(landing, /Today's boards/)
+  assert.match(landing, /XWEEK_PROMO_LINE/)
+  assert.match(landing, /STANDARD_LINE/)
+  assert.match(landing, /Open today's board/)
+  assert.match(landing, /pl-skel/)
+  assert.equal(landing.includes('Board preview'), false)
+  assert.equal(landing.includes('Loading today'), false)
+  assert.equal(landing.includes('Loading the board'), false)
+  assert.equal(landing.includes('Loading the game card'), false)
+  const edges = readFileSync(new URL('../src/LineEdgesModule.jsx', import.meta.url), 'utf8')
+  assert.match(edges, /EdgeSkeleton/)
+  assert.match(edges, /pl-edge-proof/)
+  assert.equal(edges.includes('Loading today'), false)
+})
+
 test('the public landing does not open a Stripe Checkout Session on load', () => {
   assert.equal(landing.includes('prefetchWeeklyCheckoutUrl'), false)
   assert.equal(landing.includes('requestWeeklyCheckoutUrl'), false)

@@ -52,6 +52,27 @@
   text-align: center;
 }
 
+.sub-manage-title {
+  margin: 0 0 0.35rem;
+  color: #f8fafc;
+  font-size: 1.25rem;
+}
+
+.sub-manage-copy {
+  margin: 0 auto 0.9rem;
+  max-width: 36rem;
+  color: #e4e4e7;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.sub-manage-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+}
+
 .sub-manage-btn {
   padding: 0.7rem 1.25rem;
   border-radius: 8px;
@@ -72,6 +93,11 @@
 .sub-manage-btn:disabled {
   opacity: 0.55;
   cursor: not-allowed;
+}
+
+.sub-manage-btn-secondary {
+  background: transparent;
+  color: #f8fafc;
 }
 
 .sub-manage-msg {
