@@ -1,10 +1,16 @@
 """Mark KBO props PrizePicks no longer offers as pulled (removed).
 
 KBO-Odds/KBO_ODDS_2025.py writes KBO-Odds/prizepicks_kbo_pull.json after each
-pull. Only two results mark anything:
+pull. Only a complete fresh pull marks anything:
 
-  confirmed_empty  PrizePicks answered HTTP 200 with no KBO lines. Every prop
-                   on the board is marked pulled.
+  confirmed_empty  PrizePicks answered HTTP 200 with no KBO lines. The cached
+                   slate stays up. Those rows are the card (status.json still
+                   counts them, and the projection files hold the model
+                   numbers). Flagging every row removed makes /api/data drop
+                   them, so the anonymous preview comes back with
+                   projections=[] and total_props=0. This status is recorded
+                   on the payload and any earlier empty-board flag is cleared.
+                   It does not hide the cached props.
   fresh + complete The KBO league filter returned lines. A board prop whose
                    (player, stat, line, odds type) is not among them is
                    marked pulled.
@@ -16,7 +22,8 @@ good board stays up as the fallback. Same fields as the NHL/NFL pulled-line
 check (pipeline/prizepicks_seen.py): removed=True and pp_status='removed'.
 The site already drops those rows from the board, the free top 3 and slips.
 Props this module marked are cleared again when a later complete pull lists
-them.
+them, or when a confirmed-empty pull says the whole board was unpublished
+and the cached slate should be served again.
 """
 from __future__ import annotations
 
@@ -206,9 +213,10 @@ def _load_status_file(path: Path, now: datetime) -> dict | None:
     if not isinstance(status, dict):
         return None
     checked = _parse_time(status.get("checked_at"))
-    # PrizePicks confirmed 0 KBO lines: that holds until a complete fresh
-    # pull with lines or the slate's first pitch, not just MAX_AGE, so a run
-    # of 429 fallbacks overnight cannot put the stale lines back.
+    # PrizePicks confirmed 0 KBO lines: the status holds until a complete
+    # fresh pull or the slate's first pitch, not just MAX_AGE. The cached
+    # props stay on the board while that status is in force. A run of 429s
+    # must not replace the status, and must not hide those props.
     if confirmed_empty_in_force(status, now):
         return status
     if checked is None or now - checked > MAX_AGE or checked - now > timedelta(minutes=10):
@@ -267,11 +275,22 @@ def _clear(row: dict) -> bool:
     return True
 
 
+def _clear_empty_board_flag(row: dict) -> bool:
+    """Drop only the all-board empty flag. A line missing from a real pull stays pulled."""
+    if row.get("pulled_reason") != REASON_EMPTY:
+        return False
+    for key in ("removed", "pp_status", "pulled_reason", "pulled_checked_at"):
+        row.pop(key, None)
+    return True
+
+
 def _apply(row: dict, name: Any, stat: Any, mode: str, keys: set[tuple], checked_at: Any) -> tuple[bool, bool]:
     """Returns (changed, pulled)."""
     if mode == "empty":
-        changed = _mark(row, REASON_EMPTY, checked_at)
-        return changed, True
+        # No KBO board from PrizePicks. Keep the cached prop and its projection.
+        # The API and the projection pages drop removed rows, which is what
+        # emptied the served lists while status.json still counted them.
+        return _clear_empty_board_flag(row), False
     live = _is_live(name, stat, row.get("line"), row.get("odds_type"), keys)
     if live is None:
         return False, bool(row.get("removed") is True)
@@ -283,8 +302,10 @@ def _apply(row: dict, name: Any, stat: Any, mode: str, keys: set[tuple], checked
 def mark_pulled_board(payload: Any, status: dict | None) -> tuple[Any, int]:
     """Mark prizepicks_props card props. Returns (payload, pulled count).
 
-    The payload is edited in place. Nothing changes when the status does not
-    confirm the board (fetch error, partial, missing, stale).
+    The payload is edited in place. Nothing is marked when the status does not
+    confirm a live board (fetch error, partial, missing, stale, or a
+    confirmed-empty pull). A confirmed-empty pull clears an earlier
+    empty-board flag and records prizepicks_pull without removing rows.
     """
     mode = _mode(status)
     if mode is None or not isinstance(payload, dict) or not isinstance(payload.get("cards"), list):
@@ -305,7 +326,10 @@ def mark_pulled_board(payload: Any, status: dict | None) -> tuple[Any, int]:
 
 
 def mark_pulled_projections(payload: Any, status: dict | None) -> tuple[Any, int]:
-    """Same check for strikeout_projections / batter_projections rows (slip builder input)."""
+    """Same check for strikeout_projections / batter_projections rows (slip builder input).
+
+    A confirmed-empty pull leaves the projection list in place.
+    """
     mode = _mode(status)
     rows = payload.get("projections") if isinstance(payload, dict) else None
     if mode is None or not isinstance(rows, list):

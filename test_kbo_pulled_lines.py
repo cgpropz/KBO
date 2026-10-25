@@ -1,5 +1,6 @@
-"""KBO pulled-line check: a real empty PrizePicks board, or a line missing
-from a complete pull, marks props pulled. A fetch error keeps the fallback."""
+"""KBO pulled-line check: a line missing from a complete pull marks that prop
+pulled. A confirmed-empty board keeps the cached slate. A fetch error marks
+nothing."""
 from __future__ import annotations
 
 import copy
@@ -105,15 +106,28 @@ class FetchClassification(unittest.TestCase):
 
 
 class MarkBoard(unittest.TestCase):
-    def test_confirmed_empty_marks_every_prop_pulled(self):
-        board, pulled = pl.mark_pulled_board(_board(), _status("confirmed_empty"))
-        self.assertEqual(pulled, 5)
-        self.assertEqual(len(_pulled(board)), 5)
+    def test_confirmed_empty_keeps_cached_props_and_projections(self):
+        # PrizePicks posted nothing. The cached card is still the slate
+        # status.json counts, so the rows stay servable.
+        prior = _board()
+        prior["cards"][0]["props"][0].update({
+            "removed": True, "pp_status": "removed", "pulled_reason": pl.REASON_EMPTY,
+        })
+        prior["cards"][1]["props"][0].update({
+            "removed": True, "pp_status": "removed", "pulled_reason": pl.REASON_MISSING,
+        })
+        board, pulled = pl.mark_pulled_board(prior, _status("confirmed_empty"))
+        self.assertEqual(pulled, 0)
         prop = board["cards"][0]["props"][0]
-        self.assertEqual((prop["removed"], prop["pp_status"], prop["pulled_reason"]), (True, "removed", pl.REASON_EMPTY))
-        self.assertEqual(board["prizepicks_pull"]["status"], "confirmed_empty")
-        # Projection fields are untouched; only the pulled flags are added.
+        self.assertNotIn("removed", prop)
+        self.assertNotIn("pp_status", prop)
         self.assertEqual((prop["projection"], prop["rating"]), (1.0, 60.0))
+        # A line that was missing from a real pull stays pulled.
+        missing = board["cards"][1]["props"][0]
+        self.assertEqual(missing["pulled_reason"], pl.REASON_MISSING)
+        self.assertEqual(board["prizepicks_pull"]["status"], "confirmed_empty")
+        self.assertEqual(board["prizepicks_pull"]["pulled_props"], 0)
+        self.assertEqual(sum(len(card["props"]) for card in board["cards"]), 5)
 
     def test_missing_line_marks_only_that_prop(self):
         live = [l for l in ALL_LIVE if l["name"] != "Dong Won Park"]
@@ -128,7 +142,10 @@ class MarkBoard(unittest.TestCase):
         self.assertEqual(pulled, 1)
 
     def test_relisted_line_is_cleared(self):
-        board, _ = pl.mark_pulled_board(_board(), _status("confirmed_empty"))
+        board = _board()
+        for card in board["cards"]:
+            for prop in card["props"]:
+                prop.update({"removed": True, "pp_status": "removed", "pulled_reason": pl.REASON_EMPTY})
         board, pulled = pl.mark_pulled_board(board, _status("fresh", ALL_LIVE))
         self.assertEqual(pulled, 0)
         self.assertEqual(_pulled(board), [])
@@ -171,15 +188,46 @@ class MarkBoard(unittest.TestCase):
             {"name": "Adam Oller", "pp_name": "Adam Oller", "prop": "Strikeouts", "line": 5.5, "odds_type": "standard"},
         ]}
         live = [_line("Harold Castro", "Hitter Fantasy Score", 6.0), _line("Adam Oller", "Pitcher Strikeouts", 5.5)]
+        clean = copy.deepcopy(payload)
         out, pulled = pl.mark_pulled_projections(payload, _status("fresh", live))
         self.assertEqual(pulled, 1)
         self.assertEqual([r["name"] for r in out["projections"] if r.get("removed")], ["Dong Won Park"])
-        out, pulled = pl.mark_pulled_projections(copy.deepcopy(payload), _status("confirmed_empty"))
-        self.assertEqual(pulled, 3)
+        out, pulled = pl.mark_pulled_projections(clean, _status("confirmed_empty"))
+        self.assertEqual(pulled, 0)
+        self.assertEqual(len(out["projections"]), 3)
+        self.assertTrue(all("removed" not in row for row in out["projections"]))
+        self.assertEqual([row["line"] for row in out["projections"]], [0.5, 6.0, 5.5])
+
+    def test_confirmed_empty_keeps_kia_samsung_projection_numbers(self):
+        # Shape of the Oct 25 card: cached Kia @ Samsung rows, real numbers.
+        payload = {"projections": [
+            {"name": "Yang Hyeon-jong", "pp_name": "Yang Hyeon-jong", "team": "Kia", "opponent": "Samsung",
+             "prop": "Strikeouts", "line": 5.5, "projection": 6.1, "odds_type": "standard",
+             "removed": True, "pp_status": "removed", "pulled_reason": pl.REASON_EMPTY},
+            {"name": "Won Tae-in", "pp_name": "Won Tae-in", "team": "Samsung", "opponent": "Kia",
+             "prop": "Strikeouts", "line": 4.5, "projection": 4.8, "odds_type": "standard"},
+            {"name": "Park Jung-woo", "pp_name": "Park Jung-woo", "team": "Samsung", "opponent": "Kia",
+             "prop": "Hits+Runs+RBIs", "line": 1.5, "projection": 1.9, "odds_type": "standard",
+             "removed": True, "pp_status": "removed", "pulled_reason": pl.REASON_EMPTY},
+        ]}
+        out, pulled = pl.mark_pulled_projections(payload, _status("confirmed_empty"))
+        self.assertEqual(pulled, 0)
+        self.assertEqual(len(out["projections"]), 3)
+        self.assertEqual(
+            [(row["name"], row["prop"], row["line"], row["projection"]) for row in out["projections"]],
+            [
+                ("Yang Hyeon-jong", "Strikeouts", 5.5, 6.1),
+                ("Won Tae-in", "Strikeouts", 4.5, 4.8),
+                ("Park Jung-woo", "Hits+Runs+RBIs", 1.5, 1.9),
+            ],
+        )
+        self.assertTrue(all(row.get("removed") is not True for row in out["projections"]))
 
     def test_generate_props_hook_uses_the_status(self):
         board, pulled = generate_props._apply_pulled_lines(_board(), _status("confirmed_empty"))
-        self.assertEqual(pulled, 5)
+        self.assertEqual(pulled, 0)
+        self.assertEqual(_pulled(board), [])
+        self.assertEqual(board["prizepicks_pull"]["pulled_props"], 0)
         board, pulled = generate_props._apply_pulled_lines(_board(), _status("fetch_error"))
         self.assertEqual(pulled, 0)
 
@@ -204,9 +252,11 @@ class WriteStatus(unittest.TestCase):
                 self.assertEqual(kept["status"], "confirmed_empty")
                 status = pl.load_pull_status(path, now=later)
                 self.assertEqual(status["status"], "confirmed_empty")
-                # So the rebuild after a 429 still marks every prop pulled.
-                _, pulled = generate_props._apply_pulled_lines(_board(), status)
-                self.assertEqual(pulled, 5)
+                # A later 429 keeps the empty-board status, and the rebuild
+                # still serves the cached props.
+                board, pulled = generate_props._apply_pulled_lines(_board(), status)
+                self.assertEqual(pulled, 0)
+                self.assertEqual(_pulled(board), [])
 
     def test_stale_confirmed_empty_is_replaced_by_fetch_error(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -230,7 +280,7 @@ class WriteStatus(unittest.TestCase):
             self.assertEqual(self._write(path, "fresh", later, frame=frame)["status"], "fresh")
 
     def test_confirmed_empty_stands_until_first_pitch_through_429s(self):
-        """Board QA repro: pulled at 9 PM ET, 429 fallbacks overnight, 4:45 AM ET rebuild."""
+        """Empty-board status holds through overnight 429s. The cached slate stays up."""
         with tempfile.TemporaryDirectory() as tmp:
             path = os.path.join(tmp, "pull.json")
             nine_pm = datetime(2026, 10, 20, 1, 0, tzinfo=timezone.utc)
@@ -241,8 +291,10 @@ class WriteStatus(unittest.TestCase):
             four_45 = datetime(2026, 10, 20, 8, 45, tzinfo=timezone.utc)
             status = pl.load_pull_status(path, now=four_45)
             self.assertEqual(status["status"], "confirmed_empty")
-            _, pulled = generate_props._apply_pulled_lines(_board(), status)
-            self.assertEqual(pulled, 5)
+            board, pulled = generate_props._apply_pulled_lines(_board(), status)
+            self.assertEqual(pulled, 0)
+            self.assertEqual(_pulled(board), [])
+            self.assertEqual(board["cards"][0]["props"][0]["projection"], 1.0)
             self.assertIsNone(pl.load_pull_status(path, now=datetime(2026, 10, 20, 9, 31, tzinfo=timezone.utc)))
 
     def test_valid_until_rolls_to_next_slate_after_first_pitch(self):
@@ -285,7 +337,7 @@ class RestoredBoardFallback(unittest.TestCase):
             json.dump(board, f)
         return board
 
-    def test_fresh_checkout_then_429_still_marks_every_prop_pulled(self):
+    def test_fresh_checkout_then_429_keeps_the_cached_slate(self):
         self._restore_board()
         self.assertFalse(os.path.exists(self.status_path))
         now = datetime(2026, 10, 20, 4, 30, tzinfo=timezone.utc)  # 12:30 AM ET window run
@@ -303,9 +355,11 @@ class RestoredBoardFallback(unittest.TestCase):
         status = pl.load_pull_status(now=now)
         self.assertEqual(status["status"], "confirmed_empty")
         board, pulled = generate_props._apply_pulled_lines(_board(), status)
-        self.assertEqual(pulled, 5)
-        self.assertEqual(len(_pulled(board)), 5)
+        self.assertEqual(pulled, 0)
+        self.assertEqual(_pulled(board), [])
+        self.assertEqual(sum(len(card["props"]) for card in board["cards"]), 5)
         self.assertEqual(board["prizepicks_pull"]["checked_at"], self.CHECKED.isoformat())
+        self.assertEqual(board["cards"][0]["props"][0]["projection"], 1.0)
 
     def test_fetch_error_status_file_does_not_hide_the_board_hold(self):
         self._restore_board()
@@ -313,8 +367,9 @@ class RestoredBoardFallback(unittest.TestCase):
         with open(self.status_path, "w") as f:
             json.dump(_status("fetch_error", checked=now), f)
         self.assertEqual(pl.load_pull_status(now=now)["status"], "confirmed_empty")
-        _, pulled = pl.mark_pulled_board(_board(), pl.load_pull_status(now=now))
-        self.assertEqual(pulled, 5)
+        board, pulled = pl.mark_pulled_board(_board(), pl.load_pull_status(now=now))
+        self.assertEqual(pulled, 0)
+        self.assertEqual(_pulled(board), [])
 
     def test_newer_complete_fresh_pull_beats_the_board(self):
         self._restore_board()

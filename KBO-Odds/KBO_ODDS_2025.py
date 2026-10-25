@@ -179,7 +179,8 @@ def fetch_kbo_lines(get, sleep=time.sleep, load_cached=None, log=print):
                          league filter CONFIRM_EMPTY_AFTER times, and the
                          unfiltered board had none either (or errored). The
                          frame is the last saved file so projections still
-                         build; the board marks every prop pulled.
+                         build. The cached slate stays on the board; an empty
+                         partner board is not a reason to hide those props.
       'cache'            fetch errors only (non-200, exception, timeout, bad
                          JSON): the last saved file is the fallback.
       'empty'            nothing fetched and no saved file.
@@ -216,7 +217,7 @@ def fetch_kbo_lines(get, sleep=time.sleep, load_cached=None, log=print):
         return frame, "fresh"
 
     if clean_empty >= CONFIRM_EMPTY_AFTER:
-        log(f"  ✓ PrizePicks confirmed 0 KBO lines ({clean_empty} clean HTTP 200 responses); props will be marked pulled")
+        log(f"  ✓ PrizePicks confirmed 0 KBO lines ({clean_empty} clean HTTP 200 responses); keeping cached lines and projections")
         cached = load_cached()
         return (cached if cached is not None else pd.DataFrame()), "confirmed_empty"
 
@@ -246,8 +247,10 @@ def _line_value(value):
 def pull_status_payload(source, frame=None, now=None):
     """What the last PrizePicks KBO pull saw, for the board's pulled-line check.
 
-    'fresh' lists every live line (name, stat, line, odds type). Only 'fresh'
-    and 'confirmed_empty' mark props pulled; any other status marks nothing.
+    'fresh' lists every live line (name, stat, line, odds type). Only a
+    complete 'fresh' pull marks a missing line pulled. 'confirmed_empty'
+    records that PrizePicks posted no KBO board and leaves the cached slate
+    up. Any other status marks nothing.
     """
     from datetime import datetime, timezone
     checked = (now or datetime.now(timezone.utc)).astimezone(timezone.utc).replace(microsecond=0).isoformat()
@@ -365,7 +368,7 @@ def _confirmed_status_to_keep(path, now=None, incoming=None, board_path=None):
 def write_pull_status(payload, path=None, now=None, board_path=None):
     """Write the pull status. A fetch error or partial save does not replace
     a confirming status under 3 hours old: a run of 429s after PrizePicks
-    confirmed 0 KBO lines must not bring the pulled props back.
+    confirmed 0 KBO lines keeps that record. The cached props stay served.
 
     With no explicit ``path`` the restored board
     (kbo-props-ui/public/data/prizepicks_props.json) is also checked, and a
@@ -459,11 +462,12 @@ if __name__ == "__main__":
     df, source = fetch_kbo_lines(requests.get)
     if source == "confirmed_empty":
         # A real empty board, not an error. Keep the odds file so projections
-        # still build, and record the empty pull so every KBO prop is marked
-        # pulled and leaves the ranking, free top 3 and slips.
+        # still build, and record the empty pull. The cached slate stays
+        # servable: hiding every prop left projections=[] while status still
+        # counted those lines.
         write_pull_status(pull_status_payload("confirmed_empty"))
         _write_run_signal("confirmed_empty")
-        print("⚠ PrizePicks has no KBO lines; keeping the odds file and marking every prop pulled")
+        print("⚠ PrizePicks has no KBO lines; keeping the odds file and the cached slate")
         sys.exit(0)
     if source == "cache":
         write_pull_status(pull_status_payload("fetch_error"))

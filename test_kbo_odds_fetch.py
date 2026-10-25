@@ -112,8 +112,9 @@ class FetchTests(unittest.TestCase):
         )
 
         # Two clean HTTP 200 answers with no KBO rows is a real empty board.
-        # The saved file is still returned so projections build, but the
-        # source says the board must be marked pulled.
+        # The saved file is still returned so projections build. The cached
+        # slate stays servable; the empty answer is recorded, not used to
+        # hide those props.
         self.assertEqual(source, "confirmed_empty")
         self.assertEqual(list(frame["Name"]), ["Cached Arm"])
         self.assertEqual(len(sleeps), 1)
