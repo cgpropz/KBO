@@ -204,3 +204,21 @@ export function playableRecordText(slate) {
   const freeText = freeWins + freeLosses > 0 ? ` · Free top 3 ${freeWins}-${freeLosses}` : ''
   return `${PLAYABLE_RECORD_LABEL} ${when} ${wins}-${losses} (${pct})${freeText}`
 }
+
+// Shown with the record so a hit rate is never a bare percentage. Push, Void,
+// and Ungraded stay out, and demon/goblin lines (including unders) never enter
+// the count. This is not a result versus the sportsbook.
+export const PLAYABLE_RECORD_NOTE = 'Hits and misses only. Push, Void, and Ungraded are excluded. Demon and goblin lines, including unders, are not in this count. This is not a record versus the book.'
+
+export function playableRecordDetail(slate) {
+  const line = playableRecordText(slate)
+  if (!line) return null
+  const wins = Number(slate.wins) || 0
+  const losses = Number(slate.losses) || 0
+  const n = wins + losses
+  return {
+    line,
+    n,
+    note: `${n} decided standard ${n === 1 ? 'line' : 'lines'}. ${PLAYABLE_RECORD_NOTE}`,
+  }
+}

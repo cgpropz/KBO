@@ -17,6 +17,43 @@ export const BILLING_PORTAL_CONFIGURATION = 'bpc_1URCyLPwL0k9PEMv395S66ul';
 export const ACCOUNT_PAGE_URL = 'https://www.cgpropz.com/?account=1';
 export const ACCOUNT_FALLBACK_URL = 'https://www.cgpropz.com/';
 export const NO_ACTIVE_PLAN_MESSAGE = 'No active plan on this email. DM @Cgpropz.';
+// Signed-in ?account=1 stays on a one-time billing_portal session (secret key,
+// redirect to session.url). Retention emails may use the portal login_page
+// Stripe enabled. That URL is not a checkout link and is not sent to the client:
+// https://billing.stripe.com/p/login/eVq9AV4BV4I6bzs7Da5Ne00
+export const PAYMENT_METHOD_UPDATE_FLOW = 'payment_method_update';
+
+const PORTAL_FLOWS = new Set([PAYMENT_METHOD_UPDATE_FLOW]);
+
+function readJsonBody(req) {
+  const body = req?.body;
+  if (body && typeof body === 'object' && !Array.isArray(body)) return body;
+  if (typeof body === 'string' && body.trim()) {
+    try {
+      const parsed = JSON.parse(body);
+      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) return parsed;
+    } catch {
+      // A bad body still opens the general portal. It never supplies a customer.
+    }
+  }
+  return {};
+}
+
+// Customer, configuration, and return URL come from the server. A client
+// flow_data object, customer id, or return URL is ignored. The only accepted
+// hint is flow=payment_method_update, which opens the portal on update-card.
+export function billingPortalSessionParams(customerId, body = {}) {
+  const params = {
+    customer: customerId,
+    configuration: BILLING_PORTAL_CONFIGURATION,
+    return_url: billingPortalReturnUrl(),
+  };
+  const requested = typeof body.flow === 'string' ? body.flow.trim() : '';
+  if (PORTAL_FLOWS.has(requested)) {
+    params.flow_data = { type: requested };
+  }
+  return params;
+}
 
 const PORTAL_STATUSES = ['active', 'past_due'];
 
@@ -111,11 +148,9 @@ export async function handleBillingPortalRequest(req, res, deps = liveDeps()) {
       return res.status(404).json({ error: NO_ACTIVE_PLAN_MESSAGE });
     }
 
-    const session = await stripe.billingPortal.sessions.create({
-      customer: customer.id,
-      configuration: BILLING_PORTAL_CONFIGURATION,
-      return_url: billingPortalReturnUrl(),
-    });
+    const session = await stripe.billingPortal.sessions.create(
+      billingPortalSessionParams(customer.id, readJsonBody(req)),
+    );
     if (!session?.url) {
       return res.status(502).json({ error: 'Billing portal did not return a URL' });
     }

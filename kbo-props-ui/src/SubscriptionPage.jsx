@@ -53,7 +53,7 @@ function SubscriptionPage() {
   const [pausing, setPausing] = useState(false);
   const [pauseResult, setPauseResult] = useState(null);
   const [paused, setPaused] = useState(null);
-  const [managingPortal, setManagingPortal] = useState(false);
+  const [portalFlow, setPortalFlow] = useState('');
   const [portalMessage, setPortalMessage] = useState(null);
 
   // After user clicks a payment link, poll for tier upgrade every 4s for up to 2 min
@@ -276,8 +276,9 @@ function SubscriptionPage() {
     }
   };
 
-  const handleManageSubscription = async () => {
-    setManagingPortal(true);
+  const openBillingPortal = async (flow) => {
+    if (portalFlow) return;
+    setPortalFlow(flow || 'manage');
     setPortalMessage(null);
     try {
       const token = await membershipAuthToken(user);
@@ -285,15 +286,18 @@ function SubscriptionPage() {
         setPortalMessage('Please sign in again.');
         return;
       }
-      // The server reads the email from this session. Do not send an email
-      // or a Stripe customer id.
+      // The server reads the email from this session and creates a one-time
+      // billing portal session. Do not send an email, a Stripe customer id,
+      // or a portal URL. payment_method_update opens on the card form.
       const resp = await fetch('/api/billing-portal', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
-        body: '{}',
+        body: flow === 'payment_method_update'
+          ? JSON.stringify({ flow: 'payment_method_update' })
+          : '{}',
       });
       const data = await resp.json().catch(() => ({}));
       if (resp.status === 404) {
@@ -314,7 +318,7 @@ function SubscriptionPage() {
     } catch {
       setPortalMessage('Network error — please try again.');
     } finally {
-      setManagingPortal(false);
+      setPortalFlow('');
     }
   };
 
@@ -348,22 +352,39 @@ function SubscriptionPage() {
         </p>
       </div>
 
-      {user && (
-        <section className="sub-manage" aria-label="Manage subscription">
-          <button
-            type="button"
-            className="sub-manage-btn"
-            data-testid="manage-subscription"
-            onClick={handleManageSubscription}
-            disabled={managingPortal}
-          >
-            {managingPortal ? 'Opening billing…' : 'Manage subscription'}
-          </button>
-          {portalMessage && (
-            <p className="sub-manage-msg" role="status" data-testid="manage-subscription-message">{portalMessage}</p>
-          )}
-        </section>
-      )}
+      <section className="sub-manage" aria-label="Manage billing">
+        <h2 className="sub-manage-title">Billing</h2>
+        {user ? (
+          <>
+            <p className="sub-manage-copy">Update the card on file or manage the subscription. This opens a one-time Stripe billing page for the signed-in account.</p>
+            <div className="sub-manage-actions">
+              <button
+                type="button"
+                className="sub-manage-btn"
+                data-testid="update-payment-method"
+                onClick={() => openBillingPortal('payment_method_update')}
+                disabled={Boolean(portalFlow)}
+              >
+                {portalFlow === 'payment_method_update' ? 'Opening billing…' : 'Update payment method'}
+              </button>
+              <button
+                type="button"
+                className="sub-manage-btn sub-manage-btn-secondary"
+                data-testid="manage-subscription"
+                onClick={() => openBillingPortal()}
+                disabled={Boolean(portalFlow)}
+              >
+                {portalFlow === 'manage' ? 'Opening billing…' : 'Manage subscription'}
+              </button>
+            </div>
+          </>
+        ) : (
+          <p className="sub-manage-copy">Sign in to update your payment method or manage billing.</p>
+        )}
+        {portalMessage && (
+          <p className="sub-manage-msg" role="status" data-testid="manage-subscription-message">{portalMessage}</p>
+        )}
+      </section>
 
       <div className="sub-combine-banner">
         <span className="sub-combine-icon">⚾🏀🏈🏒</span>

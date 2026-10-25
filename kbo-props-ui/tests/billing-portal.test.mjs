@@ -11,7 +11,9 @@ import {
   ACCOUNT_PAGE_URL,
   BILLING_PORTAL_CONFIGURATION,
   NO_ACTIVE_PLAN_MESSAGE,
+  PAYMENT_METHOD_UPDATE_FLOW,
   billingPortalReturnUrl,
+  billingPortalSessionParams,
   handleBillingPortalRequest,
 } from '../api/_billingPortal.js'
 
@@ -215,16 +217,60 @@ test('unauthenticated requests return 401 and do not call Stripe', async () => {
   assert.equal(forged.constructed, false)
 })
 
+test('update-card is the only client flow, and forged portal fields are dropped', async () => {
+  assert.equal(PAYMENT_METHOD_UPDATE_FLOW, 'payment_method_update')
+  const stripe = mockStripe({
+    customers: [{ id: 'cus_real', email: EMAIL, created: 200 }],
+    subsByCustomer: { cus_real: [{ id: 'sub_real', status: 'active' }] },
+  })
+  const { res } = await post({
+    flow: 'payment_method_update',
+    flow_data: { type: 'subscription_cancel' },
+    customer: FORGED_CUSTOMER,
+    return_url: 'https://evil.example/phish',
+    configuration: 'bpc_evil',
+  }, { stripe })
+  assert.equal(res.statusCode, 200)
+  const created = stripe.calls.find((call) => call.op === 'billingPortal.sessions.create')
+  assert.deepEqual(created.params, {
+    customer: 'cus_real',
+    configuration: BILLING_PORTAL_CONFIGURATION,
+    return_url: ACCOUNT_PAGE_URL,
+    flow_data: { type: 'payment_method_update' },
+  })
+  assert.equal(JSON.stringify(created.params).includes(FORGED_CUSTOMER), false)
+  assert.equal(JSON.stringify(created.params).includes('evil.example'), false)
+  assert.equal(JSON.stringify(created.params).includes('bpc_evil'), false)
+  assert.equal(JSON.stringify(created.params).includes('subscription_cancel'), false)
+
+  const general = billingPortalSessionParams('cus_real', {
+    flow: 'subscription_cancel',
+    flow_data: { type: 'payment_method_update' },
+  })
+  assert.equal(general.flow_data, undefined)
+  assert.deepEqual(billingPortalSessionParams('cus_real', JSON.parse('{"flow":"payment_method_update"}')).flow_data, {
+    type: 'payment_method_update',
+  })
+})
+
 test('the checkout dispatcher exposes the portal handler and the account page posts no customer id', () => {
   assert.equal(CHECKOUT_ACTIONS.portal, handleBillingPortalRequest)
   const uiRoot = fileURLToPath(new URL('..', import.meta.url))
   const page = readFileSync(join(uiRoot, 'src/SubscriptionPage.jsx'), 'utf8')
+  assert.match(page, /Update payment method/)
   assert.match(page, /Manage subscription/)
+  assert.match(page, /payment_method_update/)
   assert.match(page, /noActivePlanNotice\(user\?\.email\)/)
   const copy = readFileSync(join(uiRoot, 'src/manageSubscriptionCopy.js'), 'utf8')
   assert.match(copy, /No active plan on this email\. DM @Cgpropz\./)
   assert.match(copy, /Signed in as \$\{value\} — your plan may be under a different email\./)
   assert.match(page, /\/api\/billing-portal/)
-  assert.match(page, /body: '\{\}'/)
-  assert.doesNotMatch(page, /billing-portal[\s\S]{0,500}cus_/)
+  assert.match(page, /'\{\}'/)
+  assert.doesNotMatch(page, /billing\.stripe\.com/)
+  assert.doesNotMatch(page, /billing-portal[\s\S]{0,800}cus_/)
+  const loginUrl = 'https://billing.stripe.com/p/login/eVq9AV4BV4I6bzs7Da5Ne00'
+  for (const rel of ['src/SubscriptionPage.jsx', 'src/PublicLanding.jsx', 'src/tracking.js']) {
+    assert.equal(readFileSync(join(uiRoot, rel), 'utf8').includes(loginUrl), false, rel)
+  }
+  assert.equal(JSON.stringify(billingPortalSessionParams('cus_real', { flow: 'payment_method_update' })).includes(loginUrl), false)
 })
