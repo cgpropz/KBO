@@ -1,0 +1,43 @@
+{
+  "schema": 1,
+  "sport": "kbo",
+  "slate_date": "10/26/2026",
+  "slate_date_iso": "2026-10-26",
+  "generated_at": "2026-10-25T19:55:54+00:00",
+  "mode": "shadow (offline; never shown on the site)",
+  "slate_sha256": "e2962f0cbda1b9ff",
+  "slate_frozen_at": "2026-10-25T19:00:49.156439+00:00",
+  "params": {
+    "sha256": "d8ff68ba6527a1ae",
+    "files": 6,
+    "data_ref": [
+      "c73f7210bc196962b48d905a236c0dcb1e979fae"
+    ],
+    "generated_at": [
+      "2026-09-25T01:21:19+00:00"
+    ],
+    "git_commit": "2d4ca956c47d",
+    "git_tree": "7daee36463af"
+  },
+  "rules": {
+    "shadow_projection": "Phase 2 final fit (knobs + linear calibration) for stats with recommendation=candidate; otherwise the current projection is carried (carried_current=true)",
+    "current_projection": "pre-promotion formula when the slate row has formula_applied and baseline_projection (the site projection is then published_projection); otherwise the slate projection",
+    "shadow_side": "candidate stats: sign(shadow_projection - line); carried stats: current pick",
+    "p_over": "Phase 2 logistic on (fit_projection - line, line); standard lines only",
+    "top_bucket": "top 20% of the day's standard lines by |projection - line| / stat walk-forward MAE, separately for current and shadow",
+    "leakage": "inputs pinned per prop at its pregame ref (source_commit, or last commit before a provably pregame legacy freeze); game logs filtered to dates before the game date"
+  },
+  "status": "not_scored",
+  "counts": {
+    "props": 0,
+    "scored": 0,
+    "not_scored": 0,
+    "shadow_candidate": 0,
+    "carried_current": 0,
+    "with_p_over": 0,
+    "top_current": 0,
+    "top_shadow": 0
+  },
+  "input_refs": {},
+  "props": []
+}
