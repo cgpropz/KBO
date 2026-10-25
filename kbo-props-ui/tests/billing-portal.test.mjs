@@ -268,4 +268,9 @@ test('the checkout dispatcher exposes the portal handler and the account page po
   assert.match(page, /'\{\}'/)
   assert.doesNotMatch(page, /billing\.stripe\.com/)
   assert.doesNotMatch(page, /billing-portal[\s\S]{0,800}cus_/)
+  const loginUrl = 'https://billing.stripe.com/p/login/eVq9AV4BV4I6bzs7Da5Ne00'
+  for (const rel of ['src/SubscriptionPage.jsx', 'src/PublicLanding.jsx', 'src/tracking.js']) {
+    assert.equal(readFileSync(join(uiRoot, rel), 'utf8').includes(loginUrl), false, rel)
+  }
+  assert.equal(JSON.stringify(billingPortalSessionParams('cus_real', { flow: 'payment_method_update' })).includes(loginUrl), false)
 })

@@ -17,9 +17,10 @@ export const BILLING_PORTAL_CONFIGURATION = 'bpc_1URCyLPwL0k9PEMv395S66ul';
 export const ACCOUNT_PAGE_URL = 'https://www.cgpropz.com/?account=1';
 export const ACCOUNT_FALLBACK_URL = 'https://www.cgpropz.com/';
 export const NO_ACTIVE_PLAN_MESSAGE = 'No active plan on this email. DM @Cgpropz.';
-// Stripe Customer Portal login_page is off, so there is no stable public
-// portal URL to paste into email. The account page creates a one-time
-// billing_portal session with the secret key and redirects to session.url.
+// Signed-in ?account=1 stays on a one-time billing_portal session (secret key,
+// redirect to session.url). Retention emails may use the portal login_page
+// Stripe enabled. That URL is not a checkout link and is not sent to the client:
+// https://billing.stripe.com/p/login/eVq9AV4BV4I6bzs7Da5Ne00
 export const PAYMENT_METHOD_UPDATE_FLOW = 'payment_method_update';
 
 const PORTAL_FLOWS = new Set([PAYMENT_METHOD_UPDATE_FLOW]);
