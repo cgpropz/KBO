@@ -39,6 +39,9 @@ import { CardTeamLogo } from '../CardTeamLogo'
 import { sideClass, sideLetter } from '../pickSide.js'
 import ExpectedMinutesPill from './ExpectedMinutesPill'
 import { expectedMinutesPill } from './expectedMinutes.js'
+import CorrelatedPropsPanel from '../CorrelatedPropsPanel'
+import { boardAnchor, correlatedPanelModel, focusBoardProp } from '../correlatedProps'
+import { loadNbaCorrelations } from '../loadNbaCorrelations'
 
 const FREE_ROW_LIMIT = 3
 
@@ -99,7 +102,33 @@ function FilterIcon() {
 }
 
 
-function PropRow({ item, onSelectPlayer, locked, rowRef, whyOpen, onWhy, phone }) {
+function rowDetail({ phone, note, panel, rowRef }) {
+  if (!note && !panel) return null
+  if (phone) {
+    return (
+      <div className="corr-after" onClick={(event) => event.stopPropagation()}>
+        {note ? <CgScoreNote note={note} /> : null}
+        {panel}
+      </div>
+    )
+  }
+  return (
+    <>
+      {note ? (
+        <tr className="cg-score-note-row" ref={panel ? undefined : rowRef}>
+          <td colSpan={6}><CgScoreNote note={note} /></td>
+        </tr>
+      ) : null}
+      {panel ? (
+        <tr className="corr-strip-row" ref={rowRef}>
+          <td colSpan={6}>{panel}</td>
+        </tr>
+      ) : null}
+    </>
+  )
+}
+
+function PropRow({ item, onSelectPlayer, locked, rowRef, whyOpen, onWhy, phone, open, onToggle, panel }) {
   const recent = Array.isArray(item.recent) ? item.recent : []
   const grade = dvpGrade(item.dvpRank)
   const minutesPill = item.side ? expectedMinutesPill(item.avgMins) : null
@@ -116,18 +145,19 @@ function PropRow({ item, onSelectPlayer, locked, rowRef, whyOpen, onWhy, phone }
   return (
     <BoardLine
       phone={phone}
-      className={`wnba-lines-row${locked ? ' locked' : ''}`}
-      rowRef={whyOpen ? undefined : rowRef}
+      className={`wnba-lines-row${locked ? ' locked' : ''}${open ? ' is-open' : ''}`}
+      rowRef={whyOpen || open ? undefined : rowRef}
+      onClick={locked ? undefined : onToggle}
       cells={[
         { node: (
-          <div className="wnba-lines-player">
+          <div className="wnba-lines-player" data-prop-id={item.id}>
             <div className="wnba-lines-avatar">
               {item.imageUrl
                 ? <img src={fitImage(item.imageUrl, 42)} alt={item.player} loading="lazy" onError={(event) => { event.target.style.display = 'none' }} />
                 : initials(item.player)}
             </div>
             <div className="wnba-lines-info">
-              <button className="wnba-player-link" onClick={() => !locked && onSelectPlayer?.(item.player)}>{item.player}</button>
+              <button className="wnba-player-link" onClick={(event) => { event.stopPropagation(); if (!locked) onSelectPlayer?.(item.player) }}>{item.player}</button>
               <span className="wnba-lines-tag"><CardTeamLogo team={item.team} src={nbaLogoUrl(item.team) ? fitImage(nbaLogoUrl(item.team), 16) : ''} />{item.team}{item.position ? `, ${item.position}` : ''}</span>
               <div className={`wnba-lines-line ${sideClass(item.side)}${minutesPill ? ' has-min-pill' : ''}`}>
                 {minutesPill ? <><span className="nba-line-text">{lineLabel}</span><ExpectedMinutesPill minutes={item.avgMins} /></> : lineLabel}
@@ -148,11 +178,12 @@ function PropRow({ item, onSelectPlayer, locked, rowRef, whyOpen, onWhy, phone }
           </div>
         ) },
       ]}
-      after={whyOpen && !locked && scoreNote
-        ? (phone
-          ? <CgScoreNote note={scoreNote} />
-          : <tr className="cg-score-note-row" ref={rowRef}><td colSpan={6}><CgScoreNote note={scoreNote} /></td></tr>)
-        : null}
+      after={rowDetail({
+        phone,
+        note: whyOpen && !locked ? scoreNote : null,
+        panel: open && !locked ? panel : null,
+        rowRef,
+      })}
     />
   )
 }
@@ -344,6 +375,8 @@ export default function NbaDashboard({ onSelectPlayer, onNavigate, onNavigatePri
   const [refreshing, setRefreshing] = useState(false)
   const [memberPreview, setMemberPreview] = useState(false)
   const [updatedAt, setUpdatedAt] = useState(null)
+  const [selectedId, setSelectedId] = useState(null)
+  const [corrSnap, setCorrSnap] = useState(null)
 
   const tableWrapRef = useRef(null)
   const lastFreeRowRef = useRef(null)
@@ -407,6 +440,19 @@ export default function NbaDashboard({ onSelectPlayer, onNavigate, onNavigatePri
   const showPaywall = phase === 'free'
   const isPaid = phase === 'member'
 
+  useEffect(() => {
+    if (!isPaid) {
+      setCorrSnap(null)
+      return undefined
+    }
+    let cancelled = false
+    setCorrSnap(null)
+    loadNbaCorrelations().then((snap) => {
+      if (!cancelled) setCorrSnap(snap)
+    })
+    return () => { cancelled = true }
+  }, [isPaid])
+
   const retryLoad = () => {
     clearRefreshExhausted()
     setLoadError('')
@@ -436,6 +482,49 @@ export default function NbaDashboard({ onSelectPlayer, onNavigate, onNavigatePri
     () => filterAndSortRows(allRows, propTab, filters),
     [allRows, propTab, filters],
   )
+
+  const selectedRow = allRows.find((row) => row.id === selectedId) || null
+  const selectedIndex = rows.findIndex((row) => row.id === selectedId)
+  const selectedLocked = selectedIndex >= FREE_ROW_LIMIT && !isPaid
+  const showInline = selectedIndex >= 0 && !selectedLocked
+  const corrModel = useMemo(() => correlatedPanelModel({
+    anchor: boardAnchor(selectedRow),
+    board: allRows,
+    doc: corrSnap?.doc,
+    entitled: isPaid && corrSnap != null && corrSnap.preview !== true,
+    loading: isPaid && corrSnap == null,
+    memberPreview: isPaid && corrSnap?.preview === true,
+  }), [selectedRow, allRows, corrSnap, isPaid])
+
+  useEffect(() => {
+    if (selectedId && !allRows.some((row) => row.id === selectedId)) setSelectedId(null)
+  }, [allRows, selectedId])
+
+  useEffect(() => {
+    if (!selectedId || typeof document === 'undefined') return undefined
+    const escaped = typeof CSS !== 'undefined' && typeof CSS.escape === 'function'
+      ? CSS.escape(selectedId)
+      : String(selectedId).replace(/["\\]/g, '\\$&')
+    document.querySelector(`[data-prop-id="${escaped}"]`)?.scrollIntoView({ block: 'nearest' })
+    return undefined
+  }, [selectedId, rows, propTab, filters.side])
+
+  const focusProp = (id) => {
+    const row = allRows.find((item) => item.id === id)
+    if (!row) return
+    const patch = focusBoardProp(row, { propTab, side: filters.side })
+    if (patch.propTab) setPropTab(patch.propTab)
+    if (patch.side) updateFilter('side', patch.side)
+    setSelectedId(id)
+  }
+
+  const panelNode = !hold && corrModel ? (
+    <CorrelatedPropsPanel
+      model={corrModel}
+      onFocus={focusProp}
+      onNavigatePricing={onNavigatePricing}
+    />
+  ) : null
 
   const insightLimit = isPaid ? 5 : FREE_ROW_LIMIT
 
@@ -517,6 +606,9 @@ export default function NbaDashboard({ onSelectPlayer, onNavigate, onNavigatePri
           {showPaywall && <MemberPreviewNotice exhausted={refreshExhausted} onRetry={retryLoad} className="wnba-notice" />}
           {!hold && !projLoading && !loadError && !allRows.length && <div className="wnba-notice">No NBA props are on the board right now. Check back closer to tip-off.</div>}
           {!hold && !projLoading && !loadError && !!allRows.length && !rows.length && <div className="wnba-notice">No props match these filters.</div>}
+          {!hold && !projLoading && selectedRow && !showInline && !selectedLocked && panelNode ? (
+            <div className="corr-fallback">{panelNode}</div>
+          ) : null}
           {!hold && !projLoading && !!rows.length && (
             <BoardSurface
               phone={phone}
@@ -545,6 +637,9 @@ export default function NbaDashboard({ onSelectPlayer, onNavigate, onNavigatePri
                   rowRef={index === lastFreeIndex ? lastFreeRowRef : undefined}
                   whyOpen={whyId === item.id}
                   onWhy={() => setWhyId((current) => current === item.id ? null : item.id)}
+                  open={showInline && item.id === selectedId}
+                  onToggle={() => setSelectedId((current) => (current === item.id ? null : item.id))}
+                  panel={showInline && item.id === selectedId ? panelNode : null}
                 />
               ))}
               {Array.from({ length: placeholderCount }, (_, index) => (
