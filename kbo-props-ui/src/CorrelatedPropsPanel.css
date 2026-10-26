@@ -1,0 +1,149 @@
+/* Research panel on the NBA prop board. cgpropz dark board colors only. */
+
+.corr-strip-row > td {
+  padding: 0;
+  white-space: normal;
+  background: #071311;
+}
+
+.corr-after,
+.corr-fallback {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.corr-panel {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  padding: 14px 14px 12px;
+  background: #071311;
+  color: var(--pb-text, #e8f4e6);
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.corr-title {
+  margin: 0;
+  color: #e8f4e6;
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  line-height: 1.3;
+}
+
+.corr-empty {
+  margin: 6px 0 0;
+  color: #78918a;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.corr-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 12px 0 4px;
+  padding: 0;
+  list-style: none;
+}
+
+.corr-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 2px 12px;
+  width: 100%;
+  margin: 0;
+  padding: 8px 10px;
+  border: 1px solid #1a3c36;
+  border-radius: 8px;
+  background: #0a1716;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.corr-row:hover,
+.corr-row:focus-visible {
+  border-color: #2a5148;
+  outline: none;
+}
+
+.corr-who,
+.corr-figures {
+  min-width: 0;
+}
+
+.corr-name {
+  display: block;
+  color: #e8f4e6;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.corr-meta,
+.corr-sample {
+  display: block;
+  color: #8ba39c;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.corr-figures {
+  text-align: right;
+}
+
+.corr-rate {
+  display: block;
+  color: #7fff68;
+  font-size: 16px;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.corr-focus {
+  grid-column: 1 / -1;
+}
+
+.corr-focus {
+  color: #54e0bf;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.corr-plans {
+  margin-top: 10px;
+  border: 0;
+  border-radius: 999px;
+  padding: 8px 14px;
+  background: #7fff68;
+  color: #06100f;
+  font: 800 12px inherit;
+  cursor: pointer;
+}
+
+.corr-plans:focus-visible {
+  outline: 2px solid #7fff68;
+  outline-offset: 2px;
+}
+
+.nba-root .wnba-lines-row:not(.locked) { cursor: pointer; }
+.nba-root .wnba-lines-row.is-open { background: #0c1c19; }
+
+.prop-line-card > .corr-after {
+  grid-column: 1 / -1;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+@media (max-width: 420px) {
+  .corr-panel { padding: 12px 10px; }
+  .corr-title { font-size: 14px; }
+  .corr-rate { font-size: 15px; }
+  .corr-empty { font-size: 12px; }
+}
