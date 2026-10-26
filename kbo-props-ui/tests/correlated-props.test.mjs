@@ -2,13 +2,10 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import test from 'node:test'
 import {
-  BARS_STUB_NOTE,
-  CORR_BANNER,
   CORR_TITLE,
   EMPTY_PAIRS,
   FREE_UPSELL,
   LIMITED_PAIRS,
-  LINE_SOURCE_COPY,
   LOOKBACK_CAP,
   MAX_PARTNERS,
   MIN_A_HITS,
@@ -19,17 +16,18 @@ import {
   NBA_CORRELATION_STATIC,
   NBA_MIN_SHARED,
   NBA_PARTNER_STATS,
-  OVERS_NOTE,
-  PP_NOTE,
   PREVIEW_UPSELL,
   SMALL_SAMPLE_A_HITS_MAX,
   boardAnchor,
   correlatedPanelModel,
   focusBoardProp,
-  historicalLine,
   slipLegAnchor,
 } from '../src/correlatedProps.js'
-import { STANDARD_LINE } from '../src/responsibleGambling.js'
+
+const REMOVED_COPY = [
+  'banner', 'historical', 'scopeNote', 'oversNote', 'barsNote', 'barsStub',
+  'lineSourceNote', 'metricNote', 'ppNote', 'ageLine',
+]
 
 const board = [
   { id: 'a', player: 'A', prop: 'Points', team: 'NY', opponent: 'BOS', side: 'OVER' },
@@ -87,8 +85,7 @@ test('cleared floors stay centralized and the published sample is not capped at 
     { player: 'A', stat: 'Points', partner: 'B', partnerStat: 'Rebounds', agreement: 0.8, n: 40 },
   ])
   assert.equal(wide.rows[0].n, 40)
-  assert.match(wide.metricNote, /capped at 20/)
-  assert.match(wide.metricNote, /not trimmed/)
+  assert.equal(wide.rows[0].n === LOOKBACK_CAP, false)
 })
 
 test('often-hit teammates are same-team same-game overs above the existing hit-together bar', () => {
@@ -99,15 +96,8 @@ test('often-hit teammates are same-team same-game overs above the existing hit-t
   assert.equal(result.rows[0].smallSample, false)
   assert.equal(result.showNumbers, true)
   assert.equal(result.title, CORR_TITLE)
-  assert.equal(result.historical, 'Historical when A Points hit — not a projection.')
-  assert.equal(result.banner, CORR_BANNER)
-  assert.equal(result.ppNote, PP_NOTE)
-  assert.equal(result.ageLine, STANDARD_LINE)
-  assert.match(result.lineSourceNote, /saved_pp_standard/)
-  assert.match(result.lineSourceNote, /current_line_retro/)
-  assert.equal(result.barsStub, true)
-  assert.equal(result.barsNote, BARS_STUB_NOTE)
-  assert.equal(result.rows.every((row) => row.bars == null), true)
+  assert.equal(result.message, '')
+  for (const key of REMOVED_COPY) assert.equal(Object.hasOwn(result, key), false, key)
 })
 
 test('exactly 60 percent, other teams, other games, unders, stocks, and same player stay off the list', () => {
@@ -134,8 +124,8 @@ test('conditional rate is used when published and is not forced through the 60 p
     { player: 'A', stat: 'Points', partner: 'B', partnerStat: 'Rebounds', agreement: 0.8, conditionalHitRate: 0.55, n: 20 },
   ])
   assert.equal(result.rows[0].rateLabel, '55%')
-  assert.match(result.metricNote, /conditional hit rate/)
   assert.equal(result.rows[0].kind, 'conditional')
+  assert.equal(Object.hasOwn(result, 'metricNote'), false)
 })
 
 test('line source is labeled from the pair and bars keep oldest-to-newest order', () => {
@@ -149,10 +139,12 @@ test('line source is labeled from the pair and bars keep oldest-to-newest order'
       agreement: 0.7, n: 20, lineSource: 'saved_pp_standard', conditionalBars: ['H', 'H', 'M', 'H'],
     },
   ])
-  assert.equal(result.lineSourceNote, LINE_SOURCE_COPY.mixed)
+  assert.equal(result.rows[0].lineSource, 'current_line_retro')
+  assert.equal(result.rows[1].lineSource, 'saved_pp_standard')
   assert.deepEqual(result.rows[0].bars, ['miss', 'hit', 'miss', 'hit', 'miss'])
   assert.equal(result.rows[1].barsMode, 'short')
-  assert.equal(result.barsStub, false)
+  assert.equal(Object.hasOwn(result, 'lineSourceNote'), false)
+  assert.equal(Object.hasOwn(result, 'barsNote'), false)
 })
 
 test('a long bar string keeps the latest 10 without reversing', () => {
@@ -169,7 +161,7 @@ test('unknown bar tokens stay a stub instead of a guessed color', () => {
     { player: 'A', stat: 'Points', partner: 'B', partnerStat: 'Rebounds', agreement: 0.8, n: 20, l10: 'HHHHX' },
   ])
   assert.equal(result.rows[0].barsMode, 'stub')
-  assert.equal(result.barsStub, true)
+  assert.equal(result.rows[0].bars, null)
 })
 
 test('stocks and other anchors do not list pairs', () => {
@@ -180,10 +172,10 @@ test('stocks and other anchors do not list pairs', () => {
   assert.deepEqual(result.rows, [])
 })
 
-test('an under anchor still lists overs and says so', () => {
+test('an under anchor still lists overs', () => {
   const result = modelFor(boardAnchor({ ...board[0], side: 'UNDER' }))
-  assert.equal(result.oversNote, OVERS_NOTE)
   assert.equal(result.rows.some((row) => row.name === 'B'), true)
+  assert.equal(Object.hasOwn(result, 'oversNote'), false)
 })
 
 test('the list caps at five teammates', () => {
@@ -212,7 +204,7 @@ test('a standard line wins over a promo line for the same prop', () => {
   assert.equal(result.rows[0].id, 'b-std')
 })
 
-test('free and preview models keep the caveats and drop paid numbers', () => {
+test('free and preview models are one line and drop paid numbers', () => {
   const paid = modelFor(anchor)
   const free = modelFor(anchor, { entitled: false })
   const preview = modelFor(anchor, { entitled: false, memberPreview: true })
@@ -220,15 +212,14 @@ test('free and preview models keep the caveats and drop paid numbers', () => {
   assert.equal(free.showNumbers, false)
   assert.equal(free.showPlans, true)
   assert.equal(free.message, FREE_UPSELL)
+  assert.equal(free.message.includes('\n'), false)
   assert.deepEqual(free.rows, [])
-  assert.equal(free.historical, historicalLine(anchor))
-  assert.equal(free.ppNote, PP_NOTE)
-  assert.match(free.ageLine, /21\+/)
-  assert.match(free.ageLine, /Play responsibly/)
   const dumped = JSON.stringify(free)
   assert.equal(dumped.includes('72%'), false)
   assert.equal(dumped.includes('81%'), false)
   assert.equal(dumped.includes('"n":'), false)
+  assert.equal(dumped.includes('Play responsibly'), false)
+  assert.equal(dumped.includes('PrizePicks'), false)
   assert.equal(preview.message, PREVIEW_UPSELL)
   assert.equal(preview.showPlans, false)
   assert.equal(paid.rows.length > 0, true)
@@ -267,11 +258,13 @@ test('the loader and the board mount reuse the published NBA pair file', () => {
   assert.equal(loader.includes('correlations.py'), false)
   const panel = readFileSync(new URL('../src/CorrelatedPropsPanel.jsx', import.meta.url), 'utf8')
   assert.match(panel, /data-testid="nba-correlated-panel"/)
-  assert.match(panel, /data-testid="nba-corr-draft"/)
-  assert.match(panel, /data-testid="nba-corr-pp"/)
-  assert.match(panel, /data-testid="nba-corr-age"/)
-  assert.match(panel, /model\.banner/)
-  assert.match(panel, /model\.historical/)
+  assert.match(panel, /When this hits, these often hit too|model\.title/)
+  assert.match(panel, /Show on board/)
+  assert.equal(panel.includes('corr-banner'), false)
+  assert.equal(panel.includes('model.banner'), false)
+  assert.equal(panel.includes('model.historical'), false)
+  assert.equal(panel.includes('model.ppNote'), false)
+  assert.equal(panel.includes('model.ageLine'), false)
   const boardSource = readFileSync(new URL('../src/nba/NbaDashboard.jsx', import.meta.url), 'utf8')
   assert.match(boardSource, /CorrelatedPropsPanel/)
   assert.match(boardSource, /loadNbaCorrelations/)
@@ -280,4 +273,8 @@ test('the loader and the board mount reuse the published NBA pair file', () => {
   const logic = readFileSync(new URL('../src/correlatedProps.js', import.meta.url), 'utf8')
   assert.match(logic, /correlated_props_rule_2026-10-25\.md/)
   assert.equal(logic.includes('pipeline/correlations.py'), false)
+  assert.equal(logic.includes('Research draft'), false)
+  assert.equal(logic.includes('Play responsibly'), false)
+  assert.equal(logic.includes('PrizePicks needs picks'), false)
+  assert.equal(logic.includes('not a projection'), false)
 })
