@@ -20,6 +20,8 @@ import { BoardLoadError } from '../BoardLoadError'
 import { teamLogoUrl } from './nflTeams'
 import { opponentLabel } from '../cardMark'
 import { CardTeamLogo } from '../CardTeamLogo'
+import { LaneMark, TipLaneNote } from '../TipLane'
+import { stampTipLanes, tipKeys, tipRowClass } from '../tipFirst'
 import { lineClause } from '../lineCount'
 import { nflSeasonAverage } from './seasonAverage'
 import { ChartDateRow } from '../MiniHitBars'
@@ -85,8 +87,8 @@ function ProjectionCard({ item, onSelectPlayer }) {
   const shownDvp = nflBoardDvpRank(item)
 
   return (
-    <article className="nfl-edge-card">
-      <div className="nfl-card-topline"><span className="nfl-snap-badge" style={item.snapCount > 0 ? { borderColor: snapColor(item.snapCount), color: snapColor(item.snapCount) } : undefined}>{item.snapCount > 0 ? `${item.snapCount}% SNAP` : 'SNAP N/A'}</span><b className={sideClass}>{side ? `${side} ` : ''}{shownScore}</b></div>
+    <article className={tipRowClass(item.tipLane, 'nfl-edge-card')}>
+      <div className="nfl-card-topline"><LaneMark lane={item.tipLane} /><span className="nfl-snap-badge" style={item.snapCount > 0 ? { borderColor: snapColor(item.snapCount), color: snapColor(item.snapCount) } : undefined}>{item.snapCount > 0 ? `${item.snapCount}% SNAP` : 'SNAP N/A'}</span><b className={sideClass}>{side ? `${side} ` : ''}{shownScore}</b></div>
       <div className="nfl-card-player">
         <div className="nfl-card-avatar">{item.imageUrl ? <img src={fitImage(item.imageUrl, 42)} alt={item.player} width={42} height={42} loading="lazy" /> : initials(item.player)}</div>
         <div><h2 className="nfl-player-link" onClick={() => onSelectPlayer(item.player, item.prop)}>{item.player}</h2><p><b>{item.position}</b><CardTeamLogo team={item.team} src={teamLogoUrl(item.team) ? fitImage(teamLogoUrl(item.team), 16) : ''} /><span>{item.team}</span>{item.opponent ? <em>{opponentLabel(item.opponent)}</em> : null}</p></div>
@@ -166,17 +168,20 @@ export default function NflProjections({ onSelectPlayer }) {
   const matchupKey = (item) => [item.team, item.opponent].sort().join(' vs ')
   const props = useMemo(() => ['All props', ...new Set(boardProjections.map((item) => item.prop))].sort((a, b) => a === 'All props' ? -1 : a.localeCompare(b)), [boardProjections])
   const matchups = useMemo(() => ['All matchups', ...new Set(boardProjections.map(matchupKey))].sort((a, b) => a === 'All matchups' ? -1 : a.localeCompare(b)), [boardProjections])
-  const rows = useMemo(() => boardProjections
-    .filter((item) => lineMatchesStat(item.prop, item.line))
-    .map((item) => { const cgScore = nflTodayPick(item).cg; return { ...item, cgScore, score: nflCgScore(item.projection, item.line, item.prop) ?? 0, rawScore: nflRawScore(item.projection, item.line, item.prop) } })
-    .filter((item) => position === 'ALL' || item.position === position)
-    .filter((item) => prop === 'All props' || item.prop === prop)
-    .filter((item) => matchup === 'All matchups' || matchupKey(item) === matchup)
-    .filter((item) => item.player.toLowerCase().includes(query.toLowerCase()))
-    .sort((a, b) => {
-      if (sort !== 'CG Score') return b.hitRate - a.hitRate
-      return symmetricRankOn('nfl') ? compareSymmetric(a, b) : compareNflScores(a.score, a.rawScore, b.score, b.rawScore)
-    }), [matchup, position, boardProjections, prop, query, sort])
+  const rows = useMemo(() => {
+    const scored = boardProjections
+      .filter((item) => lineMatchesStat(item.prop, item.line))
+      .map((item) => { const cgScore = nflTodayPick(item).cg; return { ...item, cgScore, score: nflCgScore(item.projection, item.line, item.prop) ?? 0, rawScore: nflRawScore(item.projection, item.line, item.prop) } })
+    const byCg = (a, b) => (symmetricRankOn('nfl') ? compareSymmetric(a, b) : compareNflScores(a.score, a.rawScore, b.score, b.rawScore))
+    const shown = scored
+      .filter((item) => position === 'ALL' || item.position === position)
+      .filter((item) => prop === 'All props' || item.prop === prop)
+      .filter((item) => matchup === 'All matchups' || matchupKey(item) === matchup)
+      .filter((item) => item.player.toLowerCase().includes(query.toLowerCase()))
+      .sort((a, b) => (sort === 'CG Score' ? byCg(a, b) : b.hitRate - a.hitRate))
+    if (sort !== 'CG Score') return shown
+    return stampTipLanes(shown, tipKeys([...scored].sort(byCg), (item) => item.id), (item) => item.id)
+  }, [matchup, position, boardProjections, prop, query, sort])
 
   return (
     <section className="nfl-edge-board">
@@ -195,6 +200,7 @@ export default function NflProjections({ onSelectPlayer }) {
         <div className="nfl-position-tabs">{POSITIONS.map((item) => <button key={item} className={position === item ? 'active' : ''} onClick={() => setPosition(item)}>{item}</button>)}</div>
       </section>
       <div className="nfl-board-meta"><span><i /> LIVE MODEL / DVP ADJUSTED</span></div>
+      <TipLaneNote show={sort === 'CG Score' && rows.some((row) => row.tipLane)} />
       {hold && <MemberBoardStatus phase={phase} onRetry={retryLoad} />}
       <QuietMemberPreview phase={phase} preview={memberPreview} refreshing={refreshing} onRetry={retryLoad} />
       {!hold && error && <BoardLoadError error={error} prefix="Unable to load the NFL snapshot:" onRetry={retryLoad} />}

@@ -29,6 +29,8 @@ import { DataCredit } from './SiteFooter'
 import { UNPROVEN_RANK_NOTE } from './freePreviewCopy';
 import { CgOverMarks } from './CgOverMarks';
 import { cgOverChrome } from './cgOverTreatment';
+import { LaneMark } from './TipLane';
+import { TIP_LABEL, UNPROVEN_LABEL } from './tipFirst';
 import { displayScore, symmetricRankOn } from './sideRank';
 import CheatsheetsNavLink from './CheatsheetsNavLink';
 import ExpectedMinutesPill from './nba/ExpectedMinutesPill';
@@ -610,17 +612,18 @@ export default function MemberCommandCenter({ onEnterSport, onNavigate }) {
 
           <div className="hub-columns">
             <div className="hub-plays">
+              {state.status === 'ready' && top.length > 0 && <p className="hub-tip-kicker">{TIP_LABEL}</p>}
               {state.status === 'ready' && top.length > 0 ? top.map((row, index) => (
                 <button
                   key={rowKey(row)}
                   type="button"
-                  className={`hub-card ${active && rowKey(active) === rowKey(row) ? 'is-open' : ''}`}
+                  className={`hub-card is-tip ${active && rowKey(active) === rowKey(row) ? 'is-open' : ''}`}
                   onClick={() => setFocus(rowKey(row))}
                 >
                   <span className="hub-rank hub-num">{index + 1}</span>
                   <Avatar row={row} sport={selected} size={52} />
                   <span className="hub-card-copy">
-                    <span className="hub-name">{row.player}</span>
+                    <span className="hub-name">{row.player}<LaneMark lane="tip" /></span>
                     <Matchup row={row} sport={selected} />
                     <span className="hub-chips">
                       <span className="hub-mini">{sideLetter(row.side)}{sideLetter(row.side) ? ' ' : ''}{fmt(row.line)} {row.stat}</span>
@@ -648,15 +651,15 @@ export default function MemberCommandCenter({ onEnterSport, onNavigate }) {
 
               <section className="hub-card hub-preview">
                 <div className="hub-card-head">
-                  <h2>Board preview</h2>
+                  <h2>{UNPROVEN_LABEL}</h2>
                   <a href="/guides/cg-score">What&apos;s in a CG Score</a>
                 </div>
                 <p className="hub-unproven" role="note">{UNPROVEN_RANK_NOTE}</p>
                 {preview.length > 0 ? preview.map((row) => (
-                  <button key={rowKey(row)} type="button" className="hub-preview-row" onClick={() => setFocus(rowKey(row))}>
+                  <button key={rowKey(row)} type="button" className="hub-preview-row is-unproven" onClick={() => setFocus(rowKey(row))}>
                     <Avatar row={row} sport={selected} size={36} />
                     <span>
-                      <span className="hub-name">{row.player}</span>
+                      <span className="hub-name">{row.player}<LaneMark lane="unproven" /></span>
                       {selected.id === 'nba' && expectedMinutesPill(row.avgMins) ? (
                         <span className="hub-preview-sub">
                           <span className="hub-preview-meta">{sideLetter(row.side)}{sideLetter(row.side) ? ' ' : ''}{fmt(row.line)} {row.stat}</span>

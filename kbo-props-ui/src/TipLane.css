@@ -1,0 +1,50 @@
+.tip-lane {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 6px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 750;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  line-height: 1.6;
+  vertical-align: 1px;
+  white-space: nowrap;
+}
+
+.tip-lane-tip {
+  color: #04140c;
+  background: #5dff9a;
+}
+
+.tip-lane-unproven {
+  color: #e4d2a8;
+  border: 1px solid rgba(228, 210, 168, 0.7);
+  background: rgba(228, 210, 168, 0.08);
+}
+
+.tip-lane-note,
+.hub-tip-kicker {
+  letter-spacing: 0;
+}
+
+.tip-lane-note {
+  margin: 0 0 12px;
+  color: #9aa59c;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.hub-tip-kicker {
+  margin: 0 0 8px;
+  color: var(--hub-mint, #5dff9a);
+  font-size: 12px;
+  font-weight: 750;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.is-unproven {
+  opacity: 0.62;
+}
