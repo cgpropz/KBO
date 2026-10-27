@@ -805,6 +805,47 @@
 .nhl-root .nhl-sharp-table .nfl-sharp-edge { min-width: 0; max-width: 160px; }
 .nhl-root .nhl-sharp-page .nfl-sharp-baseline { margin: 0 0 14px; }
 
+.nhl-filters-overlay.nfl-filters-overlay { z-index: 80; }
+.nhl-filters-overlay .nfl-filters-panel {
+  overflow: hidden;
+  box-sizing: border-box;
+  max-height: 100%;
+  border-left-color: #1c3a52;
+  background: #071018;
+  color: #e7eef8;
+}
+.nhl-filters-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
+.nhl-filters-overlay .nfl-filters-side,
+.nhl-filters-overlay .nfl-filter-row-value,
+.nhl-filters-overlay .nfl-filter-chip-row button,
+.nhl-filters-overlay .nfl-filters-close,
+.nhl-filters-overlay .nfl-filters-reset {
+  border-color: #1c3a52;
+  background: #0b1424;
+  color: #9eb4c8;
+}
+.nhl-filters-overlay .nfl-filters-side { border: 0; }
+.nhl-filters-overlay .nfl-filter-row { border-bottom-color: #1c3a52; }
+.nhl-filters-overlay .nfl-filter-row-head,
+.nhl-filters-overlay .nfl-filters-head h2 { color: #f4f8ff; }
+.nhl-filters-overlay .nfl-filter-row-body select,
+.nhl-filters-overlay .nfl-filter-range-row input {
+  border-color: #1c3a52;
+  background: #0b1424;
+  color: #e7eef8;
+}
+.nhl-filters-overlay .nfl-filters-side button.active,
+.nhl-filters-overlay .nfl-filter-chip-row button.active,
+.nhl-filters-overlay .nfl-filters-apply {
+  color: #071018;
+  background: #8ecfff;
+  border-color: #8ecfff;
+}
+
 @media (--phone-board) {
   .nhl-root table.nhl-sharp-table[data-card-table] > tbody {
     grid-template-columns: repeat(2, minmax(0, 1fr));

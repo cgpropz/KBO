@@ -29,11 +29,19 @@ import { stampTipLanes, tipKeys, tipRowClass } from '../tipFirst'
 import { BoardLine, BoardSurface } from '../PropLineCard'
 import { initialBoardSort, rememberBoardSort } from '../boardSort'
 import { usePhoneBoard } from '../usePhoneBoard'
+import { NhlFiltersButton, NhlFiltersPanel } from './NhlBoardFilters.jsx'
+import {
+  DEFAULT_NHL_FILTERS,
+  NHL_PROP_TABS,
+  NHL_SORT_OPTIONS,
+  filterNhlRows,
+  nhlFiltersNarrowed,
+  nhlLineBounds,
+  nhlMatchupOptions,
+  nhlTeamOptions,
+} from './nhlBoardFilters.js'
 import { countedLines, lineClause } from '../lineCount'
 import { pickSide, sideClass, sideLetter } from '../pickSide.js'
-
-const TABS = ['All Props', 'Shots On Goal', 'Goalie Saves', 'Points', 'Power Play Points']
-const SORT_OPTIONS = ['CG Score', 'Hit Rate', 'Season', 'H2H', 'DVP']
 
 function formatValue(value) {
   const number = Number(value)
@@ -156,11 +164,19 @@ export default function NhlPropLines({ onSelectPlayer }) {
   const [loaded, setLoaded] = useState(false)
   const [loadAttempt, setLoadAttempt] = useState(0)
   const [tab, setTab] = useState('All Props')
-  const [sortBy, setSortBy] = useState(() => initialBoardSort('nhl', SORT_OPTIONS))
+  const [filtersOpen, setFiltersOpen] = useState(false)
+  const [filters, setFilters] = useState(() => ({
+    ...DEFAULT_NHL_FILTERS,
+    sortBy: initialBoardSort('nhl', NHL_SORT_OPTIONS),
+  }))
   const phone = usePhoneBoard()
-  const changeSort = (value) => {
-    setSortBy(value)
-    rememberBoardSort('nhl', value)
+  const updateFilter = (key, value) => {
+    setFilters((current) => ({ ...current, [key]: value }))
+    if (key === 'sortBy') rememberBoardSort('nhl', value)
+  }
+  const resetFilters = () => {
+    setFilters(DEFAULT_NHL_FILTERS)
+    rememberBoardSort('nhl', DEFAULT_NHL_FILTERS.sortBy)
   }
   const [lockedCount, setLockedCount] = useState(0)
   const [refreshing, setRefreshing] = useState(false)
@@ -214,19 +230,25 @@ export default function NhlPropLines({ onSelectPlayer }) {
     () => fetchNhlProjections({ showAllLines: true }),
   )
   const boardProjections = showAllLines && allPayload ? allPayload.projections : projections
-  const sortKey = SORT_OPTIONS.includes(sortBy) ? sortBy : 'CG Score'
+  const sortKey = NHL_SORT_OPTIONS.includes(filters.sortBy) ? filters.sortBy : 'CG Score'
+  const prepared = useMemo(
+    () => prepareBoardRows(boardProjections).filter((item) => lineMatchesStat(item.prop, item.line)),
+    [boardProjections],
+  )
   const rows = useMemo(() => {
     const rowKey = (item) => item.id || `${item.player}|${item.prop}|${item.line}`
-    const prepared = prepareBoardRows(boardProjections).filter((item) => lineMatchesStat(item.prop, item.line))
-    const shown = sortBoard(prepared.filter((item) => tab === 'All Props' || item.prop === tab), sortKey)
+    const shown = sortBoard(filterNhlRows(prepared, { propTab: tab, filters }), sortKey)
     if (sortKey !== 'CG Score') return shown
     return stampTipLanes(shown, tipKeys(sortBoard(prepared, 'CG Score'), rowKey), rowKey)
-  }, [boardProjections, tab, sortKey])
+  }, [prepared, tab, filters, sortKey])
+  const bounds = useMemo(() => nhlLineBounds(prepared), [prepared])
+  const teams = useMemo(() => nhlTeamOptions(prepared), [prepared])
+  const matchups = useMemo(() => nhlMatchupOptions(prepared), [prepared])
 
   return (
     <section className="nfl-lines-page">
       <div className="nfl-lines-tabs">
-        {TABS.map((name) => (
+        {NHL_PROP_TABS.map((name) => (
           <button key={name} className={name === tab ? 'active' : ''} onClick={() => setTab(name)}>{name}</button>
         ))}
       </div>
@@ -235,9 +257,10 @@ export default function NhlPropLines({ onSelectPlayer }) {
         <div className="nfl-lines-header-actions">
           <span>{hold ? 'lines' : countedLines(rows.length, { locked: showPaywall ? lockedCount : 0 })}</span>
           <ShowAllLinesToggle pressed={showAllLines} onChange={setShowAllLines} />
-          <select className="nhl-sort" value={sortKey} onChange={(event) => changeSort(event.target.value)} aria-label="Sort">
-            {SORT_OPTIONS.map((option) => <option key={option}>{option}</option>)}
+          <select className="nhl-sort" value={sortKey} onChange={(event) => updateFilter('sortBy', event.target.value)} aria-label="Sort">
+            {NHL_SORT_OPTIONS.map((option) => <option key={option}>{option}</option>)}
           </select>
+          <NhlFiltersButton open={filtersOpen} narrowed={nhlFiltersNarrowed(filters)} onOpen={() => setFiltersOpen(true)} />
         </div>
       </div>
       <TipLaneNote show={sortKey === 'CG Score' && rows.some((row) => row.tipLane)} />
@@ -250,7 +273,8 @@ export default function NhlPropLines({ onSelectPlayer }) {
           <BoardSkeleton />
         </div>
       )}
-      {!hold && !error && loaded && !rows.length && <div className="nfl-notice">No NHL prop lines are posted for tonight. Check back closer to puck drop.</div>}
+      {!hold && !error && loaded && !prepared.length && <div className="nfl-notice">No NHL prop lines are posted for tonight. Check back closer to puck drop.</div>}
+      {!hold && !error && loaded && !!prepared.length && !rows.length && <div className="nfl-notice">No lines match these filters.</div>}
       {!hold && !!rows.length && (
         <BoardSurface
           phone={phone}
@@ -278,6 +302,19 @@ export default function NhlPropLines({ onSelectPlayer }) {
         </BoardSurface>
       )}
       {showPaywall && lockedCount > 0 && <div className="nfl-notice">Free preview: {lockedCount} more {lineClause(lockedCount)} locked.</div>}
+      <NhlFiltersPanel
+        open={filtersOpen}
+        onClose={() => setFiltersOpen(false)}
+        filters={filters}
+        updateFilter={updateFilter}
+        resetFilters={resetFilters}
+        propTab={tab}
+        setPropTab={setTab}
+        lineBounds={bounds}
+        teams={teams}
+        matchups={matchups}
+        resultCount={rows.length}
+      />
     </section>
   )
 }

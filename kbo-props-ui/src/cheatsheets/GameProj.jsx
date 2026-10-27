@@ -79,7 +79,12 @@ function GameBoard({ games, selectedId, sort, onSort, onSelect }) {
           {games.map((game) => {
             const selected = game.id === selectedId
             return (
-              <tr key={game.id} className={selected ? 'on' : ''} data-testid={`cheatsheet-game-${game.id}`}>
+              <tr
+                key={game.id}
+                className={selected ? 'on' : ''}
+                data-testid={`cheatsheet-game-${game.id}`}
+                onClick={() => onSelect(game.id)}
+              >
                 <td>
                   <button
                     type="button"

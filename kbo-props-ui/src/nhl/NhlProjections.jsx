@@ -9,6 +9,18 @@ import { useMemberBoardPhase } from '../useMemberBoardPhase'
 import { useFullBoardRefresh } from '../useFullBoardRefresh'
 import BoardStatus from '../BoardStatus'
 import { sortBoard } from './NhlPropLines'
+import { initialBoardSort, rememberBoardSort } from '../boardSort'
+import { NhlFiltersButton, NhlFiltersPanel } from './NhlBoardFilters.jsx'
+import {
+  DEFAULT_NHL_FILTERS,
+  NHL_PROP_TABS,
+  NHL_SORT_OPTIONS,
+  filterNhlRows,
+  nhlFiltersNarrowed,
+  nhlLineBounds,
+  nhlMatchupOptions,
+  nhlTeamOptions,
+} from './nhlBoardFilters.js'
 import { fitImage } from '../fitImage.js'
 import { teamLogoUrl } from './nhlTeams'
 import { opponentLabel } from '../cardMark'
@@ -20,7 +32,10 @@ import { pickSide, sideClass } from '../pickSide.js'
 import { ChartDateRow } from '../MiniHitBars'
 import { tailChartBars } from '../chartLabels'
 
-const TABS = ['ALL', 'Shots On Goal', 'Goalie Saves', 'Points', 'Power Play Points']
+function chipLabel(name) {
+  if (name === 'All Props') return 'ALL'
+  return name.split(' ')[0]
+}
 
 function formatValue(value) {
   const number = Number(value)
@@ -91,8 +106,21 @@ export default function NhlProjections({ onSelectPlayer }) {
   const [updatedAt, setUpdatedAt] = useState(null)
   const [showingPreview, setShowingPreview] = useState(false)
   const [refreshing, setRefreshing] = useState(false)
-  const [tab, setTab] = useState('ALL')
+  const [tab, setTab] = useState('All Props')
   const [query, setQuery] = useState('')
+  const [filtersOpen, setFiltersOpen] = useState(false)
+  const [filters, setFilters] = useState(() => ({
+    ...DEFAULT_NHL_FILTERS,
+    sortBy: initialBoardSort('nhl', NHL_SORT_OPTIONS),
+  }))
+  const updateFilter = (key, value) => {
+    setFilters((current) => ({ ...current, [key]: value }))
+    if (key === 'sortBy') rememberBoardSort('nhl', value)
+  }
+  const resetFilters = () => {
+    setFilters(DEFAULT_NHL_FILTERS)
+    rememberBoardSort('nhl', DEFAULT_NHL_FILTERS.sortBy)
+  }
 
   useEffect(() => {
     let active = true
@@ -128,11 +156,18 @@ export default function NhlProjections({ onSelectPlayer }) {
     () => fetchNhlProjections({ showAllLines: true }),
   )
   const boardProjections = showAllLines && allPayload ? allPayload.projections : projections
-  const rows = useMemo(() => {
-    const needle = query.trim().toLowerCase()
-    const filtered = prepareBoardRows(boardProjections).filter((item) => lineMatchesStat(item.prop, item.line) && (tab === 'ALL' || item.prop === tab) && (!needle || item.player.toLowerCase().includes(needle) || item.team.toLowerCase().includes(needle)))
-    return sortBoard(filtered, 'CG Score')
-  }, [boardProjections, tab, query])
+  const sortKey = NHL_SORT_OPTIONS.includes(filters.sortBy) ? filters.sortBy : 'CG Score'
+  const prepared = useMemo(
+    () => prepareBoardRows(boardProjections).filter((item) => lineMatchesStat(item.prop, item.line)),
+    [boardProjections],
+  )
+  const rows = useMemo(
+    () => sortBoard(filterNhlRows(prepared, { propTab: tab, filters, query }), sortKey),
+    [prepared, tab, filters, query, sortKey],
+  )
+  const bounds = useMemo(() => nhlLineBounds(prepared), [prepared])
+  const teams = useMemo(() => nhlTeamOptions(prepared), [prepared])
+  const matchups = useMemo(() => nhlMatchupOptions(prepared), [prepared])
 
   return (
     <section>
@@ -142,9 +177,22 @@ export default function NhlProjections({ onSelectPlayer }) {
       </div>
       <p className="nhl-note">One card per player and prop. Demon and goblin unders stay hidden until Show all lines. Probable goalies are tagged and sorted to the bottom. When a starter is confirmed, other goalie lines on that team come off the board.</p>
       <div className="nfl-edge-controls">
-        <label><span>PLAYER</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search" /></label>
+        <label><span>PLAYER</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search" aria-label="Search player" /></label>
+        <label>
+          <span>SORT</span>
+          <select aria-label="Sort" value={sortKey} onChange={(event) => updateFilter('sortBy', event.target.value)}>
+            {NHL_SORT_OPTIONS.map((option) => <option key={option}>{option}</option>)}
+          </select>
+        </label>
+        <label>
+          <span>MATCHUP</span>
+          <select aria-label="Matchup" value={filters.matchup} onChange={(event) => updateFilter('matchup', event.target.value)}>
+            {matchups.map((option) => <option key={option} value={option}>{option === 'All' ? 'All matchups' : option}</option>)}
+          </select>
+        </label>
+        <NhlFiltersButton open={filtersOpen} narrowed={nhlFiltersNarrowed(filters)} onOpen={() => setFiltersOpen(true)} />
         <div className="nfl-position-tabs">
-          {TABS.map((name) => <button key={name} className={name === tab ? 'active' : ''} onClick={() => setTab(name)}>{name === 'ALL' ? 'ALL' : name.split(' ')[0]}</button>)}
+          {NHL_PROP_TABS.map((name) => <button key={name} className={name === tab ? 'active' : ''} onClick={() => setTab(name)}>{chipLabel(name)}</button>)}
         </div>
       </div>
       {hold && <MemberBoardStatus phase={phase} onRetry={retryLoad} />}
@@ -158,6 +206,19 @@ export default function NhlProjections({ onSelectPlayer }) {
           {rows.map((item) => <Card key={item.id || `${item.player}-${item.prop}`} item={item} onSelectPlayer={onSelectPlayer} />)}
         </div>
       )}
+      <NhlFiltersPanel
+        open={filtersOpen}
+        onClose={() => setFiltersOpen(false)}
+        filters={filters}
+        updateFilter={updateFilter}
+        resetFilters={resetFilters}
+        propTab={tab}
+        setPropTab={setTab}
+        lineBounds={bounds}
+        teams={teams}
+        matchups={matchups}
+        resultCount={rows.length}
+      />
     </section>
   )
 }
