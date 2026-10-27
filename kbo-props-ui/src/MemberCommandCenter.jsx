@@ -27,6 +27,8 @@ import { playableSlate } from './playableRecord';
 import './MemberCommandCenter.css';
 import { DataCredit } from './SiteFooter'
 import { UNPROVEN_RANK_NOTE } from './freePreviewCopy';
+import { CgOverMarks } from './CgOverMarks';
+import { cgOverChrome } from './cgOverTreatment';
 import { displayScore, symmetricRankOn } from './sideRank';
 import ExpectedMinutesPill from './nba/ExpectedMinutesPill';
 import { expectedMinutesPill } from './nba/expectedMinutes';
@@ -458,8 +460,21 @@ export default function MemberCommandCenter({ onEnterSport, onNavigate }) {
   const pool = activeGame ? (state.all || []).filter((row) => sameMatchup(row, activeGame)) : (state.all || []);
   const symmetric = symmetricRankOn(selected.id);
   const ranked = topHubRows(pool, 7, { symmetric });
-  // NFL admin pilot: an under shows its same-side strength. Score unchanged.
-  const shownScore = (row) => Math.round(symmetric ? displayScore(row.score, row.side) : row.score);
+  // Rank stays on the raw CG Score (topHubRows above). The dampener, when its
+  // flag is on, changes only this printed number. NFL admin pilot: an under
+  // still shows its same-side strength.
+  const shownScore = (row) => {
+    const chrome = cgOverChrome(row.score, row.side);
+    const value = chrome.dampened ? chrome.display : (symmetric ? displayScore(row.score, row.side) : row.score);
+    return Math.round(value);
+  };
+  const scoreLabel = (row) => {
+    const chrome = cgOverChrome(row.score, row.side);
+    const sideNote = symmetric && row.side ? ` ${row.side === 'UNDER' ? 'Under' : 'Over'}` : '';
+    const badge = chrome.badge ? ' Unproven' : '';
+    const calibrated = chrome.dampened ? ' calibrated display' : '';
+    return `CG Score ${shownScore(row)}${sideNote}${badge}${calibrated}`;
+  };
   const top = ranked.slice(0, 3);
   const preview = ranked.slice(3, 7);
   const hitLeaders = topHitRateRows(pool, 10, now);
@@ -613,9 +628,10 @@ export default function MemberCommandCenter({ onEnterSport, onNavigate }) {
                       ) : sideStatusPill(row)}
                     </span>
                   </span>
-                  <span className="hub-score" aria-label={`CG Score ${shownScore(row)}${symmetric && row.side ? ` ${row.side === 'UNDER' ? 'Under' : 'Over'}` : ''}`}>
+                  <span className="hub-score" aria-label={scoreLabel(row)}>
                     <strong className="hub-num">{shownScore(row)}</strong>
                     <span>CG</span>
+                    <CgOverMarks score={row.score} side={row.side} />
                   </span>
                 </button>
               )) : (
@@ -648,7 +664,7 @@ export default function MemberCommandCenter({ onEnterSport, onNavigate }) {
                         <span className="hub-preview-meta">{sideLetter(row.side)}{sideLetter(row.side) ? ' ' : ''}{fmt(row.line)} {row.stat}</span>
                       )}
                     </span>
-                    <span className="hub-num hub-preview-score">{shownScore(row)}</span>
+                    <span className="hub-num hub-preview-score">{shownScore(row)}<CgOverMarks score={row.score} side={row.side} /></span>
                   </button>
                 )) : null}
                 {(selected.id !== 'nba' || nbaOpen) && state.status !== 'locked' && state.status !== 'closed' && (

@@ -1,0 +1,30 @@
+.cg-over-marks {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  margin-top: 2px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  line-height: 1.15;
+}
+
+.cg-score-unproven,
+.cg-score-calibrated {
+  font-style: normal;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  padding: 1px 4px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.cg-score-unproven {
+  color: #a1a1aa;
+  border: 1px solid rgba(161, 161, 170, 0.55);
+}
+
+.cg-score-calibrated {
+  color: #8aa399;
+  border: 1px solid rgba(138, 163, 153, 0.45);
+}

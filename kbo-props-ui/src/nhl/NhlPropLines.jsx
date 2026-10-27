@@ -117,6 +117,8 @@ function PropRow({ item, onSelectPlayer, open, onToggle, odds, oddsState, seen, 
         { className: `hit-rate-score ${sideClass(side)}`, node: (
           <CgScoreCell
             scoreText={score == null ? '—' : score.toFixed(1)}
+            score={score}
+            side={side}
             note={scoreNote}
             open={whyOpen}
             onToggle={() => setWhyOpen((current) => !current)}

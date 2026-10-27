@@ -197,7 +197,7 @@ function PropRow({ item, onSelectPlayer, locked, rowRef, open, onToggle, whyOpen
         ) },
         { className: 'hit-rate-chart', node: recent.length ? <MiniHitBars bars={Array.isArray(item.recentBars) ? item.recentBars : recent.map((value) => ({ value }))} line={item.line} chartClass="wnba-lines-chart" logoFor={wnbaLogoUrl} /> : <span style={{ fontSize: 11, color: '#4d635e' }}>No data</span> },
         { className: `hit-rate-score ${sideClass(side)}`, node: (
-          <CgScoreCell scoreText={item.score.toFixed(1)} note={locked ? null : scoreNote} open={whyOpen} onToggle={onWhy} />
+          <CgScoreCell scoreText={item.score.toFixed(1)} score={item.score} side={side} note={locked ? null : scoreNote} open={whyOpen} onToggle={onWhy} />
         ) },
         { className: 'hit-rate-col', node: <HitRateStrip pills={item.hitPills} /> },
         { className: 'hit-rate-extra', style: item.dvpRank ? { color: dvpColor(item.dvpRank) } : undefined, node: item.dvpRank ? ordinal(Math.round(item.dvpRank)) : '—' },
