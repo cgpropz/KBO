@@ -233,9 +233,11 @@ export function fetchApiDataset(ds, { devStaticPath, priority, player, fresh = f
   // Set the map before any await so the board and the nav search share one
   // request. A player page and a fresh retry stay on their own keys.
   const pending = loadDataset(ds, opts, Number.isFinite(timeoutMs));
-  inflight.set(key, pending);
-  pending.finally(() => {
-    if (inflight.get(key) === pending) inflight.delete(key);
+  // Return the finally-chain. A bare pending.finally() rejects on its own,
+  // and that rejection is uncaught when the caller only handles `pending`.
+  const tracked = pending.finally(() => {
+    if (inflight.get(key) === tracked) inflight.delete(key);
   });
-  return pending;
+  inflight.set(key, tracked);
+  return tracked;
 }
