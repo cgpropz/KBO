@@ -3,18 +3,340 @@
   "slate_date": "10/26/2026",
   "slate_date_iso": "2026-10-26",
   "timezone_basis": "ET",
-  "status": "partial",
-  "props_total": 48,
-  "props_graded": 18,
-  "hits": 0,
-  "misses": 0,
-  "pushes": 0,
+  "status": "complete",
+  "props_total": 50,
+  "props_graded": 50,
+  "hits": 16,
+  "misses": 16,
+  "pushes": 1,
   "dnps": 0,
-  "voids": 18,
+  "voids": 17,
   "missing": 0,
-  "hit_rate": null,
-  "hit_rate_pct": null,
-  "props_hit": [],
-  "props_miss": [],
-  "updated_at": "2026-10-26T17:30:18.365189+00:00"
+  "hit_rate": 0.5,
+  "hit_rate_pct": 50.0,
+  "props_hit": [
+    {
+      "player": "Adrian Kempe",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 2.5,
+      "actual": 7.0,
+      "side": "OVER",
+      "model_result": "HIT",
+      "team": "LAK"
+    },
+    {
+      "player": "Auston Matthews",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 3.5,
+      "actual": 1.0,
+      "side": "UNDER",
+      "model_result": "HIT",
+      "team": "TOR"
+    },
+    {
+      "player": "Brandt Clarke",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 2.0,
+      "actual": 1.0,
+      "side": "UNDER",
+      "model_result": "HIT",
+      "team": "LAK"
+    },
+    {
+      "player": "Darren Raddysh",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 2.5,
+      "actual": 3.0,
+      "side": "OVER",
+      "model_result": "HIT",
+      "team": "TOR"
+    },
+    {
+      "player": "Devin Cooley",
+      "stat": "Goalie Saves",
+      "odds_type": "standard",
+      "line": 26.5,
+      "actual": 26.0,
+      "side": "UNDER",
+      "model_result": "HIT",
+      "team": "CGY"
+    },
+    {
+      "player": "Emmitt Finnie",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 1.5,
+      "actual": 1.0,
+      "side": "UNDER",
+      "model_result": "HIT",
+      "team": "DET"
+    },
+    {
+      "player": "Erik Haula",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 1.5,
+      "actual": 0.0,
+      "side": "UNDER",
+      "model_result": "HIT",
+      "team": "LAK"
+    },
+    {
+      "player": "James Reimer",
+      "stat": "Goalie Saves",
+      "odds_type": "standard",
+      "line": 24.5,
+      "actual": 5.0,
+      "side": "UNDER",
+      "model_result": "HIT",
+      "team": "NYR"
+    },
+    {
+      "player": "Leon Draisaitl",
+      "stat": "Points",
+      "odds_type": "standard",
+      "line": 1.5,
+      "actual": 1.0,
+      "side": "UNDER",
+      "model_result": "HIT",
+      "team": "EDM"
+    },
+    {
+      "player": "Matvei Gridin",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 2.0,
+      "actual": 5.0,
+      "side": "OVER",
+      "model_result": "HIT",
+      "team": "CGY"
+    },
+    {
+      "player": "Mikael Backlund",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 2.5,
+      "actual": 1.0,
+      "side": "UNDER",
+      "model_result": "HIT",
+      "team": "CGY"
+    },
+    {
+      "player": "Sergei Bobrovsky",
+      "stat": "Goalie Saves",
+      "odds_type": "standard",
+      "line": 26.5,
+      "actual": 29.0,
+      "side": "OVER",
+      "model_result": "HIT",
+      "team": "TOR"
+    },
+    {
+      "player": "Tristan Jarry",
+      "stat": "Goalie Saves",
+      "odds_type": "standard",
+      "line": 25.5,
+      "actual": 25.0,
+      "side": "UNDER",
+      "model_result": "HIT",
+      "team": "EDM"
+    },
+    {
+      "player": "Viktor Arvidsson",
+      "stat": "Points",
+      "odds_type": "standard",
+      "line": 0.5,
+      "actual": 2.0,
+      "side": "OVER",
+      "model_result": "HIT",
+      "team": "DET"
+    },
+    {
+      "player": "Viktor Arvidsson",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 2.5,
+      "actual": 4.0,
+      "side": "OVER",
+      "model_result": "HIT",
+      "team": "DET"
+    },
+    {
+      "player": "Yegor Sharangovich",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 2.0,
+      "actual": 1.0,
+      "side": "UNDER",
+      "model_result": "HIT",
+      "team": "CGY"
+    }
+  ],
+  "props_miss": [
+    {
+      "player": "Alex Laferriere",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 2.5,
+      "actual": 2.0,
+      "side": "OVER",
+      "model_result": "MISS",
+      "team": "LAK"
+    },
+    {
+      "player": "Connor McDavid",
+      "stat": "Power Play Points",
+      "odds_type": "standard",
+      "line": 0.5,
+      "actual": 0.0,
+      "side": "OVER",
+      "model_result": "MISS",
+      "team": "EDM"
+    },
+    {
+      "player": "Darcy Kuemper",
+      "stat": "Goalie Saves",
+      "odds_type": "standard",
+      "line": 22.5,
+      "actual": 23.0,
+      "side": "UNDER",
+      "model_result": "MISS",
+      "team": "LAK"
+    },
+    {
+      "player": "Darren Raddysh",
+      "stat": "Points",
+      "odds_type": "standard",
+      "line": 0.5,
+      "actual": 0.0,
+      "side": "OVER",
+      "model_result": "MISS",
+      "team": "TOR"
+    },
+    {
+      "player": "Evan Bouchard",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 2.5,
+      "actual": 2.0,
+      "side": "OVER",
+      "model_result": "MISS",
+      "team": "EDM"
+    },
+    {
+      "player": "Gabe Perreault",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 1.5,
+      "actual": 1.0,
+      "side": "OVER",
+      "model_result": "MISS",
+      "team": "NYR"
+    },
+    {
+      "player": "Gavin McKenna",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 1.5,
+      "actual": 1.0,
+      "side": "OVER",
+      "model_result": "MISS",
+      "team": "TOR"
+    },
+    {
+      "player": "Kasperi Kapanen",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 1.5,
+      "actual": 1.0,
+      "side": "OVER",
+      "model_result": "MISS",
+      "team": "EDM"
+    },
+    {
+      "player": "Kirill Marchenko",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 2.5,
+      "actual": 1.0,
+      "side": "OVER",
+      "model_result": "MISS",
+      "team": "TOR"
+    },
+    {
+      "player": "Leon Draisaitl",
+      "stat": "Power Play Points",
+      "odds_type": "standard",
+      "line": 0.5,
+      "actual": 0.0,
+      "side": "OVER",
+      "model_result": "MISS",
+      "team": "EDM"
+    },
+    {
+      "player": "Matt Coronato",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 2.5,
+      "actual": 2.0,
+      "side": "OVER",
+      "model_result": "MISS",
+      "team": "CGY"
+    },
+    {
+      "player": "Moritz Seider",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 2.0,
+      "actual": 3.0,
+      "side": "UNDER",
+      "model_result": "MISS",
+      "team": "DET"
+    },
+    {
+      "player": "Ryan Nugent-Hopkins",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 2.0,
+      "actual": 5.0,
+      "side": "UNDER",
+      "model_result": "MISS",
+      "team": "EDM"
+    },
+    {
+      "player": "Simon Nemec",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 1.5,
+      "actual": 1.0,
+      "side": "OVER",
+      "model_result": "MISS",
+      "team": "CGY"
+    },
+    {
+      "player": "Vasily Podkolzin",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 2.0,
+      "actual": 1.0,
+      "side": "OVER",
+      "model_result": "MISS",
+      "team": "EDM"
+    },
+    {
+      "player": "Zayne Parekh",
+      "stat": "Shots On Goal",
+      "odds_type": "standard",
+      "line": 1.5,
+      "actual": 3.0,
+      "side": "UNDER",
+      "model_result": "MISS",
+      "team": "CGY"
+    }
+  ],
+  "updated_at": "2026-10-27T16:46:06.072875+00:00"
 }
