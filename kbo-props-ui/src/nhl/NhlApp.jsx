@@ -8,6 +8,7 @@ import { useNhlOpen } from '../useNhlOpen'
 import RouteFallback from '../RouteFallback'
 import { GuideNavLinks } from '../GuideLinks'
 import { viewOnLoad } from '../memberNav'
+import CheatsheetsNavLink from '../CheatsheetsNavLink'
 import '../nfl/nfl.css'
 import './nhl.css'
 
@@ -69,6 +70,7 @@ export default function NhlApp({ sport, setSport, onSlipSport, onNavigateHome, o
         <SportSwitcher sport={sport} setSport={setSport} />
         <PageMenu open={menu.open}>
           <div className="nfl-nav-links">
+            <CheatsheetsNavLink />
             {NAV.map((item) => (
               <button key={item.id} data-testid={item.id === 'slip' ? 'nhl-slip-nav' : `nhl-nav-${item.id}`} className={view === item.id ? 'active' : ''} onClick={() => setView(item.id)}>{item.label}</button>
             ))}

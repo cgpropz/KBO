@@ -7,6 +7,7 @@ import NflPlayerSearch from './NflPlayerSearch'
 import RouteFallback from '../RouteFallback'
 import { GuideNavLinks } from '../GuideLinks'
 import { viewOnLoad } from '../memberNav'
+import CheatsheetsNavLink from '../CheatsheetsNavLink'
 import './nfl.css'
 
 const NflGameMarkets = lazy(() => import('./NflGameMarkets'))
@@ -75,6 +76,7 @@ export default function NflApp({ sport, setSport, onSlipSport, onNavigateHome, o
         <SportSwitcher sport={sport} setSport={setSport} />
         <PageMenu open={menu.open}>
           <div className="nfl-nav-links">
+            <CheatsheetsNavLink />
             {NAV_ITEMS.map((item) => (
               <button key={item.id} data-testid={item.id === 'slip' ? 'nfl-slip-nav' : undefined} className={view === item.id ? 'active' : ''} onClick={() => setView(item.id)}>
                 {item.label}

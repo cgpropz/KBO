@@ -1,0 +1,291 @@
+{
+  "label": "EXAMPLE DATA \u2014 not live board",
+  "sport": "NFL",
+  "week": "Week 9",
+  "game": {
+    "away": {
+      "abbr": "DAL",
+      "name": "Cowboys",
+      "city": "Dallas",
+      "record": "5-2",
+      "color": "#003594"
+    },
+    "home": {
+      "abbr": "PHI",
+      "name": "Eagles",
+      "city": "Philadelphia",
+      "record": "6-1",
+      "color": "#004C54"
+    },
+    "kickoff": "Sun Nov 2 \u00b7 4:25 PM ET",
+    "venue": "Lincoln Financial Field",
+    "surface": "Outdoors"
+  },
+  "market": {
+    "books": 12,
+    "total": 47.5,
+    "spread": {
+      "favorite": "PHI",
+      "line": -3.5
+    },
+    "ml": {
+      "PHI": -165,
+      "DAL": 140
+    }
+  },
+  "cg": {
+    "away_score": 22.4,
+    "home_score": 28.1,
+    "total": 50.5,
+    "total_edge": 3.0,
+    "total_lean": "OVER",
+    "side_proj": -5.7,
+    "side_lean": "PHI",
+    "side_edge": 2.2,
+    "cg_score_total": 78.4,
+    "cg_score_spread": 71.2
+  },
+  "hit_rates_over": [
+    {
+      "window": "L3",
+      "rate": 67
+    },
+    {
+      "window": "L6",
+      "rate": 50
+    },
+    {
+      "window": "L12",
+      "rate": 58
+    },
+    {
+      "window": "Season",
+      "rate": 55
+    }
+  ],
+  "historical_totals": [
+    {
+      "label": "G1",
+      "total": 41
+    },
+    {
+      "label": "G2",
+      "total": 52
+    },
+    {
+      "label": "G3",
+      "total": 38
+    },
+    {
+      "label": "G4",
+      "total": 55
+    },
+    {
+      "label": "G5",
+      "total": 47
+    },
+    {
+      "label": "G6",
+      "total": 61
+    },
+    {
+      "label": "G7",
+      "total": 44
+    },
+    {
+      "label": "G8",
+      "total": 49
+    },
+    {
+      "label": "G9",
+      "total": 53
+    },
+    {
+      "label": "G10",
+      "total": 46
+    }
+  ],
+  "matchups": {
+    "dal_off_vs_phi_def": [
+      {
+        "stat": "Points / G",
+        "off": 27.1,
+        "off_rk": 6,
+        "def": 18.4,
+        "def_rk": 4,
+        "edge": 18
+      },
+      {
+        "stat": "Yards / G",
+        "off": 368,
+        "off_rk": 8,
+        "def": 312,
+        "def_rk": 7,
+        "edge": 9
+      },
+      {
+        "stat": "Success Rate",
+        "off": 47.2,
+        "off_rk": 9,
+        "def": 41.8,
+        "def_rk": 5,
+        "edge": 14
+      },
+      {
+        "stat": "EPA / Play",
+        "off": 0.08,
+        "off_rk": 7,
+        "def": -0.06,
+        "def_rk": 6,
+        "edge": 12
+      },
+      {
+        "stat": "Explosive %",
+        "off": 12.4,
+        "off_rk": 10,
+        "def": 9.1,
+        "def_rk": 8,
+        "edge": 7
+      }
+    ],
+    "phi_off_vs_dal_def": [
+      {
+        "stat": "Points / G",
+        "off": 29.6,
+        "off_rk": 3,
+        "def": 21.2,
+        "def_rk": 12,
+        "edge": 22
+      },
+      {
+        "stat": "Yards / G",
+        "off": 392,
+        "off_rk": 4,
+        "def": 341,
+        "def_rk": 15,
+        "edge": 16
+      },
+      {
+        "stat": "Success Rate",
+        "off": 49.8,
+        "off_rk": 4,
+        "def": 44.6,
+        "def_rk": 14,
+        "edge": 19
+      },
+      {
+        "stat": "EPA / Play",
+        "off": 0.14,
+        "off_rk": 2,
+        "def": 0.01,
+        "def_rk": 16,
+        "edge": 24
+      },
+      {
+        "stat": "Explosive %",
+        "off": 14.1,
+        "off_rk": 5,
+        "def": 11.8,
+        "def_rk": 18,
+        "edge": 11
+      }
+    ]
+  },
+  "pace": {
+    "secs_per_play": {
+      "DAL": 27.8,
+      "PHI": 26.4,
+      "league": 27.1
+    },
+    "plays_per_game": {
+      "DAL": 63.2,
+      "PHI": 66.8,
+      "league": 64.1
+    },
+    "expected_plays": 132.4,
+    "situational": [
+      {
+        "sit": "Leading",
+        "dal": 29.2,
+        "phi": 28.1
+      },
+      {
+        "sit": "Trailing",
+        "dal": 25.4,
+        "phi": 24.8
+      },
+      {
+        "sit": "Close",
+        "dal": 27.6,
+        "phi": 26.2
+      }
+    ]
+  },
+  "dvp": {
+    "labels": [
+      "vs QB",
+      "vs RB",
+      "vs WR",
+      "vs TE"
+    ],
+    "dal_def": [
+      42,
+      61,
+      38,
+      55
+    ],
+    "phi_def": [
+      71,
+      48,
+      64,
+      33
+    ]
+  },
+  "components": [
+    {
+      "name": "Adj Offense",
+      "away": 11.8,
+      "home": 14.6
+    },
+    {
+      "name": "Opp vs League",
+      "away": 6.2,
+      "home": 8.1
+    },
+    {
+      "name": "Pace",
+      "away": 2.4,
+      "home": 3.1
+    },
+    {
+      "name": "Home Field",
+      "away": 0.0,
+      "home": 2.3
+    },
+    {
+      "name": "Final",
+      "away": 22.4,
+      "home": 28.1
+    }
+  ],
+  "slate": [
+    {
+      "away": "SF",
+      "home": "ATL",
+      "kick": "1:00 PM",
+      "total": 46.5
+    },
+    {
+      "away": "CIN",
+      "home": "BAL",
+      "kick": "1:00 PM",
+      "total": 49.0
+    },
+    {
+      "away": "KC",
+      "home": "BUF",
+      "kick": "8:20 PM",
+      "total": 51.5
+    }
+  ]
+}

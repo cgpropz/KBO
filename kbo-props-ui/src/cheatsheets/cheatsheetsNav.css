@@ -1,0 +1,35 @@
+a.cheatsheets-nav {
+  text-decoration: none;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+:is(.nfl-nav-links, .kbo-app-nav-links, .wnba-nav-links) > a.cheatsheets-nav {
+  display: inline-flex;
+  align-items: center;
+  border: 0;
+  padding: 8px 10px;
+  color: #4ade80;
+  background: transparent;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.pl-nav a.cheatsheets-nav {
+  padding: 0;
+  color: var(--muted);
+  font-weight: 650;
+  font-size: 15px;
+}
+
+.hub-top > a.cheatsheets-nav {
+  border: 0;
+  border-radius: 999px;
+  padding: 8px 12px;
+  color: var(--hub-mint, #4ade80);
+  background: transparent;
+  font: 800 14px Inter, system-ui, sans-serif;
+}
+
+.pl-nav a.cheatsheets-nav:hover { color: #fff; }

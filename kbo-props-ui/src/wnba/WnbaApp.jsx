@@ -8,6 +8,7 @@ import Paywall from '../Paywall'
 import RouteFallback from '../RouteFallback'
 import { GuideNavLinks } from '../GuideLinks'
 import { viewOnLoad } from '../memberNav'
+import CheatsheetsNavLink from '../CheatsheetsNavLink'
 
 const Projections = lazy(() => import('./Projections'))
 const Dashboard = lazy(() => import('./Dashboard'))
@@ -92,6 +93,7 @@ export default function WnbaApp({ sport, setSport, onSlipSport, onNavigateKbo, e
         <SportSwitcher sport={sport} setSport={setSport} />
         <PageMenu open={menu.open}>
           <div className="wnba-nav-links">
+            <CheatsheetsNavLink />
             {NAV_ITEMS.map(item => (
               <button
                 key={item.id}
