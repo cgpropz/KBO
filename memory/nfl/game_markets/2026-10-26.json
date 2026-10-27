@@ -1,8 +1,8 @@
 {
-  "generated_at": "2026-10-26T23:49:10Z",
+  "generated_at": "2026-10-27T00:07:46Z",
   "provider": "unabated",
   "status": "ok",
-  "message": "Posted lines from Unabated for 1 of 1 games.",
+  "message": "Posted lines from Unabated for 14 of 14 games.",
   "model": {
     "id": "opponent_adjusted_market_scores",
     "proven": false,
@@ -11,46 +11,566 @@
   },
   "margin_sigma": 13.11,
   "margin_sigma_source": "model_margin_residual_sd",
-  "week": 7,
+  "week": 8,
   "games": [
     {
-      "id": "2026-10-26-DAL-PHI",
-      "week": 7,
-      "gameday": "2026-10-26",
-      "weekday": "Monday",
+      "id": "2026-10-29-CAR-GB",
+      "week": 8,
+      "gameday": "2026-10-29",
+      "weekday": "Thursday",
       "gametime": "20:15",
-      "awayTeam": "DAL",
-      "homeTeam": "PHI",
-      "awayName": "Cowboys",
-      "homeName": "Eagles",
-      "awayScore": 23,
+      "awayTeam": "CAR",
+      "homeTeam": "GB",
+      "awayName": "Panthers",
+      "homeName": "Packers",
+      "awayScore": 22,
       "homeScore": 23,
       "spread": {
-        "line": -4.0,
-        "projection": 0,
-        "edge": -4.0,
+        "line": 3.5,
+        "projection": 1,
+        "edge": 2.5,
         "book": "Circa",
         "price": -110,
         "priceSide": "away",
         "homePrice": -110
       },
       "total": {
-        "line": 43.5,
-        "projection": 46,
-        "edge": 2.5,
+        "line": 48.0,
+        "projection": 45,
+        "edge": -3.0,
         "book": "Circa",
         "overPrice": -110,
         "underPrice": -110
       },
       "moneyline": {
-        "line": 180,
-        "projection": 100,
-        "edge": 15.4,
+        "line": -195,
+        "projection": -113,
+        "edge": -11.3,
         "book": "Circa",
-        "fairProbability": 0.3459,
+        "fairProbability": 0.6429,
+        "modelProbability": 0.5304,
+        "homePrice": -195,
+        "awayPrice": 170
+      }
+    },
+    {
+      "id": "2026-11-01-ARI-DAL",
+      "week": 8,
+      "gameday": "2026-11-01",
+      "weekday": "Sunday",
+      "gametime": "13:00",
+      "awayTeam": "ARI",
+      "homeTeam": "DAL",
+      "awayName": "Cardinals",
+      "homeName": "Cowboys",
+      "awayScore": 24,
+      "homeScore": 26,
+      "spread": {
+        "line": 6.0,
+        "projection": 2,
+        "edge": 4.0,
+        "book": "BetOnline",
+        "price": -105,
+        "priceSide": "away",
+        "homePrice": -115
+      },
+      "total": {
+        "line": 54.5,
+        "projection": 50,
+        "edge": -4.5,
+        "book": "BetOnline",
+        "overPrice": -110,
+        "underPrice": -110
+      },
+      "moneyline": {
+        "line": -295,
+        "projection": -128,
+        "edge": -15.5,
+        "book": "BetMGM",
+        "fairProbability": 0.7154,
+        "modelProbability": 0.5606,
+        "homePrice": -295,
+        "awayPrice": 240
+      }
+    },
+    {
+      "id": "2026-11-01-ATL-TB",
+      "week": 8,
+      "gameday": "2026-11-01",
+      "weekday": "Sunday",
+      "gametime": "13:00",
+      "awayTeam": "ATL",
+      "homeTeam": "TB",
+      "awayName": "Falcons",
+      "homeName": "Buccaneers",
+      "awayScore": 23,
+      "homeScore": 23,
+      "spread": {
+        "line": 2.0,
+        "projection": 0,
+        "edge": 2.0,
+        "book": "Circa",
+        "price": -110,
+        "priceSide": "away",
+        "homePrice": -110
+      },
+      "total": {
+        "line": 46.5,
+        "projection": 46,
+        "edge": -0.5,
+        "book": "Circa",
+        "overPrice": -110,
+        "underPrice": -110
+      },
+      "moneyline": {
+        "line": -130,
+        "projection": 100,
+        "edge": -4.5,
+        "book": "Circa",
+        "fairProbability": 0.5452,
         "modelProbability": 0.5,
-        "homePrice": 180,
-        "awayPrice": -210
+        "homePrice": -130,
+        "awayPrice": 110
+      }
+    },
+    {
+      "id": "2026-11-01-BAL-BUF",
+      "week": 8,
+      "gameday": "2026-11-01",
+      "weekday": "Sunday",
+      "gametime": "13:00",
+      "awayTeam": "BAL",
+      "homeTeam": "BUF",
+      "awayName": "Ravens",
+      "homeName": "Bills",
+      "awayScore": 24,
+      "homeScore": 26,
+      "spread": {
+        "line": 3.5,
+        "projection": 2,
+        "edge": 1.5,
+        "book": "Circa",
+        "price": -120,
+        "priceSide": "away",
+        "homePrice": 100
+      },
+      "total": {
+        "line": 53.5,
+        "projection": 50,
+        "edge": -3.5,
+        "book": "Circa",
+        "overPrice": -110,
+        "underPrice": -110
+      },
+      "moneyline": {
+        "line": -180,
+        "projection": -128,
+        "edge": -5.5,
+        "book": "Circa",
+        "fairProbability": 0.6159,
+        "modelProbability": 0.5606,
+        "homePrice": -180,
+        "awayPrice": 155
+      }
+    },
+    {
+      "id": "2026-11-01-CLE-PIT",
+      "week": 8,
+      "gameday": "2026-11-01",
+      "weekday": "Sunday",
+      "gametime": "13:00",
+      "awayTeam": "CLE",
+      "homeTeam": "PIT",
+      "awayName": "Browns",
+      "homeName": "Steelers",
+      "awayScore": 20,
+      "homeScore": 21,
+      "spread": {
+        "line": 3.5,
+        "projection": 1,
+        "edge": 2.5,
+        "book": "Circa",
+        "price": -110,
+        "priceSide": "away",
+        "homePrice": -110
+      },
+      "total": {
+        "line": 40.0,
+        "projection": 41,
+        "edge": 1.0,
+        "book": "Circa",
+        "overPrice": -110,
+        "underPrice": -110
+      },
+      "moneyline": {
+        "line": -195,
+        "projection": -113,
+        "edge": -10.1,
+        "book": "Circa",
+        "fairProbability": 0.6314,
+        "modelProbability": 0.5304,
+        "homePrice": -195,
+        "awayPrice": 170
+      }
+    },
+    {
+      "id": "2026-11-01-IND-JAX",
+      "week": 8,
+      "gameday": "2026-11-01",
+      "weekday": "Sunday",
+      "gametime": "13:00",
+      "awayTeam": "IND",
+      "homeTeam": "JAX",
+      "awayName": "Colts",
+      "homeName": "Jaguars",
+      "awayScore": 21,
+      "homeScore": 26,
+      "spread": {
+        "line": 7.5,
+        "projection": 5,
+        "edge": 2.5,
+        "book": "Circa",
+        "price": -110,
+        "priceSide": "away",
+        "homePrice": -110
+      },
+      "total": {
+        "line": 46.5,
+        "projection": 47,
+        "edge": 0.5,
+        "book": "Circa",
+        "overPrice": -110,
+        "underPrice": -110
+      },
+      "moneyline": {
+        "line": -380,
+        "projection": -185,
+        "edge": -11.8,
+        "book": "Circa",
+        "fairProbability": 0.7661,
+        "modelProbability": 0.6486,
+        "homePrice": -380,
+        "awayPrice": 310
+      }
+    },
+    {
+      "id": "2026-11-01-LV-NYJ",
+      "week": 8,
+      "gameday": "2026-11-01",
+      "weekday": "Sunday",
+      "gametime": "13:00",
+      "awayTeam": "LV",
+      "homeTeam": "NYJ",
+      "awayName": "Raiders",
+      "homeName": "Jets",
+      "awayScore": 24,
+      "homeScore": 22,
+      "spread": {
+        "line": 0.0,
+        "projection": -2,
+        "edge": 2.0,
+        "book": "Circa",
+        "price": -110,
+        "priceSide": "away",
+        "homePrice": -110
+      },
+      "total": {
+        "line": 46.0,
+        "projection": 46,
+        "edge": 0.0,
+        "book": "Circa",
+        "overPrice": -110,
+        "underPrice": -110
+      },
+      "moneyline": {
+        "line": -110,
+        "projection": 128,
+        "edge": -5.7,
+        "book": "Bookmaker",
+        "fairProbability": 0.4968,
+        "modelProbability": 0.4394,
+        "homePrice": -110,
+        "awayPrice": -106
+      }
+    },
+    {
+      "id": "2026-11-01-MIN-DET",
+      "week": 8,
+      "gameday": "2026-11-01",
+      "weekday": "Sunday",
+      "gametime": "13:00",
+      "awayTeam": "MIN",
+      "homeTeam": "DET",
+      "awayName": "Vikings",
+      "homeName": "Lions",
+      "awayScore": 23,
+      "homeScore": 22,
+      "spread": {
+        "line": 3.5,
+        "projection": -1,
+        "edge": 4.5,
+        "book": "Circa",
+        "price": -115,
+        "priceSide": "away",
+        "homePrice": -105
+      },
+      "total": {
+        "line": 45.5,
+        "projection": 45,
+        "edge": -0.5,
+        "book": "Circa",
+        "overPrice": -110,
+        "underPrice": -110
+      },
+      "moneyline": {
+        "line": -180,
+        "projection": 113,
+        "edge": -15.5,
+        "book": "Circa",
+        "fairProbability": 0.6249,
+        "modelProbability": 0.4696,
+        "homePrice": -180,
+        "awayPrice": 155
+      }
+    },
+    {
+      "id": "2026-11-01-TEN-CIN",
+      "week": 8,
+      "gameday": "2026-11-01",
+      "weekday": "Sunday",
+      "gametime": "13:00",
+      "awayTeam": "TEN",
+      "homeTeam": "CIN",
+      "awayName": "Titans",
+      "homeName": "Bengals",
+      "awayScore": 20,
+      "homeScore": 25,
+      "spread": {
+        "line": 10.0,
+        "projection": 5,
+        "edge": 5.0,
+        "book": "Circa",
+        "price": -110,
+        "priceSide": "away",
+        "homePrice": -110
+      },
+      "total": {
+        "line": 46.5,
+        "projection": 45,
+        "edge": -1.5,
+        "book": "Circa",
+        "overPrice": -110,
+        "underPrice": -110
+      },
+      "moneyline": {
+        "line": -550,
+        "projection": -185,
+        "edge": -16.2,
+        "book": "Circa",
+        "fairProbability": 0.811,
+        "modelProbability": 0.6486,
+        "homePrice": -550,
+        "awayPrice": 425
+      }
+    },
+    {
+      "id": "2026-11-01-LAC-LA",
+      "week": 8,
+      "gameday": "2026-11-01",
+      "weekday": "Sunday",
+      "gametime": "16:05",
+      "awayTeam": "LAC",
+      "homeTeam": "LA",
+      "awayName": "Chargers",
+      "homeName": "Rams",
+      "awayScore": 21,
+      "homeScore": 24,
+      "spread": {
+        "line": 6.5,
+        "projection": 3,
+        "edge": 3.5,
+        "book": "Circa",
+        "price": -110,
+        "priceSide": "away",
+        "homePrice": -110
+      },
+      "total": {
+        "line": 44.0,
+        "projection": 45,
+        "edge": 1.0,
+        "book": "Circa",
+        "overPrice": -110,
+        "underPrice": -110
+      },
+      "moneyline": {
+        "line": -310,
+        "projection": -144,
+        "edge": -13.6,
+        "book": "Circa",
+        "fairProbability": 0.7269,
+        "modelProbability": 0.5905,
+        "homePrice": -310,
+        "awayPrice": 260
+      }
+    },
+    {
+      "id": "2026-11-01-KC-DEN",
+      "week": 8,
+      "gameday": "2026-11-01",
+      "weekday": "Sunday",
+      "gametime": "16:25",
+      "awayTeam": "KC",
+      "homeTeam": "DEN",
+      "awayName": "Chiefs",
+      "homeName": "Broncos",
+      "awayScore": 20,
+      "homeScore": 21,
+      "spread": {
+        "line": -1.0,
+        "projection": 1,
+        "edge": -2.0,
+        "book": "Circa",
+        "price": -110,
+        "priceSide": "away",
+        "homePrice": -110
+      },
+      "total": {
+        "line": 41.5,
+        "projection": 41,
+        "edge": -0.5,
+        "book": "Circa",
+        "overPrice": -110,
+        "underPrice": -110
+      },
+      "moneyline": {
+        "line": -105,
+        "projection": -113,
+        "edge": 4.6,
+        "book": "Circa",
+        "fairProbability": 0.484,
+        "modelProbability": 0.5304,
+        "homePrice": -105,
+        "awayPrice": -115
+      }
+    },
+    {
+      "id": "2026-11-01-NE-MIA",
+      "week": 8,
+      "gameday": "2026-11-01",
+      "weekday": "Sunday",
+      "gametime": "16:25",
+      "awayTeam": "NE",
+      "homeTeam": "MIA",
+      "awayName": "Patriots",
+      "homeName": "Dolphins",
+      "awayScore": 26,
+      "homeScore": 20,
+      "spread": {
+        "line": -7.5,
+        "projection": -6,
+        "edge": -1.5,
+        "book": "Circa",
+        "price": -105,
+        "priceSide": "away",
+        "homePrice": -115
+      },
+      "total": {
+        "line": 44.5,
+        "projection": 46,
+        "edge": 1.5,
+        "book": "Circa",
+        "overPrice": -110,
+        "underPrice": -110
+      },
+      "moneyline": {
+        "line": 300,
+        "projection": 209,
+        "edge": 7.9,
+        "book": "Circa",
+        "fairProbability": 0.2449,
+        "modelProbability": 0.3236,
+        "homePrice": 300,
+        "awayPrice": -365
+      }
+    },
+    {
+      "id": "2026-11-01-PHI-WAS",
+      "week": 8,
+      "gameday": "2026-11-01",
+      "weekday": "Sunday",
+      "gametime": "20:20",
+      "awayTeam": "PHI",
+      "homeTeam": "WAS",
+      "awayName": "Eagles",
+      "homeName": "Commanders",
+      "awayScore": 23,
+      "homeScore": 21,
+      "spread": {
+        "line": 3.5,
+        "projection": -2,
+        "edge": 5.5,
+        "book": "BetOnline",
+        "price": -105,
+        "priceSide": "away",
+        "homePrice": -115
+      },
+      "total": {
+        "line": 40.5,
+        "projection": 44,
+        "edge": 3.5,
+        "book": "BetOnline",
+        "overPrice": -110,
+        "underPrice": -110
+      },
+      "moneyline": {
+        "line": -200,
+        "projection": 128,
+        "edge": -19.0,
+        "book": "Bet365",
+        "fairProbability": 0.6291,
+        "modelProbability": 0.4394,
+        "homePrice": -200,
+        "awayPrice": 165
+      }
+    },
+    {
+      "id": "2026-11-02-CHI-SEA",
+      "week": 8,
+      "gameday": "2026-11-02",
+      "weekday": "Monday",
+      "gametime": "20:15",
+      "awayTeam": "CHI",
+      "homeTeam": "SEA",
+      "awayName": "Bears",
+      "homeName": "Seahawks",
+      "awayScore": 22,
+      "homeScore": 23,
+      "spread": {
+        "line": 3.0,
+        "projection": 1,
+        "edge": 2.0,
+        "book": "Circa",
+        "price": 100,
+        "priceSide": "away",
+        "homePrice": -120
+      },
+      "total": {
+        "line": 46.5,
+        "projection": 45,
+        "edge": -1.5,
+        "book": "Circa",
+        "overPrice": -110,
+        "underPrice": -110
+      },
+      "moneyline": {
+        "line": -170,
+        "projection": -113,
+        "edge": -8.0,
+        "book": "Circa",
+        "fairProbability": 0.6106,
+        "modelProbability": 0.5304,
+        "homePrice": -170,
+        "awayPrice": 150
       }
     }
   ]
