@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { lineResult, overHitRate } from '../hitRateStrip'
 import { lineMatchesStat } from '../cgScore'
 import { compareNflScores, nflCgScore, nflRawScore } from './nflLineFloors'
@@ -152,11 +152,11 @@ export default function NflProjections({ onSelectPlayer }) {
   const [showAllLines, setShowAllLines] = useState(false)
   const [showPassCluster, setShowPassCluster] = useState(passAllFromLocation)
   const reveal = showAllLines || showPassCluster
-  const altBoard = useNflReveal(
-    `${loadAttempt}:${updatedAt || ''}:${showAllLines ? 1 : 0}:${showPassCluster ? 1 : 0}`,
-    reveal,
+  const loadReveal = useCallback(
     () => fetchNflProjections({ showAllLines, showPassCluster }),
+    [showAllLines, showPassCluster],
   )
+  const altBoard = useNflReveal(reveal, loadReveal)
   const sourceProjections = reveal && altBoard ? altBoard.projections : projections
   const boardProjections = showPassCluster ? sourceProjections : sourceProjections.filter((item) => !isNflPassClusterRow(item))
   const matchupKey = (item) => [item.team, item.opponent].sort().join(' vs ')

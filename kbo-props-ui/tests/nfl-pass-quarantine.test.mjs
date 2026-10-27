@@ -148,3 +148,4 @@ test('pass=all on the data route restores the cluster for a paid NFL board only'
   assert.equal(shown.body.data.some((item) => item.player === 'Passer'), true)
   assert.equal(shown.body.data.find((item) => item.player === 'Passer').projection, 310)
 })
+

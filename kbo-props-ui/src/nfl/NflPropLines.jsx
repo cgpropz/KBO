@@ -1,6 +1,6 @@
 import MiniHitBars from '../MiniHitBars'
 import { tailChartBars } from '../chartLabels'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { fetchNflProjections, fetchNflSharpOdds } from './nflData'
 import { ShowAllLinesToggle } from '../ShowAllLinesToggle'
 import { isNflPassClusterRow, NFL_PASS_QUARANTINE_NOTE } from '../nflPassQuarantine'
@@ -340,11 +340,11 @@ export default function NflPropLines({ onSelectPlayer, onNavigatePricing }) {
   const [showAllLines, setShowAllLines] = useState(false)
   const [showPassCluster, setShowPassCluster] = useState(passAllFromLocation)
   const reveal = showAllLines || showPassCluster
-  const altBoard = useNflReveal(
-    `${loadAttempt}:${updatedAt || ''}:${showAllLines ? 1 : 0}:${showPassCluster ? 1 : 0}`,
-    reveal,
+  const loadReveal = useCallback(
     () => fetchNflProjections({ showAllLines, showPassCluster }),
+    [showAllLines, showPassCluster],
   )
+  const altBoard = useNflReveal(reveal, loadReveal)
   const sourceProjections = reveal && altBoard ? altBoard.projections : projections
   const boardProjections = showPassCluster ? sourceProjections : sourceProjections.filter((item) => !isNflPassClusterRow(item))
   const lineBounds = useMemo(() => {
