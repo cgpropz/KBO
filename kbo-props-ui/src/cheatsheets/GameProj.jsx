@@ -1,5 +1,5 @@
 import { STANDARD_LINE } from '../responsibleGambling'
-import example from './gameProjExample.json'
+import { filterRows, sortRows } from './boardControls.js'
 import {
   chartPct,
   edgeLabel,
@@ -11,12 +11,11 @@ import {
   signed1,
 } from './gameProjFormat.js'
 
-const EXAMPLE_LABEL = example.label
-
-function Banner() {
+function Banner({ label }) {
+  if (!label) return null
   return (
     <div className="gp-banner" role="status" data-testid="game-proj-banner">
-      {EXAMPLE_LABEL}
+      {label}
     </div>
   )
 }
@@ -46,77 +45,140 @@ function LayoutToggle({ layout, onLayout }) {
   )
 }
 
-function MarketStrip() {
-  const { market } = example
-  const books = market.books
+function SortHead({ scope, label, sortKey, sort, onSort, align = '' }) {
+  const on = sort?.key === sortKey
+  const arrow = on ? (sort.dir === 'asc' ? ' ↑' : ' ↓') : ''
+  return (
+    <th className={align} aria-sort={on ? (sort.dir === 'asc' ? 'ascending' : 'descending') : 'none'}>
+      <button
+        type="button"
+        className={on ? 'on' : ''}
+        data-testid={`sort-${scope}-${sortKey}`}
+        onClick={() => onSort(sortKey)}
+      >
+        {label}{arrow}
+      </button>
+    </th>
+  )
+}
+
+function GameBoard({ games, selectedId, sort, onSort, onSelect }) {
+  return (
+    <div className="gp-board" role="tablist" aria-label="Games" data-testid="cheatsheet-game-board">
+      <table className="gp-tbl gp-games">
+        <caption className="gp-sr">Games</caption>
+        <thead>
+          <tr>
+            <SortHead scope="games" label="Game" sortKey="game" sort={sort} onSort={onSort} />
+            <SortHead scope="games" label="Kick" sortKey="kick" sort={sort} onSort={onSort} />
+            <SortHead scope="games" label="Total" sortKey="total" sort={sort} onSort={onSort} align="r" />
+            <SortHead scope="games" label="Edge" sortKey="edge" sort={sort} onSort={onSort} align="r" />
+          </tr>
+        </thead>
+        <tbody>
+          {games.map((game) => {
+            const selected = game.id === selectedId
+            return (
+              <tr key={game.id} className={selected ? 'on' : ''} data-testid={`cheatsheet-game-${game.id}`}>
+                <td>
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={selected}
+                    className="gp-game-tab"
+                    onClick={() => onSelect(game.id)}
+                  >
+                    {game.game.away.abbr} @ {game.game.home.abbr}
+                  </button>
+                </td>
+                <td>{game.listKick}</td>
+                <td className="r">{format1(game.market.total)}</td>
+                <td className="r gp-hi">{signed1(game.cg.total_edge)}</td>
+              </tr>
+            )
+          })}
+        </tbody>
+      </table>
+      {!games.length && <p className="gp-empty" data-testid="cheatsheet-no-games">No games match this filter.</p>}
+    </div>
+  )
+}
+
+function MarketStrip({ game }) {
+  const { market } = game
+  const away = game.game.away.abbr
+  const home = game.game.home.abbr
+  const totalLabel = market.bookName ? `TOTAL · ${market.bookName}` : `TOTAL · ${market.books} BOOKS`
   return (
     <div className="gp-mkt">
       <div className="gp-mkt-b">
-        <div className="gp-mkt-l">TOTAL · {books} BOOKS</div>
+        <div className="gp-mkt-l">{totalLabel}</div>
         <div className="gp-mkt-v">{format1(market.total)}</div>
         <div className="gp-mkt-s">O/U market</div>
       </div>
       <div className="gp-mkt-b">
         <div className="gp-mkt-l">SPREAD</div>
-        <div className="gp-mkt-v">{market.spread.favorite} {format1(market.spread.line)}</div>
+        <div className="gp-mkt-v">{market.spread.favorite || '—'} {format1(market.spread.line)}</div>
         <div className="gp-mkt-s">favorite</div>
       </div>
       <div className="gp-mkt-b">
-        <div className="gp-mkt-l">ML {example.game.home.abbr}</div>
-        <div className="gp-mkt-v">{moneyline(market.ml.PHI)}</div>
+        <div className="gp-mkt-l">ML {home}</div>
+        <div className="gp-mkt-v">{moneyline(market.ml?.[home])}</div>
         <div className="gp-mkt-s">home</div>
       </div>
       <div className="gp-mkt-b">
-        <div className="gp-mkt-l">ML {example.game.away.abbr}</div>
-        <div className="gp-mkt-v">{moneyline(market.ml.DAL)}</div>
+        <div className="gp-mkt-l">ML {away}</div>
+        <div className="gp-mkt-v">{moneyline(market.ml?.[away])}</div>
         <div className="gp-mkt-s">away</div>
       </div>
     </div>
   )
 }
 
-function TotalsChart() {
-  const line = example.market.total
+function TotalsChart({ game, chart, example }) {
+  const line = game.market.total
+  const floor = chart?.floor
+  const span = chart?.span
   return (
     <div>
-      <div className="gp-chart" role="img" aria-label={`Example last 10 combined totals versus ${format1(line)}`}>
-        {example.historical_totals.map((bar) => (
+      <div className="gp-chart" role="img" aria-label={`Last 10 combined totals versus ${format1(line)}`}>
+        {game.historical_totals.map((bar, index) => (
           <div
-            key={bar.label}
+            key={`${bar.label}-${index}`}
             className={`gp-bar ${bar.total > line ? 'over' : 'under'}`}
-            style={{ '--h': `${chartPct(bar.total)}%` }}
+            style={{ '--h': `${chartPct(bar.total, floor, span)}%` }}
             title={String(bar.total)}
           />
         ))}
-        <div className="gp-oline" style={{ bottom: `${chartPct(line)}%` }}>
+        <div className="gp-oline" style={{ bottom: `${chartPct(line, floor, span)}%` }}>
           <em>O/U {format1(line)}</em>
         </div>
       </div>
       <div className="gp-chart-key">
         <span>older</span>
-        <span>EXAMPLE bars</span>
+        <span>{example ? 'EXAMPLE bars' : 'combined'}</span>
         <span>recent</span>
       </div>
     </div>
   )
 }
 
-function MatchupTable({ title, rows }) {
+function MatchupTable({ title, rows, sort, onSort, scope }) {
   return (
     <section className="gp-card">
       <p className="gp-kick">{title}</p>
       <table className="gp-tbl">
         <thead>
           <tr>
-            <th>Stat</th>
-            <th className="r">Off</th>
-            <th className="r">Def</th>
-            <th className="r">Edge</th>
+            <SortHead scope={scope} label="Stat" sortKey="stat" sort={sort} onSort={onSort} />
+            <SortHead scope={scope} label="Off" sortKey="off" sort={sort} onSort={onSort} align="r" />
+            <SortHead scope={scope} label="Def" sortKey="def" sort={sort} onSort={onSort} align="r" />
+            <SortHead scope={scope} label="Edge" sortKey="edge" sort={sort} onSort={onSort} align="r" />
           </tr>
         </thead>
         <tbody>
           {rows.map((row) => (
-            <tr key={row.stat}>
+            <tr key={row.stat} data-testid={`matchup-row-${scope}`}>
               <td>{row.stat}</td>
               <td className="r">{formatStat(row.stat, row.off)} <span className="gp-mid">#{row.off_rk}</span></td>
               <td className="r">{formatStat(row.stat, row.def)} <span className="gp-mid">#{row.def_rk}</span></td>
@@ -130,76 +192,77 @@ function MatchupTable({ title, rows }) {
           ))}
         </tbody>
       </table>
+      {!rows.length && <p className="gp-empty" data-testid={`matchup-empty-${scope}`}>No stats match this filter.</p>}
     </section>
   )
 }
 
-function Heat({ footer = null }) {
-  const labels = example.dvp.labels.map((label) => label.replace(/^vs\s+/i, ''))
+function Heat({ game, footer = null }) {
+  const { dvp } = game
+  const labels = dvp.labels
   return (
     <section className="gp-card">
       <p className="gp-kick">POSITIONAL HEAT · DvP</p>
-      <div className="gp-heat">
+      <div className="gp-heat" style={{ gridTemplateColumns: `56px repeat(${labels.length}, minmax(0, 1fr))` }}>
         <span />
         {labels.map((label) => <span key={label} className="gp-hd">{label}</span>)}
-        <span className="gp-lab">{example.game.away.abbr} DEF</span>
-        {example.dvp.dal_def.map((value, index) => (
-          <span key={`dal-${labels[index]}`} className="gp-cell" style={{ background: heatColor(value) }}>{value}</span>
+        <span className="gp-lab">{game.game.away.abbr} DEF</span>
+        {dvp.away_def.map((value, index) => (
+          <span key={`away-${labels[index]}`} className="gp-cell" style={{ background: heatColor(value) }}>{value}</span>
         ))}
-        <span className="gp-lab">{example.game.home.abbr} DEF</span>
-        {example.dvp.phi_def.map((value, index) => (
-          <span key={`phi-${labels[index]}`} className="gp-cell" style={{ background: heatColor(value) }}>{value}</span>
+        <span className="gp-lab">{game.game.home.abbr} DEF</span>
+        {dvp.home_def.map((value, index) => (
+          <span key={`home-${labels[index]}`} className="gp-cell" style={{ background: heatColor(value) }}>{value}</span>
         ))}
       </div>
-      <p className="gp-note">Higher = softer matchup for that position (EXAMPLE)</p>
+      <p className="gp-note">{dvp.note}</p>
       {footer}
     </section>
   )
 }
 
-function Pace() {
-  const { pace } = example
+function Pace({ game }) {
+  const { pace } = game
+  const away = game.game.away.abbr
+  const home = game.game.home.abbr
   return (
     <section className="gp-card">
       <p className="gp-kick">PACE & SITUATIONAL</p>
       <div className="gp-pace">
+        {pace.metrics.map((metric) => (
+          <div key={metric.label}>
+            <div className="gp-mid gp-mini">{metric.label}</div>
+            <div className="gp-mono">{away} {format1(metric.away)}</div>
+            <div className="gp-mono gp-hi">{home} {format1(metric.home)}</div>
+          </div>
+        ))}
         <div>
-          <div className="gp-mid gp-mini">SECS/PLAY</div>
-          <div className="gp-mono">{example.game.away.abbr} {format1(pace.secs_per_play.DAL)}</div>
-          <div className="gp-mono gp-hi">{example.game.home.abbr} {format1(pace.secs_per_play.PHI)}</div>
-        </div>
-        <div>
-          <div className="gp-mid gp-mini">PLAYS/G</div>
-          <div className="gp-mono">{example.game.away.abbr} {format1(pace.plays_per_game.DAL)}</div>
-          <div className="gp-mono gp-hi">{example.game.home.abbr} {format1(pace.plays_per_game.PHI)}</div>
-        </div>
-        <div>
-          <div className="gp-mid gp-mini">EXP PLAYS</div>
-          <div className="gp-exp">{format1(pace.expected_plays)}</div>
+          <div className="gp-mid gp-mini">{pace.expected_label}</div>
+          <div className="gp-exp">{format1(pace.expected)}</div>
         </div>
       </div>
-      <div className="gp-mid gp-mini gp-sit-k">SECS/PLAY BY SITUATION</div>
+      <div className="gp-mid gp-mini gp-sit-k">{pace.situational_label}</div>
       {pace.situational.map((row) => (
         <div key={row.sit} className="gp-sit">
           <span className="gp-mid">{row.sit}</span>
-          <span>{example.game.away.abbr} {format1(row.dal)}</span>
-          <span className="gp-hi">{example.game.home.abbr} {format1(row.phi)}</span>
+          <span>{away} {format1(row.away)}</span>
+          <span className="gp-hi">{home} {format1(row.home)}</span>
         </div>
       ))}
     </section>
   )
 }
 
-function Components() {
+function Components({ game }) {
   return (
     <section className="gp-card">
       <p className="gp-kick">MODEL COMPONENTS</p>
       <div className="gp-comp gp-comp-h">
         <span>DRIVER</span>
-        <span>{example.game.away.abbr}</span>
-        <span>{example.game.home.abbr}</span>
+        <span>{game.game.away.abbr}</span>
+        <span>{game.game.home.abbr}</span>
       </div>
-      {example.components.map((row) => (
+      {game.components.map((row) => (
         <div key={row.name} className={`gp-comp${row.name === 'Final' ? ' final' : ''}`}>
           <span>{row.name}</span>
           <span>{format1(row.away)}</span>
@@ -210,29 +273,11 @@ function Components() {
   )
 }
 
-function Slate({ stacked = false }) {
-  const { game } = example
-  return (
-    <div className={stacked ? '' : 'gp-card'}>
-      <p className="gp-kick">THIS WEEK · EXAMPLE</p>
-      <div className="gp-slate on">
-        <span>{game.away.abbr} @ {game.home.abbr}</span>
-        <span className="t">LIVE</span>
-      </div>
-      {example.slate.map((item) => (
-        <div key={`${item.away}-${item.home}`} className="gp-slate">
-          <span>{item.away} @ {item.home}</span>
-          <span className="t">{item.kick} · {format1(item.total)}</span>
-        </div>
-      ))}
-    </div>
-  )
-}
-
-function HitChips({ compact = false }) {
+function HitChips({ game, compact = false }) {
+  if (!game.hit_rates_over?.length) return null
   return (
     <div className={compact ? 'gp-hits' : 'gp-hr'}>
-      {example.hit_rates_over.map((item) => (
+      {game.hit_rates_over.map((item) => (
         <div key={item.window} className={compact ? 'gp-hb' : 'gp-hr-box'}>
           <div className="w">{item.window}</div>
           <div className="v" style={{ color: hitColor(item.rate) }}>{item.rate}%</div>
@@ -248,15 +293,35 @@ function TeamBadge({ abbr, color, small = false }) {
   )
 }
 
-function StandardView({ week, onLayout }) {
-  const { game, cg, market } = example
+function ScorePill({ value }) {
+  if (value == null) return null
+  return <span className="gp-score">CG {format1(value)}</span>
+}
+
+function DetailNote({ note }) {
+  if (!note) return null
+  return <p className="gp-note gp-detail-note" data-testid="cheatsheet-detail-note">{note}</p>
+}
+
+function rowsFor(game, side, rowMode, sort) {
+  const source = game?.matchups?.[side] || []
+  return sortRows(filterRows(source, rowMode), sort)
+}
+
+function StandardView({ pack, game, games, gameSort, onGameSort, onSelectGame, rowSort, onRowSort, rowMode, layout, onLayout }) {
+  const { cg, market } = game
+  const away = game.game.away.abbr
+  const home = game.game.home.abbr
+  const awayRows = rowsFor(game, 'away_off', rowMode, rowSort.away)
+  const homeRows = rowsFor(game, 'home_off', rowMode, rowSort.home)
+  const exampleTag = pack.example ? ' · EXAMPLE' : ''
   return (
     <div data-testid="game-proj-standard">
       <header className="gp-top">
         <div className="gp-wm">cg<span>propz</span></div>
         <span className="gp-pill mute">Game Proj</span>
-        <LayoutToggle layout="standard" onLayout={onLayout} />
-        <span className="gp-pill mute">{week}</span>
+        <LayoutToggle layout={layout} onLayout={onLayout} />
+        <span className="gp-pill mute">{pack.weekLabel}</span>
         <span className="gp-rg">{STANDARD_LINE}</span>
       </header>
       <div className="gp-hero">
@@ -264,13 +329,13 @@ function StandardView({ week, onLayout }) {
           <div className="gp-hero-head">
             <div>
               <p className="gp-kick">CG MODEL VS MARKET</p>
-              <h2 className="gp-match">{game.away.abbr} <span>@</span> {game.home.abbr}</h2>
+              <h2 className="gp-match" data-testid="game-proj-match">{away} <span>@</span> {home}</h2>
               <p className="gp-meta">
-                {game.away.record} · {game.home.record} · {game.kickoff} · {game.venue}
+                {[game.game.away.record, game.game.home.record, game.game.kickoff, game.game.venue].filter(Boolean).join(' · ')}
               </p>
             </div>
             <div className="gp-hero-flags">
-              <Banner />
+              <Banner label={pack.label} />
               <span className="gp-primary">PRIMARY VIEW</span>
             </div>
           </div>
@@ -280,8 +345,8 @@ function StandardView({ week, onLayout }) {
               <p className="big">{signed1(cg.total_edge)}</p>
               <p className="sub">CG <b>{format1(cg.total)}</b> vs market <b>{format1(market.total)}</b></p>
               <div className="row">
-                <span className="gp-pill over">{cg.total_lean}</span>
-                <span className="gp-score">CG {format1(cg.cg_score_total)}</span>
+                {cg.total_lean ? <span className="gp-pill over">{cg.total_lean}</span> : null}
+                <ScorePill value={cg.cg_score_total} />
               </div>
             </article>
             <article className="gp-edge">
@@ -289,63 +354,104 @@ function StandardView({ week, onLayout }) {
               <p className="big">{signed1(cg.side_edge)}</p>
               <p className="sub">CG <b>{cg.side_lean} {format1(cg.side_proj)}</b> vs mkt {market.spread.favorite} {format1(market.spread.line)}</p>
               <div className="row">
-                <span className="gp-pill side">{cg.side_lean} SIDE</span>
-                <span className="gp-score">CG {format1(cg.cg_score_spread)}</span>
+                {cg.side_lean ? <span className="gp-pill side">{cg.side_lean} SIDE</span> : null}
+                <ScorePill value={cg.cg_score_spread} />
               </div>
             </article>
           </div>
           <div className="gp-scoreline">
             <div className="team">
-              <TeamBadge abbr={game.away.abbr} color={game.away.color} />
+              <TeamBadge abbr={away} color={game.game.away.color} />
               <div className="n">{format1(cg.away_score)}</div>
-              <div className="gp-mid gp-mini">{game.away.abbr}</div>
+              <div className="gp-mid gp-mini">{away}</div>
             </div>
             <div className="vs">CG PROJ</div>
             <div className="team">
-              <TeamBadge abbr={game.home.abbr} color={game.home.color} />
+              <TeamBadge abbr={home} color={game.game.home.color} />
               <div className="n">{format1(cg.home_score)}</div>
-              <div className="gp-mid gp-mini">{game.home.abbr}</div>
+              <div className="gp-mid gp-mini">{home}</div>
             </div>
             <div className="tot">
               <p className="gp-kick">CG TOTAL</p>
               <div className="n">{format1(cg.total)}</div>
-              <HitChips compact />
+              <HitChips game={game} compact />
             </div>
           </div>
         </div>
         <div className="gp-rail">
           <section className="gp-card">
-            <p className="gp-kick">MARKET · {market.books} BOOKS · EXAMPLE</p>
-            <MarketStrip />
+            <p className="gp-kick">MARKET · {market.bookName || `${market.books} BOOKS`}{exampleTag}</p>
+            <MarketStrip game={game} />
           </section>
-          <section className="gp-card gp-grow">
-            <p className="gp-kick">LAST 10 COMBINED · VS {format1(market.total)}</p>
-            <TotalsChart />
-          </section>
+          {game.historical_totals?.length ? (
+            <section className="gp-card gp-grow">
+              <p className="gp-kick">LAST 10 COMBINED · VS {format1(market.total)}</p>
+              <TotalsChart game={game} chart={pack.chart} example={pack.example} />
+            </section>
+          ) : null}
           <section className="gp-card">
-            <Slate stacked />
+            <p className="gp-kick">THIS WEEK{exampleTag}</p>
+            <GameBoard games={games} selectedId={game.id} sort={gameSort} onSort={onGameSort} onSelect={onSelectGame} />
           </section>
         </div>
       </div>
       <div className="gp-sec-label">
-        <span className="gp-kick">MATCHUP DETAIL · EXAMPLE</span>
+        <span className="gp-kick">MATCHUP DETAIL{exampleTag}</span>
         <span className="line" />
       </div>
       <div className="gp-sec">
-        <MatchupTable title={`${game.away.abbr} OFF vs ${game.home.abbr} DEF`} rows={example.matchups.dal_off_vs_phi_def} />
-        <MatchupTable title={`${game.home.abbr} OFF vs ${game.away.abbr} DEF`} rows={example.matchups.phi_off_vs_dal_def} />
-        <Heat />
-        <Pace />
-        <Components />
+        {game.matchups ? (
+          <>
+            <MatchupTable title={`${away} OFF vs ${home} DEF`} rows={awayRows} sort={rowSort.away} onSort={(key) => onRowSort('away', key)} scope="away" />
+            <MatchupTable title={`${home} OFF vs ${away} DEF`} rows={homeRows} sort={rowSort.home} onSort={(key) => onRowSort('home', key)} scope="home" />
+          </>
+        ) : <DetailNote note={pack.detailNote} />}
+        {game.dvp ? <Heat game={game} /> : null}
+        {game.pace ? <Pace game={game} /> : null}
+        {game.components ? <Components game={game} /> : null}
       </div>
     </div>
   )
 }
 
-function ProView({ week, onLayout }) {
-  const { game, cg, market } = example
+function PanelTabs({ panel, onPanel, score }) {
+  const tabs = [
+    ['overview', 'Overview'],
+    ['totals', 'Totals'],
+    ['pace', 'Pace'],
+  ]
   return (
-    <div className="gp-pro" data-testid="game-proj-pro">
+    <div className="gp-tabs" role="tablist" aria-label="Projection section">
+      {tabs.map(([id, label]) => (
+        <button
+          key={id}
+          type="button"
+          role="tab"
+          aria-selected={panel === id}
+          className={panel === id ? 'on' : ''}
+          data-testid={`game-proj-panel-${id}`}
+          onClick={() => onPanel(id)}
+        >
+          {label}
+        </button>
+      ))}
+      <ScorePill value={score} />
+    </div>
+  )
+}
+
+function ProView({ pack, game, games, gameSort, onGameSort, onSelectGame, rowSort, onRowSort, rowMode, layout, onLayout, panel, onPanel }) {
+  const { cg, market } = game
+  const away = game.game.away
+  const home = game.game.home
+  const awayRows = rowsFor(game, 'away_off', rowMode, rowSort.away)
+  const homeRows = rowsFor(game, 'home_off', rowMode, rowSort.home)
+  const exampleTag = pack.example ? ' · EXAMPLE' : ''
+  const showOverview = panel === 'overview'
+  const showTotals = panel === 'overview' || panel === 'totals'
+  const showPace = panel === 'overview' || panel === 'pace'
+  return (
+    <div className="gp-pro" data-testid="game-proj-pro" data-panel={panel}>
       <header className="gp-top gp-top-pro">
         <div className="gp-wm">cg<span>propz</span></div>
         <div className="gp-fake-nav" aria-hidden="true">
@@ -355,104 +461,168 @@ function ProView({ week, onLayout }) {
           <span>Slip</span>
           <span>Results</span>
         </div>
-        <LayoutToggle layout="pro" onLayout={onLayout} />
+        <LayoutToggle layout={layout} onLayout={onLayout} />
         <span className="gp-pro-badge">PRO / ADVANCED</span>
-        <Banner />
-        <div className="gp-tabs" aria-hidden="true">
-          <span className="on">Overview</span>
-          <span>Totals</span>
-          <span>Pace</span>
-          <span className="gp-score">CG {format1(cg.cg_score_total)}</span>
-        </div>
+        <Banner label={pack.label} />
+        <PanelTabs panel={panel} onPanel={onPanel} score={cg.cg_score_total} />
       </header>
       <div className="gp-pro-body">
         <aside className="gp-pro-rail">
-          <Slate />
+          <p className="gp-kick">THIS WEEK{exampleTag}</p>
+          <GameBoard games={games} selectedId={game.id} sort={gameSort} onSort={onGameSort} onSelect={onSelectGame} />
         </aside>
         <div className="gp-pro-main">
           <section className="gp-card gp-pro-head">
             <div className="gp-club">
-              <TeamBadge abbr={game.away.abbr} color={game.away.color} small />
+              <TeamBadge abbr={away.abbr} color={away.color} small />
               <div>
-                <div className="gp-club-name">{game.away.city} {game.away.name}</div>
-                <div className="gp-mid gp-mono">{game.away.record}</div>
+                <div className="gp-club-name">{[away.city, away.name].filter(Boolean).join(' ')}</div>
+                {away.record ? <div className="gp-mid gp-mono">{away.record}</div> : null}
               </div>
             </div>
             <div className="gp-at">@</div>
             <div className="gp-club">
-              <TeamBadge abbr={game.home.abbr} color={game.home.color} small />
+              <TeamBadge abbr={home.abbr} color={home.color} small />
               <div>
-                <div className="gp-club-name">{game.home.city} {game.home.name}</div>
-                <div className="gp-mid gp-mono">{game.home.record}</div>
+                <div className="gp-club-name">{[home.city, home.name].filter(Boolean).join(' ')}</div>
+                {home.record ? <div className="gp-mid gp-mono">{home.record}</div> : null}
               </div>
             </div>
             <div className="gp-kickoff">
-              <p className="gp-kick">{week}</p>
-              <div className="gp-mono">{game.kickoff}</div>
-              <div className="gp-mid gp-mono">{game.venue} · {game.surface}</div>
+              <p className="gp-kick">{pack.weekLabel}</p>
+              <div className="gp-mono">{game.game.kickoff}</div>
+              {(game.game.venue || game.game.surface) ? (
+                <div className="gp-mid gp-mono">{[game.game.venue, game.game.surface].filter(Boolean).join(' · ')}</div>
+              ) : null}
             </div>
           </section>
-          <div className="gp-row1">
-            <section className="gp-card">
-              <MarketStrip />
-            </section>
-            <section className="gp-card">
-              <p className="gp-kick">CG FULL-GAME PROJECTION</p>
-              <div className="gp-proj">
-                <div className="team">
-                  <TeamBadge abbr={game.away.abbr} color={game.away.color} />
-                  <div className="n">{format1(cg.away_score)}</div>
-                  <div className="gp-mid gp-mini">{game.away.abbr} · {game.away.record}</div>
-                </div>
-                <div className="mid">
-                  <div className="tot">{format1(cg.total)}</div>
-                  <div className="gp-mid gp-mini">CG TOTAL</div>
-                  <div className="pills">
-                    <span className="gp-pill over">{cg.total_lean} {signed1(cg.total_edge)} vs {format1(market.total)}</span>
-                    <span className="gp-pill side">{cg.side_lean} SIDE</span>
+          {showTotals && (
+            <div className="gp-row1">
+              <section className="gp-card">
+                <MarketStrip game={game} />
+              </section>
+              <section className="gp-card">
+                <p className="gp-kick">CG FULL-GAME PROJECTION</p>
+                <div className="gp-proj">
+                  <div className="team">
+                    <TeamBadge abbr={away.abbr} color={away.color} />
+                    <div className="n">{format1(cg.away_score)}</div>
+                    <div className="gp-mid gp-mini">{away.abbr}{away.record ? ` · ${away.record}` : ''}</div>
+                  </div>
+                  <div className="mid">
+                    <div className="tot">{format1(cg.total)}</div>
+                    <div className="gp-mid gp-mini">CG TOTAL</div>
+                    <div className="pills">
+                      {cg.total_lean ? <span className="gp-pill over">{cg.total_lean} {signed1(cg.total_edge)} vs {format1(market.total)}</span> : null}
+                      {cg.side_lean ? <span className="gp-pill side">{cg.side_lean} SIDE</span> : null}
+                    </div>
+                  </div>
+                  <div className="team">
+                    <TeamBadge abbr={home.abbr} color={home.color} />
+                    <div className="n">{format1(cg.home_score)}</div>
+                    <div className="gp-mid gp-mini">{home.abbr}{home.record ? ` · ${home.record}` : ''}</div>
                   </div>
                 </div>
-                <div className="team">
-                  <TeamBadge abbr={game.home.abbr} color={game.home.color} />
-                  <div className="n">{format1(cg.home_score)}</div>
-                  <div className="gp-mid gp-mini">{game.home.abbr} · {game.home.record}</div>
+                <div className="gp-sidebar">
+                  <span>Side proj <b>{cg.side_lean} {format1(cg.side_proj)}</b> vs mkt {market.spread.favorite} {format1(market.spread.line)} · edge <b className="gp-hi">{signed1(cg.side_edge)}</b></span>
+                  <ScorePill value={cg.cg_score_total} />
                 </div>
-              </div>
-              <div className="gp-sidebar">
-                <span>Side proj <b>{cg.side_lean} {format1(cg.side_proj)}</b> vs mkt {market.spread.favorite} {format1(market.spread.line)} · edge <b className="gp-hi">{signed1(cg.side_edge)}</b></span>
-                <span className="gp-score">CG {format1(cg.cg_score_total)}</span>
-              </div>
-            </section>
-          </div>
-          <div className="gp-row2">
-            <section className="gp-card">
-              <p className="gp-kick">OVER HIT RATES · EXAMPLE</p>
-              <HitChips />
-            </section>
-            <section className="gp-card">
-              <p className="gp-kick">LAST 10 COMBINED · VS {format1(market.total)}</p>
-              <TotalsChart />
-            </section>
-            <Components />
-          </div>
-          <div className="gp-row3">
-            <MatchupTable title={`${game.away.abbr} OFF vs ${game.home.abbr} DEF`} rows={example.matchups.dal_off_vs_phi_def} />
-            <MatchupTable title={`${game.home.abbr} OFF vs ${game.away.abbr} DEF`} rows={example.matchups.phi_off_vs_dal_def} />
-            <Pace />
-            <Heat footer={<p className="gp-rg gp-rg-in">{STANDARD_LINE}</p>} />
-          </div>
+              </section>
+            </div>
+          )}
+          {showTotals && (game.hit_rates_over || game.historical_totals || game.components) && (
+            <div className="gp-row2">
+              {game.hit_rates_over ? (
+                <section className="gp-card">
+                  <p className="gp-kick">OVER HIT RATES{exampleTag}</p>
+                  <HitChips game={game} />
+                </section>
+              ) : null}
+              {game.historical_totals?.length ? (
+                <section className="gp-card">
+                  <p className="gp-kick">LAST 10 COMBINED · VS {format1(market.total)}</p>
+                  <TotalsChart game={game} chart={pack.chart} example={pack.example} />
+                </section>
+              ) : null}
+              {game.components ? <Components game={game} /> : null}
+            </div>
+          )}
+          {(showOverview || showPace) && (
+            <div className="gp-row3">
+              {showOverview && game.matchups ? (
+                <>
+                  <MatchupTable title={`${away.abbr} OFF vs ${home.abbr} DEF`} rows={awayRows} sort={rowSort.away} onSort={(key) => onRowSort('away', key)} scope="away" />
+                  <MatchupTable title={`${home.abbr} OFF vs ${away.abbr} DEF`} rows={homeRows} sort={rowSort.home} onSort={(key) => onRowSort('home', key)} scope="home" />
+                </>
+              ) : null}
+              {showPace && game.pace ? <Pace game={game} /> : null}
+              {showOverview && game.dvp ? <Heat game={game} footer={<p className="gp-rg gp-rg-in">{STANDARD_LINE}</p>} /> : null}
+              {!game.matchups && showOverview ? <DetailNote note={pack.detailNote} /> : null}
+              {panel === 'pace' && !game.pace ? <DetailNote note={pack.detailNote} /> : null}
+            </div>
+          )}
         </div>
       </div>
     </div>
   )
 }
 
-export default function GameProj({ week, layout, onLayout }) {
+function EmptyBoard() {
+  return (
+    <div className="gp-empty-board" data-testid="cheatsheet-empty-board">
+      <p>No games match this filter.</p>
+    </div>
+  )
+}
+
+export default function GameProj({
+  pack,
+  game,
+  games,
+  gameSort,
+  onGameSort,
+  onSelectGame,
+  rowSort,
+  onRowSort,
+  rowMode,
+  layout,
+  onLayout,
+  panel,
+  onPanel,
+}) {
   return (
     <div className={`gp${layout === 'pro' ? ' is-pro' : ''}`} data-layout={layout}>
-      {layout === 'pro'
-        ? <ProView week={week} onLayout={onLayout} />
-        : <StandardView week={week} onLayout={onLayout} />}
+      {!game ? <EmptyBoard /> : layout === 'pro' ? (
+        <ProView
+          pack={pack}
+          game={game}
+          games={games}
+          gameSort={gameSort}
+          onGameSort={onGameSort}
+          onSelectGame={onSelectGame}
+          rowSort={rowSort}
+          onRowSort={onRowSort}
+          rowMode={rowMode}
+          layout={layout}
+          onLayout={onLayout}
+          panel={panel}
+          onPanel={onPanel}
+        />
+      ) : (
+        <StandardView
+          pack={pack}
+          game={game}
+          games={games}
+          gameSort={gameSort}
+          onGameSort={onGameSort}
+          onSelectGame={onSelectGame}
+          rowSort={rowSort}
+          onRowSort={onRowSort}
+          rowMode={rowMode}
+          layout={layout}
+          onLayout={onLayout}
+        />
+      )}
     </div>
   )
 }

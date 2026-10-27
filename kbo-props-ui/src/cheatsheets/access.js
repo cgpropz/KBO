@@ -1,7 +1,7 @@
 import { canSeeCheatsheets } from '../entitlements.js'
 
-// Sport tabs on the cheatsheets page. Every tab uses the same EXAMPLE
-// DAL@PHI mock. There is no live game-projection feed to call.
+// Sport tabs on the cheatsheets page. NFL upgrades to nfl_game_markets when
+// a full (non-preview) snapshot loads. Other sports have no game-proj feed.
 export const CHEATSHEET_SPORTS = [
   { id: 'nfl', name: 'NFL' },
   { id: 'nba', name: 'NBA' },

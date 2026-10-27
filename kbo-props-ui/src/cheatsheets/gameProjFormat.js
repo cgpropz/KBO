@@ -28,7 +28,8 @@ export function formatStat(stat, value) {
   const n = Number(value)
   if (!Number.isFinite(n)) return '—'
   const label = String(stat || '')
-  if (label.startsWith('EPA')) return n.toFixed(2)
+  if (label.startsWith('OPS')) return n.toFixed(3)
+  if (/^(EPA|xG|WHIP|ERA)/.test(label)) return n.toFixed(2)
   if (label.startsWith('Yards')) return String(Math.round(n))
   return Number.isInteger(n) ? String(n) : n.toFixed(1)
 }
@@ -39,8 +40,8 @@ export function edgeLabel(edge) {
   return `${n > 0 ? '+' : ''}${n}%`
 }
 
-export function chartPct(value) {
-  const pct = ((Number(value) - CHART_FLOOR) / CHART_SPAN) * 100
+export function chartPct(value, floor = CHART_FLOOR, span = CHART_SPAN) {
+  const pct = ((Number(value) - floor) / span) * 100
   return Math.round(pct * 10) / 10
 }
 
