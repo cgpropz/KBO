@@ -1104,6 +1104,24 @@
     text-align: left;
   }
 
+  /* The name row is display:contents, so the tip badge is its own grid item.
+     Keep it in the name column. An auto column is wider than the 56px score
+     track and pushes the phone card past the viewport. */
+  .prop-line-card .tip-lane {
+    grid-column: 2;
+    grid-row: 1;
+    justify-self: end;
+    align-self: center;
+    margin-left: 0;
+    min-width: 0;
+    max-width: 100%;
+    z-index: 1;
+  }
+
+  .prop-line-card:is(.is-tip, .is-unproven) :is(.nfl-player-link, .wnba-player-link) {
+    padding-right: 6.5rem;
+  }
+
   .prop-line-card :is(.nfl-lines-tag, .wnba-lines-tag),
   .prop-line-card .kbo-player-cell small,
   .prop-line-card :is(.nhl-probable, .nhl-confirmed) {
