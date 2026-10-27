@@ -24,6 +24,8 @@ import { BoardSkeleton } from '../BootScreen.jsx'
 import { BoardLoadError } from '../BoardLoadError'
 import { opponentLabel } from '../cardMark'
 import { CardTeamLogo } from '../CardTeamLogo'
+import { LaneMark, TipLaneNote } from '../TipLane'
+import { stampTipLanes, tipKeys, tipRowClass } from '../tipFirst'
 import { BoardLine, BoardSurface } from '../PropLineCard'
 import { initialBoardSort, rememberBoardSort } from '../boardSort'
 import { usePhoneBoard } from '../usePhoneBoard'
@@ -95,7 +97,7 @@ function PropRow({ item, onSelectPlayer, open, onToggle, odds, oddsState, seen, 
   return (
     <BoardLine
       phone={phone}
-      className={`nfl-lines-row${open ? ' is-open' : ''}`}
+      className={tipRowClass(item.tipLane, `nfl-lines-row${open ? ' is-open' : ''}`)}
       onClick={onToggle}
       cells={[
         { node: (
@@ -103,6 +105,7 @@ function PropRow({ item, onSelectPlayer, open, onToggle, odds, oddsState, seen, 
             <div className="nfl-lines-avatar"><NhlAvatar item={item} initials={initials(item.player)} /></div>
             <div className="nfl-lines-info">
               <button className="nfl-player-link" onClick={(event) => { event.stopPropagation(); onSelectPlayer(item) }}>{item.player}</button>
+              <LaneMark lane={item.tipLane} />
               {item.goalieStatus === 'probable' && <span className="nhl-probable">PROBABLE</span>}
               {item.goalieStatus === 'confirmed' && <span className="nhl-confirmed">CONFIRMED</span>}
               <span className="nfl-lines-tag"><CardTeamLogo team={item.team} src={teamLogo ? fitImage(teamLogo, 16) : ''} />{item.team}, {item.position}</span>
@@ -213,8 +216,11 @@ export default function NhlPropLines({ onSelectPlayer }) {
   const boardProjections = showAllLines && allPayload ? allPayload.projections : projections
   const sortKey = SORT_OPTIONS.includes(sortBy) ? sortBy : 'CG Score'
   const rows = useMemo(() => {
-    const filtered = prepareBoardRows(boardProjections).filter((item) => lineMatchesStat(item.prop, item.line) && (tab === 'All Props' || item.prop === tab))
-    return sortBoard(filtered, sortKey)
+    const rowKey = (item) => item.id || `${item.player}|${item.prop}|${item.line}`
+    const prepared = prepareBoardRows(boardProjections).filter((item) => lineMatchesStat(item.prop, item.line))
+    const shown = sortBoard(prepared.filter((item) => tab === 'All Props' || item.prop === tab), sortKey)
+    if (sortKey !== 'CG Score') return shown
+    return stampTipLanes(shown, tipKeys(sortBoard(prepared, 'CG Score'), rowKey), rowKey)
   }, [boardProjections, tab, sortKey])
 
   return (
@@ -234,6 +240,7 @@ export default function NhlPropLines({ onSelectPlayer }) {
           </select>
         </div>
       </div>
+      <TipLaneNote show={sortKey === 'CG Score' && rows.some((row) => row.tipLane)} />
       {hold && <MemberBoardStatus phase={phase} onRetry={retryLoad} />}
       <QuietMemberPreview phase={phase} preview={memberPreview} refreshing={refreshing} onRetry={retryLoad} />
       {!hold && error && <BoardLoadError error={error} prefix="Unable to load the NHL board:" onRetry={retryLoad} />}

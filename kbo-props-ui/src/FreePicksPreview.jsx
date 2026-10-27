@@ -10,7 +10,8 @@ import { kboHitPills, l10Display, nflHitPills, nhlHitPills, wnbaHitPills, wnbaLo
 import { wnbaCgScore } from './wnba/wnbaScore';
 import { nflCgScore, nflHasProjection, nflRawScore } from './nfl/nflLineFloors';
 import { cgScore as plainCgScore } from './cgScore';
-import { freeTop3SectionState } from './freePreviewCopy';
+import { UNPROVEN_RANK_NOTE, freeTop3SectionState } from './freePreviewCopy';
+import { LaneMark } from './TipLane';
 import { selectFreeTop3 } from './freeTopPicks';
 import './FreeFunnel.css';
 import './bootScreen.css';
@@ -283,7 +284,7 @@ export default function FreePicksPreview({ onSignUp, onOpenBoard, onSeePlans }) 
         ) : (
           <>
             <div className="ff-picks-meta">
-              <span>{activeBoard.emoji} {activeBoard.label} · PrizePicks board</span>
+              <span>Today&apos;s tip · {activeBoard.emoji} {activeBoard.label} · PrizePicks board</span>
               {updatedLabel(state.updatedAt) && <span>{updatedLabel(state.updatedAt)}</span>}
             </div>
             <ol className="ff-pick-list">
@@ -295,7 +296,7 @@ export default function FreePicksPreview({ onSignUp, onOpenBoard, onSeePlans }) 
                   <li key={`${row.player}-${row.stat}-${row.line}-${i}`} className="ff-pick">
                     <span className="ff-pick-rank">{i + 1}</span>
                     <div className="ff-pick-main">
-                      <strong>{row.player}</strong>
+                      <strong>{row.player}<LaneMark lane="tip" /></strong>
                       <small>{row.matchup}</small>
                     </div>
                     <div className="ff-pick-line">
@@ -313,6 +314,7 @@ export default function FreePicksPreview({ onSignUp, onOpenBoard, onSeePlans }) 
                 );
               })}
             </ol>
+            <p className="tip-lane-note" role="note">{UNPROVEN_RANK_NOTE}</p>
             {state.lockedCount > 0 && (
               <button className="ff-unlock" onClick={onSeePlans}>
                 <span aria-hidden="true">🔒</span>

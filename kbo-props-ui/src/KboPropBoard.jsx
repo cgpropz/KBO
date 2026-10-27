@@ -17,6 +17,8 @@ import { fitImage } from './fitImage.js'
 import { BoardLine, BoardSurface, LockedPlaceholder } from './PropLineCard'
 import { rememberBoardSort, withDefaultSort } from './boardSort'
 import { usePhoneBoard } from './usePhoneBoard'
+import { LaneMark, TipLaneNote } from './TipLane'
+import { stampTipLanes, tipKeys, tipRowClass } from './tipFirst'
 import { countedLines, lineWord } from './lineCount'
 import { MemberPreviewNotice } from './MemberPreviewNotice'
 import { QuietMemberPreview } from './QuietMemberPreview'
@@ -142,7 +144,7 @@ function Filters({ open, close, filters, setFilters, propTabs, propTab, setPropT
   )
 }
 
-function KboBoardRow({ card, prop, score, direction, hitPills, breakEvenWindows, showBreakEven, photo, locked, rowRef, onSelectPlayer, onExpand, phone }) {
+function KboBoardRow({ card, prop, score, direction, hitPills, breakEvenWindows, showBreakEven, photo, locked, rowRef, onSelectPlayer, onExpand, phone, tipLane }) {
   const [whyOpen, setWhyOpen] = useState(false)
   const sideMark = direction === 'over' ? 'O' : direction === 'under' ? 'U' : ''
   const scoreNote = buildCgScoreExplainer({
@@ -166,7 +168,7 @@ function KboBoardRow({ card, prop, score, direction, hitPills, breakEvenWindows,
   return (
     <BoardLine
       phone={phone}
-      className={locked ? 'locked' : undefined}
+      className={tipRowClass(tipLane, locked ? 'locked' : '')}
       rowRef={whyOpen ? undefined : rowRef}
       cells={[
         {
@@ -176,7 +178,7 @@ function KboBoardRow({ card, prop, score, direction, hitPills, breakEvenWindows,
             <div className="kbo-player-cell">
               <div className="kbo-avatar">{photo ? <img src={fitImage(photo, 42)} alt="" loading="lazy" /> : initials(card.name)}</div>
               <div>
-                <strong>{card.name}</strong>
+                <strong>{card.name}<LaneMark lane={tipLane} /></strong>
                 <small><CardTeamLogo team={card.team} src={kboLogoUrl(card.team)} />{card.team}, {card.type}</small>
                 <b className={direction}>{sideMark ? `${sideMark} ` : ''}{value(prop.line)} {prop.stat}</b>
               </div>
@@ -307,12 +309,16 @@ export default function KboPropBoard({ onNavigatePricing, onSelectPlayer }) {
       .filter(({ prop }) => Number(prop.hit_rate_l10 ?? 0) >= filters.minL10)
       .filter(({ score }) => filters.minScore === '' || (score != null && score >= minimumScore))
     const rank = (row) => (row.score == null || !Number.isFinite(row.score) ? -Infinity : row.score)
-    return visible.sort((left, right) => {
+    const sorted = visible.sort((left, right) => {
       if (filters.sortBy === 'L10 Hit Rate') return Number(right.prop.hit_rate_l10 ?? 0) - Number(left.prop.hit_rate_l10 ?? 0)
       if (filters.sortBy === 'Full Hit Rate') return Number(right.prop.hit_rate_all ?? 0) - Number(left.prop.hit_rate_all ?? 0)
       if (filters.sortBy === 'Player Name') return left.card.name.localeCompare(right.card.name)
       return rank(right) - rank(left)
     })
+    if (filters.sortBy !== 'CG Score') return sorted
+    const kboKey = (row) => `${row.card?.name}|${row.prop?.stat}|${row.prop?.line}|${row.prop?.odds_type || ''}`
+    const ranked = [...allRows].sort((left, right) => rank(right) - rank(left))
+    return stampTipLanes(sorted, tipKeys(ranked, kboKey), kboKey)
   }, [allRows, filters, propTab])
 
   const boardEmpty = !!snapshot && !allRows.length
@@ -343,6 +349,7 @@ export default function KboPropBoard({ onNavigatePricing, onSelectPlayer }) {
         <div><p>KBO / PRIZEPICKS</p><h1>Prop Lines</h1><BoardStatus sport="kbo" updatedAt={updatedAt} /></div>
         {!hold && !!snapshot && <div className="kbo-header-actions">{!boardEmpty && <span>{countedLines(rows.length, { locked: showPaywall ? lockedCount : 0 })} · sorted by {filters.sortBy}</span>}<ShowAllLinesToggle pressed={showAllLines} onChange={setShowAllLines} />{!boardEmpty && <button onClick={() => setFiltersOpen(true)}><FilterIcon /> Filters</button>}</div>}
       </section>
+      <TipLaneNote show={filters.sortBy === 'CG Score' && rows.some((row) => row.tipLane)} />
       {hold && <MemberBoardStatus phase={phase} onRetry={retryLoad} className="kbo-notice" />}
       <QuietMemberPreview phase={phase} preview={memberPreview} refreshing={refreshing} onRetry={retryLoad} className="kbo-notice" />
       {!hold && error && <BoardLoadError className="kbo-notice" error={error} onRetry={retryLoad} />}
@@ -371,7 +378,7 @@ export default function KboPropBoard({ onNavigatePricing, onSelectPlayer }) {
             </div>
           )}
         >
-          {rows.map(({ card, prop, score, direction, hitPills, breakEvenWindows }, index) => (
+          {rows.map(({ card, prop, score, direction, hitPills, breakEvenWindows, tipLane }, index) => (
             <KboBoardRow
               key={`${card.name}-${prop.stat}-${prop.line}-${prop.odds_type}-${index}`}
               card={card}
@@ -387,6 +394,7 @@ export default function KboPropBoard({ onNavigatePricing, onSelectPlayer }) {
               onSelectPlayer={onSelectPlayer}
               onExpand={() => setWhyRevision((current) => current + 1)}
               phone={phone}
+              tipLane={tipLane}
             />
           ))}
           {Array.from({ length: placeholderCount }, (_, index) => (

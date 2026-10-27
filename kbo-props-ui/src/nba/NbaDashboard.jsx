@@ -10,6 +10,8 @@ import { CgScoreCell, CgScoreNote } from '../CgScoreExplainer'
 import { BoardLine, BoardSurface, LockedPlaceholder } from '../PropLineCard'
 import { rememberBoardSort, withDefaultSort } from '../boardSort'
 import { usePhoneBoard } from '../usePhoneBoard'
+import { LaneMark, TipLaneNote } from '../TipLane'
+import { stampTipLanes, tipKeys, tipRowClass } from '../tipFirst'
 import { countedLines, lineWord } from '../lineCount'
 import { MemberPreviewNotice } from '../MemberPreviewNotice'
 import { QuietMemberPreview } from '../QuietMemberPreview'
@@ -116,7 +118,7 @@ function PropRow({ item, onSelectPlayer, locked, rowRef, whyOpen, onWhy, phone }
   return (
     <BoardLine
       phone={phone}
-      className={`wnba-lines-row${locked ? ' locked' : ''}`}
+      className={tipRowClass(item.tipLane, `wnba-lines-row${locked ? ' locked' : ''}`)}
       rowRef={whyOpen ? undefined : rowRef}
       cells={[
         { node: (
@@ -128,6 +130,7 @@ function PropRow({ item, onSelectPlayer, locked, rowRef, whyOpen, onWhy, phone }
             </div>
             <div className="wnba-lines-info">
               <button className="wnba-player-link" onClick={() => !locked && onSelectPlayer?.(item.player)}>{item.player}</button>
+              <LaneMark lane={item.tipLane} />
               <span className="wnba-lines-tag"><CardTeamLogo team={item.team} src={nbaLogoUrl(item.team) ? fitImage(nbaLogoUrl(item.team), 16) : ''} />{item.team}{item.position ? `, ${item.position}` : ''}</span>
               <div className={`wnba-lines-line ${sideClass(item.side)}${minutesPill ? ' has-min-pill' : ''}`}>
                 {minutesPill ? <><span className="nba-line-text">{lineLabel}</span><ExpectedMinutesPill minutes={item.avgMins} /></> : lineLabel}
@@ -432,10 +435,12 @@ export default function NbaDashboard({ onSelectPlayer, onNavigate, onNavigatePri
     return { min: Math.floor(Math.min(...lines) * 10) / 10, max: Math.ceil(Math.max(...lines) * 10) / 10 }
   }, [allRows])
 
-  const rows = useMemo(
-    () => filterAndSortRows(allRows, propTab, filters),
-    [allRows, propTab, filters],
-  )
+  const rows = useMemo(() => {
+    const sorted = filterAndSortRows(allRows, propTab, filters)
+    if (filters.sortBy !== 'CG Score') return sorted
+    const ranked = [...allRows].sort((a, b) => (b.score - a.score) || ((b._rawScore ?? 0) - (a._rawScore ?? 0)))
+    return stampTipLanes(sorted, tipKeys(ranked, (row) => row.id), (row) => row.id)
+  }, [allRows, propTab, filters])
 
   const insightLimit = isPaid ? 5 : FREE_ROW_LIMIT
 
@@ -509,6 +514,7 @@ export default function NbaDashboard({ onSelectPlayer, onNavigate, onNavigatePri
               <button className={`wnba-filters-btn${filtersOpen ? ' active' : ''}`} onClick={() => setFiltersOpen(true)}><FilterIcon /> Filters</button>
             </div>
           </div>
+          <TipLaneNote show={filters.sortBy === 'CG Score' && rows.some((row) => row.tipLane)} />
 
           {hold && <MemberBoardStatus phase={phase} onRetry={retryLoad} className="wnba-notice" />}
           <QuietMemberPreview phase={phase} preview={memberPreview} refreshing={refreshing} onRetry={retryLoad} className="wnba-notice" />

@@ -31,6 +31,8 @@ import { BoardLoadError } from '../BoardLoadError'
 import { countedLines, lineClause, lineWord } from '../lineCount'
 import { opponentLabel } from '../cardMark'
 import { CardTeamLogo } from '../CardTeamLogo'
+import { LaneMark, TipLaneNote } from '../TipLane'
+import { stampTipLanes, tipKeys, tipRowClass } from '../tipFirst'
 
 const FREE_ROW_LIMIT = 3
 
@@ -134,7 +136,7 @@ function PropRow({ item, onSelectPlayer, locked, rowRef, open, onToggle, whyOpen
   return (
     <BoardLine
       phone={phone}
-      className={`nfl-lines-row${locked ? ' locked' : ''}${open ? ' is-open' : ''}`}
+      className={tipRowClass(item.tipLane, `nfl-lines-row${locked ? ' locked' : ''}${open ? ' is-open' : ''}`)}
       rowRef={open || whyOpen ? undefined : rowRef}
       onClick={locked ? undefined : onToggle}
       cells={[
@@ -143,6 +145,7 @@ function PropRow({ item, onSelectPlayer, locked, rowRef, open, onToggle, whyOpen
             <div className="nfl-lines-avatar">{item.imageUrl ? <img src={fitImage(item.imageUrl, 42)} alt={item.player} width={42} height={42} loading="lazy" /> : initials(item.player)}</div>
             <div className="nfl-lines-info">
               <button className="nfl-player-link" onClick={(event) => { event.stopPropagation(); if (!locked) onSelectPlayer(item.player, item.prop) }}>{item.player}</button>
+              <LaneMark lane={item.tipLane} />
               <span className="nfl-lines-tag"><CardTeamLogo team={item.team} src={teamLogoUrl(item.team) ? fitImage(teamLogoUrl(item.team), 16) : ''} />{item.team}, {item.position}</span>
               <div className={`nfl-lines-line ${sideClass}`}>{side ? <b>{side === 'OVER' ? 'O' : 'U'}</b> : null} {formatValue(item.line)} {item.prop}</div>
             </div>
@@ -389,13 +392,17 @@ export default function NflPropLines({ onSelectPlayer, onNavigatePricing }) {
       })
 
     const symmetric = symmetricRankOn('nfl')
-    return filtered.sort((a, b) => {
-      if (filters.sortBy === 'CG Score') return symmetric ? compareSymmetric(a, b) : compareNflScores(a.score, a.rawScore, b.score, b.rawScore)
+    const byCg = (a, b) => (symmetric ? compareSymmetric(a, b) : compareNflScores(a.score, a.rawScore, b.score, b.rawScore))
+    const sorted = filtered.sort((a, b) => {
+      if (filters.sortBy === 'CG Score') return byCg(a, b)
       if (filters.sortBy === `${SEASON_LABEL} Hit Rate`) return (b.seasonHitRate ?? -1) - (a.seasonHitRate ?? -1)
       if (filters.sortBy === 'H2H Hit Rate') return (b.h2hHitRate ?? -1) - (a.h2hHitRate ?? -1)
       if (filters.sortBy === 'DVP Rank') return (b.dvpRank ?? 0) - (a.dvpRank ?? 0)
       return b.hitRate - a.hitRate
     })
+    if (filters.sortBy !== 'CG Score') return sorted
+    const ranked = [...withScore].sort(byCg)
+    return stampTipLanes(sorted, tipKeys(ranked, (item) => item.id), (item) => item.id)
   }, [boardProjections, propTab, filters])
 
   const paintCount = usePhonePaintCount(phone, rows.length)
@@ -433,6 +440,7 @@ export default function NflPropLines({ onSelectPlayer, onNavigatePricing }) {
           <button className={`nfl-filters-btn${filtersOpen ? ' active' : ''}`} onClick={() => setFiltersOpen(true)}><FilterIcon /> Filters</button>
         </div>
       </div>
+      <TipLaneNote show={filters.sortBy === 'CG Score' && rows.some((row) => row.tipLane)} />
       {hold && <MemberBoardStatus phase={phase} onRetry={retryLoad} />}
       <QuietMemberPreview phase={phase} preview={memberPreview} refreshing={refreshing} onRetry={retryLoad} />
       {!hold && error && <BoardLoadError error={error} prefix="Unable to load the NFL snapshot:" onRetry={retryLoad} />}

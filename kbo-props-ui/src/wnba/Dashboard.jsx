@@ -18,6 +18,8 @@ import { fitImage } from '../fitImage.js'
 import { BoardLine, BoardSurface, LockedPlaceholder } from '../PropLineCard'
 import { rememberBoardSort, withDefaultSort } from '../boardSort'
 import { usePhoneBoard } from '../usePhoneBoard'
+import { LaneMark, TipLaneNote } from '../TipLane'
+import { stampTipLanes, tipKeys, tipRowClass } from '../tipFirst'
 import { countedLines, lineWord } from '../lineCount'
 import { MemberPreviewNotice } from '../MemberPreviewNotice'
 import { QuietMemberPreview } from '../QuietMemberPreview'
@@ -176,7 +178,7 @@ function PropRow({ item, onSelectPlayer, locked, rowRef, open, onToggle, whyOpen
   return (
     <BoardLine
       phone={phone}
-      className={`wnba-lines-row${locked ? ' locked' : ''}${open ? ' is-open' : ''}`}
+      className={tipRowClass(item.tipLane, `wnba-lines-row${locked ? ' locked' : ''}${open ? ' is-open' : ''}`)}
       rowRef={open || whyOpen ? undefined : rowRef}
       onClick={locked ? undefined : onToggle}
       cells={[
@@ -189,6 +191,7 @@ function PropRow({ item, onSelectPlayer, locked, rowRef, open, onToggle, whyOpen
             </div>
             <div className="wnba-lines-info">
               <button className="wnba-player-link" onClick={(event) => { event.stopPropagation(); if (!locked) onSelectPlayer?.(item.player) }}>{item.player}</button>
+              <LaneMark lane={item.tipLane} />
               <span className="wnba-lines-tag"><CardTeamLogo team={item.team} src={wnbaLogoUrl(item.team) ? fitImage(wnbaLogoUrl(item.team), 16) : ''} />{item.team}{item.position ? `, ${item.position}` : ''}</span>
               <div className={`wnba-lines-line ${sideClass(side)}`}>{side ? <b>{sideLetter(side)}</b> : null} {formatValue(item.line)} {item.prop}</div>
             </div>
@@ -570,7 +573,10 @@ export default function Dashboard({ onSelectPlayer, onNavigate, onNavigatePricin
         return grade && grade[0] === filters.grade
       })
 
-    return sortWnbaRows(filtered, filters.sortBy, SEASON_LABEL)
+    const sorted = sortWnbaRows(filtered, filters.sortBy, SEASON_LABEL)
+    if (filters.sortBy !== 'CG Score') return sorted
+    const ranked = sortWnbaRows(allRows, 'CG Score', SEASON_LABEL)
+    return stampTipLanes(sorted, tipKeys(ranked, (row) => row.id), (row) => row.id)
   }, [allRows, propTab, filters])
 
   // ── Bonus insight panels (kept from the previous board) ──────────────────
@@ -646,6 +652,7 @@ export default function Dashboard({ onSelectPlayer, onNavigate, onNavigatePricin
               <button className={`wnba-filters-btn${filtersOpen ? ' active' : ''}`} onClick={() => setFiltersOpen(true)}><FilterIcon /> Filters</button>
             </div>
           </div>
+          <TipLaneNote show={filters.sortBy === 'CG Score' && rows.some((row) => row.tipLane)} />
 
           {hold && <MemberBoardStatus phase={phase} onRetry={retryLoad} className="wnba-notice" />}
           <QuietMemberPreview phase={phase} preview={memberPreview} refreshing={refreshing} onRetry={retryLoad} className="wnba-notice" />
