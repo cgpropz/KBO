@@ -21,6 +21,7 @@ import { whenVisibleOrIdle } from './whenVisibleOrIdle';
 import { rowStartMs } from './etStart';
 import { freeTopEmptyText, kboHoldMessage } from './freeTopEmpty';
 import { UNPROVEN_RANK_NOTE } from './freePreviewCopy';
+import CheatsheetsNavLink from './CheatsheetsNavLink';
 import LineEdgesModule from './LineEdgesModule';
 import PlayerMark from './PlayerMark';
 import { playerInitials } from './playerMark';
@@ -346,6 +347,7 @@ export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard, onSi
         <PageMenu open={menu.open}>
           <nav className="pl-nav" aria-label="Page">
             <a href="#boards" onClick={(event) => { event.preventDefault(); scrollTo('boards'); }}>Boards</a>
+            <CheatsheetsNavLink />
             <a href="/nba-player-props">NBA</a>
             <a href="#matchup" onClick={(event) => { event.preventDefault(); scrollTo('matchup'); }}>Matchup sheets</a>
             <a href="#free-top-3" onClick={(event) => { event.preventDefault(); scrollTo('free-top-3'); }}>Results</a>

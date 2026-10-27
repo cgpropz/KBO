@@ -7,6 +7,7 @@ import { PageMenu, PageMenuButton, usePageMenu } from '../PageMenu'
 import RouteFallback from '../RouteFallback'
 import { GuideNavLinks } from '../GuideLinks'
 import { viewOnLoad } from '../memberNav'
+import CheatsheetsNavLink from '../CheatsheetsNavLink'
 
 const NbaPlayers = lazy(() => import('./NbaPlayers'))
 const NbaTeams = lazy(() => import('./NbaTeams'))
@@ -101,6 +102,7 @@ export default function NbaApp({ sport, setSport, onSlipSport, onNavigateHome, o
         <SportSwitcher sport={sport} setSport={setSport} />
         <PageMenu open={menu.open}>
           <div className="wnba-nav-links">
+            <CheatsheetsNavLink />
             {NAV_ITEMS.map((item) => (
               <button
                 key={item.id}

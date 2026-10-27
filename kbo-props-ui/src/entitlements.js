@@ -84,6 +84,12 @@ export function canSeeNba(user) {
   return email === NBA_OWNER_EMAIL;
 }
 
+// Game Proj / Cheatsheets is an admin draft, not an All-Access feature.
+// Same account as the NBA owner gate. A paid tier does not unlock it.
+export function canSeeCheatsheets(user) {
+  return canSeeNba(user);
+}
+
 // Local screenshots only. Production builds set DEV to false, so this cannot
 // open the live tab or pretend to be a subscriber.
 const DEV_PREVIEW_TIERS = new Set([

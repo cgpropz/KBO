@@ -28,6 +28,7 @@ import './MemberCommandCenter.css';
 import { DataCredit } from './SiteFooter'
 import { UNPROVEN_RANK_NOTE } from './freePreviewCopy';
 import { displayScore, symmetricRankOn } from './sideRank';
+import CheatsheetsNavLink from './CheatsheetsNavLink';
 import ExpectedMinutesPill from './nba/ExpectedMinutesPill';
 import { expectedMinutesPill } from './nba/expectedMinutes';
 
@@ -501,6 +502,7 @@ export default function MemberCommandCenter({ onEnterSport, onNavigate }) {
     <div className="hub">
       <header className="hub-top">
         <button type="button" className="hub-brand" onClick={() => setPanel('today')}>cg<span>propz</span></button>
+        <CheatsheetsNavLink />
         <nav className="hub-nav" aria-label="Member">
           <button type="button" className={panel === 'today' ? 'is-active' : ''} onClick={() => setPanel('today')}>Today</button>
           <button type="button" onClick={() => onEnterSport(openSport, { view: 'board' })}>Boards</button>

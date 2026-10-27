@@ -8,6 +8,7 @@ import PlayerSearch from './PlayerSearch'
 import RouteFallback from './RouteFallback'
 import { GuideNavLinks } from './GuideLinks'
 import { viewOnLoad } from './memberNav'
+import CheatsheetsNavLink from './CheatsheetsNavLink'
 import './KboPropBoard.css'
 
 const KboPropBoard = lazy(() => import('./KboPropBoard'))
@@ -89,6 +90,7 @@ export default function KboApp({ sport, setSport, onSlipSport, onNavigateHome, i
         <SportSwitcher sport={sport} setSport={setSport} />
         <PageMenu open={menu.open}>
           <div className="kbo-app-nav-links">
+            <CheatsheetsNavLink />
             {NAV_ITEMS.map((item) => (
               <button key={item.id} data-testid={item.id === 'optimizer' ? 'kbo-slip-nav' : undefined} className={view === item.id ? 'active' : ''} onClick={() => setView(item.id)}>
                 {item.label}

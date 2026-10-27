@@ -6,6 +6,9 @@ import CheckoutSuccess from './CheckoutSuccess'
 import SiteFooter from './SiteFooter'
 import RouteFallback from './RouteFallback'
 import { accountFromSearch, slipLinkFromSearch, sportFromSearch } from './appSport'
+import { canSeeCheatsheets } from './entitlements'
+import { cheatsheetsGate, cheatsheetsRequested, stripCheatsheetsSearch } from './cheatsheets/access'
+import { signedInCanSeeCheatsheets } from './cheatsheets/sessionGate'
 import { slipTabSearch, sportTabSearch } from './memberNav'
 import { rememberMemberSport, resolveMemberSport, sportAfterNbaGate } from './memberSport'
 import { pauseTokenFromSearch } from './pauseWindow'
@@ -42,6 +45,7 @@ const WnbaApp = lazy(() => loadSport('wnba'))
 const NflApp = lazy(() => loadSport('nfl'))
 const NbaApp = lazy(() => loadSport('nba'))
 const NhlApp = lazy(() => loadSport('nhl'))
+const Cheatsheets = lazy(() => import('./cheatsheets/Cheatsheets'))
 
 function App() {
   const { user, tier, tierConfirmed, passwordRecovery, clearPasswordRecovery } = useAuth();
@@ -54,6 +58,9 @@ function App() {
     if (pauseTokenFromSearch(window.location.search) || accountFromSearch(window.location.search)) return 'pricing';
     return sportFromSearch(window.location.search) ? 'home' : 'hub';
   });
+  // Logged-out cheatsheets visits stay closed until getSession settles.
+  // A cached admin is allowed on the first paint; no effect setState.
+  const [cheatsheetSessionChecked, setCheatsheetSessionChecked] = useState(false);
   // Pre-login flow: marketing page first, then the login/signup form.
   // A pause email link must be opened by the matching signed-in member.
   const [publicView, setPublicView] = useState(() => {
@@ -111,6 +118,26 @@ function App() {
   useEffect(() => subscribeBoardRefreshing(setRefreshingBoard), []);
 
   useEffect(() => {
+    if (typeof window === 'undefined' || !cheatsheetsRequested(window.location.search)) return undefined;
+    const strip = () => {
+      const next = stripCheatsheetsSearch(window.location.search);
+      window.history.replaceState(null, '', `${window.location.pathname}${next}`);
+    };
+    if (canSeeCheatsheets(user)) return undefined;
+    if (user) {
+      strip();
+      return undefined;
+    }
+    let cancelled = false;
+    signedInCanSeeCheatsheets().then((allowed) => {
+      if (cancelled) return;
+      if (!allowed) strip();
+      setCheatsheetSessionChecked(true);
+    });
+    return () => { cancelled = true; };
+  }, [user]);
+
+  useEffect(() => {
     if (!previewNode) {
       document.documentElement.style.removeProperty('--ff-preview-offset');
       return undefined;
@@ -138,6 +165,26 @@ function App() {
         <Suspense fallback={<RouteFallback />}>
           <SetNewPassword onDone={clearPasswordRecovery} />
         </Suspense>
+        <SiteFooter />
+      </>
+    );
+  }
+
+  const cheatsheetGate = cheatsheetsGate({
+    search: typeof window === 'undefined' ? '' : window.location.search,
+    user,
+    sessionPending: !user && !cheatsheetSessionChecked,
+  });
+  if (cheatsheetGate === 'allow' || cheatsheetGate === 'wait') {
+    return (
+      <>
+        {cheatsheetGate === 'allow' ? (
+          <Suspense fallback={<RouteFallback />}>
+            <Cheatsheets />
+          </Suspense>
+        ) : (
+          <p role="status" style={{ margin: 0, padding: '48px 20px', textAlign: 'center', color: '#a1a1aa' }}>Checking access…</p>
+        )}
         <SiteFooter />
       </>
     );
