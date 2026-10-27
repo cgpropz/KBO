@@ -1,8 +1,10 @@
 import MiniHitBars from '../MiniHitBars'
 import { tailChartBars } from '../chartLabels'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { fetchNflProjections, fetchNflSharpOdds } from './nflData'
-import { ShowAllLinesToggle, useShowAllLines } from '../ShowAllLinesToggle'
+import { ShowAllLinesToggle } from '../ShowAllLinesToggle'
+import { isNflPassClusterRow, NFL_PASS_QUARANTINE_NOTE } from '../nflPassQuarantine'
+import { passAllFromLocation, useNflReveal } from './useNflReveal'
 import { MemberPreviewNotice } from '../MemberPreviewNotice'
 import { QuietMemberPreview } from '../QuietMemberPreview'
 import { MemberBoardStatus } from '../MemberBoardStatus'
@@ -144,7 +146,7 @@ function PropRow({ item, onSelectPlayer, locked, rowRef, open, onToggle, whyOpen
             <div className="nfl-lines-info">
               <button className="nfl-player-link" onClick={(event) => { event.stopPropagation(); if (!locked) onSelectPlayer(item.player, item.prop) }}>{item.player}</button>
               <span className="nfl-lines-tag"><CardTeamLogo team={item.team} src={teamLogoUrl(item.team) ? fitImage(teamLogoUrl(item.team), 16) : ''} />{item.team}, {item.position}</span>
-              <div className={`nfl-lines-line ${sideClass}`}>{side ? <b>{side === 'OVER' ? 'O' : 'U'}</b> : null} {formatValue(item.line)} {item.prop}</div>
+              <div className={`nfl-lines-line ${sideClass}`}>{side ? <b>{side === 'OVER' ? 'O' : 'U'}</b> : null} {formatValue(item.line)} {item.prop}{isNflPassClusterRow(item) ? <span className="nfl-unproven-tag">Unproven</span> : null}</div>
             </div>
             <OddsChevron open={open} player={item.player} onToggle={onToggle} disabled={locked} />
           </div>
@@ -335,11 +337,16 @@ export default function NflPropLines({ onSelectPlayer, onNavigatePricing }) {
     rememberBoardSort('nfl', DEFAULT_FILTERS.sortBy)
   }
 
-  const { showAllLines, setShowAllLines, allPayload } = useShowAllLines(
-    `${loadAttempt}:${updatedAt || ''}`,
-    () => fetchNflProjections({ showAllLines: true }),
+  const [showAllLines, setShowAllLines] = useState(false)
+  const [showPassCluster, setShowPassCluster] = useState(passAllFromLocation)
+  const reveal = showAllLines || showPassCluster
+  const loadReveal = useCallback(
+    () => fetchNflProjections({ showAllLines, showPassCluster }),
+    [showAllLines, showPassCluster],
   )
-  const boardProjections = showAllLines && allPayload ? allPayload.projections : projections
+  const altBoard = useNflReveal(reveal, loadReveal)
+  const sourceProjections = reveal && altBoard ? altBoard.projections : projections
+  const boardProjections = showPassCluster ? sourceProjections : sourceProjections.filter((item) => !isNflPassClusterRow(item))
   const lineBounds = useMemo(() => {
     const lines = boardProjections.map((item) => item.line).filter((value) => typeof value === 'number')
     if (!lines.length) return { min: 0, max: 0 }
@@ -430,9 +437,11 @@ export default function NflPropLines({ onSelectPlayer, onNavigatePricing }) {
         <div className="nfl-lines-header-actions">
           <span>{hold ? '' : `${countedLines(rows.length, { locked: showPaywall ? lockedCount : 0 })} · sorted by ${filters.sortBy}`}</span>
           <ShowAllLinesToggle pressed={showAllLines} onChange={setShowAllLines} />
+          <button type="button" className="show-all-lines" aria-pressed={showPassCluster} aria-label="Show quarantined pass props" onClick={() => setShowPassCluster((current) => !current)}>Show all</button>
           <button className={`nfl-filters-btn${filtersOpen ? ' active' : ''}`} onClick={() => setFiltersOpen(true)}><FilterIcon /> Filters</button>
         </div>
       </div>
+      <p className="nfl-pass-note" role="note">{NFL_PASS_QUARANTINE_NOTE}</p>
       {hold && <MemberBoardStatus phase={phase} onRetry={retryLoad} />}
       <QuietMemberPreview phase={phase} preview={memberPreview} refreshing={refreshing} onRetry={retryLoad} />
       {!hold && error && <BoardLoadError error={error} prefix="Unable to load the NFL snapshot:" onRetry={retryLoad} />}

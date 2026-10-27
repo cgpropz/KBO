@@ -354,7 +354,7 @@ export const SLIP_SPORTS = {
       chip('Rec', 'Rec', (row) => String(row.prop).startsWith('Rec') || row.prop === 'Receptions'),
     ],
     loadProps: async () => {
-      const snapshot = await fetchNflProjections()
+      const snapshot = await fetchNflProjections({ showPassCluster: true })
       return flatRows(snapshot.projections, NFL_SHORT, { sport: 'nfl' })
     },
   },

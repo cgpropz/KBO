@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { lineResult, overHitRate } from '../hitRateStrip'
 import { lineMatchesStat } from '../cgScore'
 import { compareNflScores, nflCgScore, nflRawScore } from './nflLineFloors'
@@ -6,7 +6,9 @@ import { nflBoardDvpRank, nflTodayPick } from './nflPlayerGames.js'
 import { compareSymmetric, displayScoreText, symmetricRankOn } from '../sideRank'
 import { cgSide } from '../cgScore'
 import { fetchNflProjections } from './nflData'
-import { ShowAllLinesToggle, useShowAllLines } from '../ShowAllLinesToggle'
+import { ShowAllLinesToggle } from '../ShowAllLinesToggle'
+import { isNflPassClusterRow, NFL_PASS_QUARANTINE_NOTE } from '../nflPassQuarantine'
+import { passAllFromLocation, useNflReveal } from './useNflReveal'
 import BoardStatus from '../BoardStatus'
 import { MemberPreviewNotice } from '../MemberPreviewNotice'
 import { QuietMemberPreview } from '../QuietMemberPreview'
@@ -80,7 +82,7 @@ function ProjectionCard({ item, onSelectPlayer }) {
         <div className="nfl-card-avatar">{item.imageUrl ? <img src={fitImage(item.imageUrl, 42)} alt={item.player} width={42} height={42} loading="lazy" /> : initials(item.player)}</div>
         <div><h2 className="nfl-player-link" onClick={() => onSelectPlayer(item.player, item.prop)}>{item.player}</h2><p><b>{item.position}</b><CardTeamLogo team={item.team} src={teamLogoUrl(item.team) ? fitImage(teamLogoUrl(item.team), 16) : ''} /><span>{item.team}</span>{item.opponent ? <em>{opponentLabel(item.opponent)}</em> : null}</p></div>
       </div>
-      <div className="nfl-card-prop">{item.prop}</div>
+      <div className="nfl-card-prop">{item.prop}{isNflPassClusterRow(item) ? <span className="nfl-unproven-tag">Unproven</span> : null}</div>
       <div className="nfl-card-metrics"><div><small>LINE</small><strong>{formatValue(item.line)}</strong></div><div><small>MODEL</small><strong>{formatValue(item.projection)}</strong></div><div><small>SCORE</small><strong className={sideClass}>{shownScore}</strong></div><div><small>DVP RANK</small>{shownDvp == null ? <strong className="neutral" data-testid="nfl-card-dvp">—</strong> : <strong className={item.dvpRatio >= 1 ? 'over' : 'under'} data-testid="nfl-card-dvp">{shownDvp}<i> /32</i></strong>}</div></div>
       <div className="nfl-card-meta"><div><small>SEASON AVG</small><strong>{seasonAvgText(item)}</strong></div><div><small>HIT RATE</small><strong>{l10?.rate == null ? '—' : `${l10.rate}%`}</strong></div><div><small>GAMES</small><strong>{l10?.games ?? 0}</strong></div></div>
       <div className="nfl-history-label"><span>LAST {recent.length} GAMES</span><span>{shown?.rate == null ? '—' : `${shown.rate}% OVER LINE`}</span></div>
@@ -147,11 +149,16 @@ export default function NflProjections({ onSelectPlayer }) {
     setLoadAttempt((current) => current + 1)
   }
 
-  const { showAllLines, setShowAllLines, allPayload } = useShowAllLines(
-    `${loadAttempt}:${updatedAt || ''}`,
-    () => fetchNflProjections({ showAllLines: true }),
+  const [showAllLines, setShowAllLines] = useState(false)
+  const [showPassCluster, setShowPassCluster] = useState(passAllFromLocation)
+  const reveal = showAllLines || showPassCluster
+  const loadReveal = useCallback(
+    () => fetchNflProjections({ showAllLines, showPassCluster }),
+    [showAllLines, showPassCluster],
   )
-  const boardProjections = showAllLines && allPayload ? allPayload.projections : projections
+  const altBoard = useNflReveal(reveal, loadReveal)
+  const sourceProjections = reveal && altBoard ? altBoard.projections : projections
+  const boardProjections = showPassCluster ? sourceProjections : sourceProjections.filter((item) => !isNflPassClusterRow(item))
   const matchupKey = (item) => [item.team, item.opponent].sort().join(' vs ')
   const props = useMemo(() => ['All props', ...new Set(boardProjections.map((item) => item.prop))].sort((a, b) => a === 'All props' ? -1 : a.localeCompare(b)), [boardProjections])
   const matchups = useMemo(() => ['All matchups', ...new Set(boardProjections.map(matchupKey))].sort((a, b) => a === 'All matchups' ? -1 : a.localeCompare(b)), [boardProjections])
@@ -173,9 +180,11 @@ export default function NflProjections({ onSelectPlayer }) {
         <div><p>NFL / PRIZEPICKS</p><h1>Edge Board</h1><BoardStatus sport="nfl" updatedAt={updatedAt} /></div>
         <div className="nfl-lines-header-actions">
           <ShowAllLinesToggle pressed={showAllLines} onChange={setShowAllLines} />
+          <button type="button" className="show-all-lines" aria-pressed={showPassCluster} aria-label="Show quarantined pass props" onClick={() => setShowPassCluster((current) => !current)}>Show all</button>
           <span>{rows.length} edges</span>
         </div>
       </div>
+      <p className="nfl-pass-note" role="note">{NFL_PASS_QUARANTINE_NOTE}</p>
       <section className="nfl-edge-controls" aria-label="NFL projection filters">
         <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search player..." />
         <label><span>SORT</span><select aria-label="Sort" value={sort} onChange={(event) => setSort(event.target.value)}><option>CG Score</option><option>Best hit rate</option></select></label>

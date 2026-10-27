@@ -1,6 +1,7 @@
 import { boundCg, cgScore, lineMatchesStat } from '../src/cgScore.js';
 import { kboRawRating, modelProjection as kboModelNumber, scoreFor as kboBoardScore } from '../src/kboBoardScore.js';
 import { nflCgScore, nflHasProjection, nflRawScore } from '../src/nfl/nflLineFloors.js';
+import { isNflPassClusterRow, withoutNflPassCluster } from '../src/nflPassQuarantine.js';
 import { NFL_FREE_PREVIEW_ENABLED } from '../src/nflPreviewFlag.js';
 import { NBA_FREE_PREVIEW_ENABLED } from '../src/nbaPreviewFlag.js';
 import { hasPostedProjection } from '../src/nba/nbaPostedProjection.js';
@@ -267,8 +268,12 @@ function nflPlayerKey(row, index) {
 // Free NFL board: each player's highest-scoring eligible prop, then the top 3
 // distinct players. Started games and unmatched yardage lines are not eligible.
 function previewNflProjections(payload) {
+  // Pass yards, attempts, completions, and pass+rush never take a free slot.
+  // The score on the row is unchanged; the row is just not eligible.
   const rows = (Array.isArray(payload) ? payload : []).filter((row) => (
-    lineMatchesStat(row?.prop ?? row?.stat, row?.line) && !gameAlreadyStarted(row)
+    !isNflPassClusterRow(row)
+    && lineMatchesStat(row?.prop ?? row?.stat, row?.line)
+    && !gameAlreadyStarted(row)
   ));
   const bestByPlayer = new Map();
   rows.forEach((item, index) => {
@@ -566,7 +571,11 @@ function topN(items, scoreFn, n = FREE_ROW_LIMIT, rawFn = null) {
 // this so its before/after list is the preview's list.
 export function selectFreeSharpOddsPreview(records, sport = 'nfl', options = {}) {
   if (sport !== 'nhl' && !NFL_FREE_PREVIEW_ENABLED) return [];
-  const rows = (Array.isArray(records) ? records : []).filter((row) => isShownBoardLine(row, options) && sharpOddsPreviewLine(row));
+  const rows = (Array.isArray(records) ? records : []).filter((row) => (
+    isShownBoardLine(row, options)
+    && sharpOddsPreviewLine(row)
+    && (sport !== 'nfl' || !isNflPassClusterRow(row))
+  ));
   const scoreFn = sport === 'nhl' ? nhlSharpScore : nflSharpScore;
   return topN(rows, scoreFn, FREE_ROW_LIMIT).map(({ item, score }) => ({
     player: item?.player || '',
@@ -608,6 +617,10 @@ function previewObjectList(key, scoreFn) {
 // NFL and NHL PP Odds. When every remaining row has already started, the
 // preview is empty on purpose. Tell the tab, and do not count those rows as
 // a locked upgrade.
+function previewNflSharpOdds(payload, opts) {
+  return previewSharpOdds(nflSharpScore)(withoutNflPassCluster('nfl_sharp_odds', payload), opts);
+}
+
 function previewSharpOdds(scoreFn) {
   const build = previewObjectList('records', scoreFn);
   return (payload, opts = {}) => {
@@ -897,7 +910,7 @@ export const DATASETS = {
     free: previewNflProjections,
   },
   nfl_lineups: { table: 'nfl_lineups', sport: 'nfl', free: previewList(() => 0) },
-  nfl_sharp_odds: { table: 'nfl_sharp_odds', sport: 'nfl', free: previewSharpOdds(nflSharpScore) },
+  nfl_sharp_odds: { table: 'nfl_sharp_odds', sport: 'nfl', free: previewNflSharpOdds },
   nfl_game_markets: { table: 'nfl_game_markets', sport: 'nfl', free: previewNflGameMarkets },
   correlations_nfl: { table: 'correlations_nfl', sport: 'nfl', free: previewCorrelations },
   // Opponent-adjusted defense vs position (nflverse play-by-play). Team-level
@@ -1082,7 +1095,7 @@ function attachLineEdges(ds, payload, shaped, now) {
 // Decide what the caller receives for one dataset snapshot.
 // alreadyStandard means the cached board was filtered once for this entry.
 // The hot path must not walk the rows again.
-export function shapeForTier(ds, payload, tier, { alreadyStandard = false, showAllLines = false, now = new Date() } = {}) {
+export function shapeForTier(ds, payload, tier, { alreadyStandard = false, showAllLines = false, showPassCluster = false, now = new Date() } = {}) {
   const spec = Object.hasOwn(DATASETS, ds) ? DATASETS[ds] : null;
   if (!spec) throw new Error(`Unknown dataset: ${ds}`);
   // Playable lines are applied before the trim on paid boards and, while
@@ -1099,6 +1112,13 @@ export function shapeForTier(ds, payload, tier, { alreadyStandard = false, showA
   // Only nhl_projections then drops Points overs under 0.69 and leaves
   // overs from 0.69 up to 0.78 on the board with rankEligible false.
   if (MEMBER_BOARD_DATASETS.has(ds)) payload = prepareMemberBoard(ds, payload, now);
+  // Line edges stay a gap list and can still name a pass prop. The board
+  // itself, and the free top 3 taken from it, leave the pass cluster off
+  // unless a paid caller asked to see those rows. Free callers never get
+  // them in the top 3. Scores on the rows are not rewritten.
+  const edgeSource = payload;
+  const revealPass = showPassCluster === true && paid;
+  if (!revealPass) payload = withoutNflPassCluster(ds, payload);
   if (paid || spec.free === FULL) {
     return { data: payload, preview: false, lockedCount: 0 };
   }
@@ -1116,5 +1136,5 @@ export function shapeForTier(ds, payload, tier, { alreadyStandard = false, showA
       preview: true,
       lockedCount: Math.max(0, countMemberBoardRows(ds, payload) - countMemberBoardRows(ds, preview.data)),
     };
-  return attachLineEdges(ds, payload, shaped, now);
+  return attachLineEdges(ds, edgeSource, shaped, now);
 }

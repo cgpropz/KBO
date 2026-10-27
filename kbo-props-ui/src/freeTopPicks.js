@@ -3,6 +3,7 @@
 // filter, so a started row does not take a slot that a live row should fill.
 
 import { gameAlreadyStarted } from './gameStarted.js'
+import { isNflPassClusterRow } from './nflPassQuarantine.js'
 import { pointsOverDisposition } from './nhl/pointsGate.js'
 import { compareSymmetric, rankable, symmetricRankOn } from './sideRank.js'
 
@@ -14,6 +15,7 @@ export function isLiveFreePick(row, sport, now = new Date()) {
   if (!row?.player || !row?.stat) return false
   if (!Number.isFinite(row.score) || row.score === -Infinity) return false
   if (row.rankEligible === false || row.removed === true) return false
+  if (sport === 'nfl' && isNflPassClusterRow(row)) return false
   if (pickHasStarted(row, now)) return false
   if (sport === 'nhl' && pointsOverDisposition({
     prop: row.stat,

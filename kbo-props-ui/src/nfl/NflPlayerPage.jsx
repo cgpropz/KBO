@@ -169,7 +169,7 @@ export default function NflPlayerPage({ player, prop, onBack }) {
 
   useEffect(() => {
     let active = true
-    fetchApiDataset('nfl_projections', { devStaticPath: 'nfl/projections.json', player })
+    fetchApiDataset('nfl_projections', { devStaticPath: 'nfl/projections.json', player, showPassCluster: true })
       .then((snapshot) => { if (!active) return; setProjections(Array.isArray(snapshot.data) ? snapshot.data : []); setLoaded(true) })
       .catch((loadError) => active && setError(loadError.message))
     return () => { active = false }
@@ -177,7 +177,7 @@ export default function NflPlayerPage({ player, prop, onBack }) {
 
   useEffect(() => {
     let active = true
-    fetchNflSharpOdds()
+    fetchNflSharpOdds({ showPassCluster: true })
       .then(({ records }) => { if (active) setOddsRecords(Array.isArray(records) ? records : []) })
       .catch(() => { if (active) { setOddsRecords([]); setOddsError(true) } })
     return () => { active = false }
