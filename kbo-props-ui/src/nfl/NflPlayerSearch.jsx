@@ -12,7 +12,7 @@ export default function NflPlayerSearch({ onSelect }) {
 
   useEffect(() => {
     let active = true
-    fetchNflProjections().then(({ projections }) => {
+    fetchNflProjections({ showPassCluster: true }).then(({ projections }) => {
       if (!active) return
       const seen = new Map()
       for (const item of projections || []) {

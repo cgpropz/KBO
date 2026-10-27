@@ -4,8 +4,8 @@ import { fetchApiDataset } from '../apiData'
  * NFL loaders. Data comes from the server-gated /api/data endpoint: paid tiers
  * get every row, free users get the top rows plus a locked-row count.
  */
-export async function fetchNflProjections({ showAllLines = false } = {}) {
-  const snapshot = await fetchApiDataset('nfl_projections', { devStaticPath: 'nfl/projections.json', showAllLines })
+export async function fetchNflProjections({ showAllLines = false, showPassCluster = false } = {}) {
+  const snapshot = await fetchApiDataset('nfl_projections', { devStaticPath: 'nfl/projections.json', showAllLines, showPassCluster })
   return {
     projections: Array.isArray(snapshot.data) ? snapshot.data : [],
     updatedAt: snapshot.updatedAt,
@@ -41,8 +41,8 @@ export async function fetchNflGameMarkets() {
   }
 }
 
-export async function fetchNflSharpOdds({ fresh = false, showAllLines = false } = {}) {
-  const snapshot = await fetchApiDataset('nfl_sharp_odds', { devStaticPath: 'nfl/sharp_odds.json', fresh, showAllLines })
+export async function fetchNflSharpOdds({ fresh = false, showAllLines = false, showPassCluster = false } = {}) {
+  const snapshot = await fetchApiDataset('nfl_sharp_odds', { devStaticPath: 'nfl/sharp_odds.json', fresh, showAllLines, showPassCluster })
   const payload = snapshot.data && typeof snapshot.data === 'object' && !Array.isArray(snapshot.data)
     ? snapshot.data
     : { records: Array.isArray(snapshot.data) ? snapshot.data : [], status: 'ok' }

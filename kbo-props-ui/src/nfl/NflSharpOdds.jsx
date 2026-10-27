@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { fetchNflSharpOdds } from './nflData'
-import { ShowAllLinesToggle, useShowAllLines } from '../ShowAllLinesToggle'
+import { ShowAllLinesToggle } from '../ShowAllLinesToggle'
+import { isNflPassClusterRow, NFL_PASS_QUARANTINE_NOTE } from '../nflPassQuarantine'
+import { passAllFromLocation, useNflReveal } from './useNflReveal'
 import { MemberBoardStatus } from '../MemberBoardStatus'
 import { QuietMemberPreview } from '../QuietMemberPreview'
 import { useMemberBoardPhase } from '../useMemberBoardPhase'
@@ -248,7 +250,7 @@ function SharpRow({ item, mode, baselineAmerican, onSelectPlayer, open, onToggle
           </div>
         </td>
         <td>
-          <div className={`nfl-lines-line ${side}`}><b>{label}</b> {formatValue(item.pp_line)} {item.prop}</div>
+          <div className={`nfl-lines-line ${side}`}><b>{label}</b> {formatValue(item.pp_line)} {item.prop}{isNflPassClusterRow(item) ? <span className="nfl-unproven-tag">Unproven</span> : null}</div>
           {item.line_match === 'nearest' && <div className="nfl-sharp-book">nearest {formatValue(item.matched_line)}</div>}
           {gap && <div className="nfl-sharp-book">{gap}</div>}
           {item.line_plus && (
@@ -374,11 +376,16 @@ export default function NflSharpOdds({ onSelectPlayer }) {
 
   const baseline = BASELINES[mode] || BASELINES.flex
 
-  const { showAllLines, setShowAllLines, allPayload } = useShowAllLines(
-    `${loadAttempt}:${payload?.generated_at || ''}`,
-    () => fetchNflSharpOdds({ showAllLines: true }),
+  const [showAllLines, setShowAllLines] = useState(false)
+  const [showPassCluster, setShowPassCluster] = useState(passAllFromLocation)
+  const reveal = showAllLines || showPassCluster
+  const altBoard = useNflReveal(
+    `${loadAttempt}:${payload?.generated_at || ''}:${showAllLines ? 1 : 0}:${showPassCluster ? 1 : 0}`,
+    reveal,
+    () => fetchNflSharpOdds({ showAllLines, showPassCluster }),
   )
-  const boardRecords = showAllLines && allPayload ? allPayload.records : records
+  const sourceRecords = reveal && altBoard ? altBoard.records : records
+  const boardRecords = showPassCluster ? sourceRecords : sourceRecords.filter((item) => !isNflPassClusterRow(item))
   const props = useMemo(() => {
     const present = new Set(boardRecords.map((item) => item.prop).filter(Boolean))
     const ordered = PROP_ORDER.filter((item) => present.has(item))
@@ -418,7 +425,7 @@ export default function NflSharpOdds({ onSelectPlayer }) {
     })
   }, [boardRecords, prop, matchup, side, query, sort, mode, plusOnly, showCg])
 
-  const activePayload = showAllLines && allPayload?.payload ? allPayload.payload : payload
+  const activePayload = reveal && altBoard?.payload ? altBoard.payload : payload
   const status = activePayload?.status || 'ok'
   const showStatus = loaded && !error && activePayload && status !== 'ok'
   const startedEmpty = !boardRecords.length && activePayload?.empty_state === 'started'
@@ -437,9 +444,11 @@ export default function NflSharpOdds({ onSelectPlayer }) {
         </div>
         <div className="nfl-lines-header-actions">
           <ShowAllLinesToggle pressed={showAllLines} onChange={setShowAllLines} />
+          <button type="button" className="show-all-lines" aria-pressed={showPassCluster} aria-label="Show quarantined pass props" onClick={() => setShowPassCluster((current) => !current)}>Show all</button>
           <span title={activePayload?.feed_snapshot_at ? `Unabated snapshot ${activePayload.feed_snapshot_at}` : undefined}>{loaded ? `${rows.length} props${snapshotLabel}` : ''}</span>
         </div>
       </div>
+      <p className="nfl-pass-note" role="note">{NFL_PASS_QUARANTINE_NOTE}</p>
       <div className="nfl-lines-tabs" role="tablist" aria-label="Prop type">
         {props.map((item) => (
           <button key={item} className={prop === item ? 'active' : ''} onClick={() => setProp(item)}>{item === 'All' ? 'All Props' : item}</button>

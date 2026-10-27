@@ -18,8 +18,9 @@ export function useFullBoardRefresh(ds, apply) {
       return
     }
     // lines=all is a separate snapshot for the Show all lines toggle.
-    // Applying it here would put demon and goblin unders on the default board.
-    if (snapshot.preview === false && snapshot.showAllLines !== true) {
+    // pass=all is the quarantined NFL pass props. Applying either here
+    // would put those rows on the default board.
+    if (snapshot.preview === false && snapshot.showAllLines !== true && snapshot.showPassCluster !== true) {
       setRefreshExhausted(false)
       applyRef.current(snapshot)
     }

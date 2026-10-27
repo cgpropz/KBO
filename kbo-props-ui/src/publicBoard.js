@@ -7,6 +7,7 @@
 // stat; a row whose stat says "goal scorer" is still left off.
 
 import { rowStartPassed } from './etStart.js'
+import { isNflPassClusterRow } from './nflPassQuarantine.js'
 import { biggestLineEdges, publicLineEdgeRow } from './lineEdges.js'
 import { confirmedGoalieStarters, isNeutralHubRow, kboHubRows, nflHubRows, nhlHubRows, playableRows, topHitRateRows, topHubRows, unavailableFromLineups, wnbaHubRows } from './memberHub.js'
 import { LANDING_SPORTS } from './landingSports.js'
@@ -103,6 +104,7 @@ export const FREE_TOP_LIMIT = 3
 export function publicFreeTopRows(rows, limit = FREE_TOP_LIMIT, now = Date.now()) {
   const raw = (row) => (Number.isFinite(row.rawScore) ? row.rawScore : -Infinity)
   return publicBoardRows(rows)
+    .filter((row) => row?.sport !== 'nfl' || !isNflPassClusterRow(row))
     .filter((row) => !rowStartPassed(row, now))
     .map((row, index) => ({ row, index }))
     .filter(({ row }) => Number.isFinite(Number(row.line)) && !isNeutralHubRow(row))

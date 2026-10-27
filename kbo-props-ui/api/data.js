@@ -164,6 +164,12 @@ export function showAllLinesFromRequest(req) {
   return String(req?.query?.lines || '').trim().toLowerCase() === 'all';
 }
 
+// Paid NFL boards only. Free top 3 never includes the pass cluster, even
+// when this flag is set. lines=all does not reveal these rows.
+export function showPassClusterFromRequest(req) {
+  return String(req?.query?.pass || '').trim().toLowerCase() === 'all';
+}
+
 // Paid callers, and free or logged-out callers while the preview flag is on,
 // filter once per cache entry and per line mode. The stored snapshot stays raw.
 function payloadForTier(ds, table, row, raw, tier, { showAllLines = false } = {}) {
@@ -1292,6 +1298,7 @@ export async function handleDataRequest(req, res, client) {
     return res.status(502).json({ error: 'Dataset unavailable' });
   }
   const showAllLines = showAllLinesFromRequest(req);
+  const showPassCluster = showPassClusterFromRequest(req);
   const tierPayload = payloadForTier(ds, spec.table, row, board, tier, { showAllLines });
   // Manual KBO hold: every KBO prop served as pulled until a fresh pull has
   // lines or the hold expires. Applied per request, after the cached playable
@@ -1300,7 +1307,7 @@ export async function handleDataRequest(req, res, client) {
   const heldPayload = applyKboHold(ds, tierPayload.payload);
   const shaped = withPresentedData(
     req,
-    shapeForTier(ds, heldPayload, tier, { alreadyStandard: tierPayload.alreadyStandard, showAllLines }),
+    shapeForTier(ds, heldPayload, tier, { alreadyStandard: tierPayload.alreadyStandard, showAllLines, showPassCluster }),
     presented,
   );
   if (ds === 'matchup_data' && shaped.preview === true) {
