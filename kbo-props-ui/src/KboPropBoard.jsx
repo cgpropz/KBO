@@ -187,6 +187,8 @@ function KboBoardRow({ card, prop, score, direction, hitPills, breakEvenWindows,
         { className: `hit-rate-score ${direction}`, node: (
           <CgScoreCell
             scoreText={score == null ? '-' : value(score)}
+            score={score}
+            side={direction}
             note={locked ? null : scoreNote}
             open={whyOpen}
             onToggle={() => {

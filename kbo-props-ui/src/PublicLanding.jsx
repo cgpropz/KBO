@@ -20,6 +20,8 @@ import { lineClause, lineWord } from './lineCount';
 import { whenVisibleOrIdle } from './whenVisibleOrIdle';
 import { rowStartMs } from './etStart';
 import { freeTopEmptyText, kboHoldMessage } from './freeTopEmpty';
+import { CgOverMarks } from './CgOverMarks';
+import { cgOverChrome } from './cgOverTreatment';
 import { UNPROVEN_RANK_NOTE } from './freePreviewCopy';
 import CheatsheetsNavLink from './CheatsheetsNavLink';
 import LineEdgesModule from './LineEdgesModule';
@@ -73,24 +75,30 @@ function BoardTable({ rows, showHitRate, sport, showKickoff = false }) {
         <span>L10</span>
         <span>CG</span>
       </div>
-      {rows.map((row) => (
-        <div className="pl-tr" role="row" key={`${row.player}|${row.stat}|${row.line}|${row.side || ''}|${row.start || ''}`}>
-          <span className="pl-player">
-            <PlayerMark name={row.player} team={row.team} sport={sport} image={row.ppImageUrl} />
-            <span>
-              <b>{row.player}</b>
-              <small>{row.team ? `${row.team} vs ${row.opponent || '—'}` : row.stat} · {row.stat}{showKickoff && kickoffText(row) ? ` · ${kickoffText(row)}` : ''}</small>
+      {rows.map((row) => {
+        const chrome = cgOverChrome(row.score, row.side);
+        return (
+          <div className="pl-tr" role="row" key={`${row.player}|${row.stat}|${row.line}|${row.side || ''}|${row.start || ''}`}>
+            <span className="pl-player">
+              <PlayerMark name={row.player} team={row.team} sport={sport} image={row.ppImageUrl} />
+              <span>
+                <b>{row.player}</b>
+                <small>{row.team ? `${row.team} vs ${row.opponent || '—'}` : row.stat} · {row.stat}{showKickoff && kickoffText(row) ? ` · ${kickoffText(row)}` : ''}</small>
+              </span>
             </span>
-          </span>
-          <span className="pl-num">{sideLetter(row.side)}{sideLetter(row.side) ? ' ' : ''}{fmt(row.line)}</span>
-          <span className="pl-num pl-proj">{fmt(row.projection)}</span>
-          <span className="pl-num">
-            {showHitRate && Number.isFinite(row.hitRate) ? `${Math.round(row.hitRate)}%` : (Number.isFinite(row.hitHits) && Number.isFinite(row.hitGames) ? `${row.hitHits}/${row.hitGames}` : '—')}
-            {showHitRate && Number.isFinite(row.hitHits) && Number.isFinite(row.hitGames) ? <small>{row.hitHits}/{row.hitGames}</small> : null}
-          </span>
-          <span className="pl-num pl-score">{fmtScore(row.score)}</span>
-        </div>
-      ))}
+            <span className="pl-num">{sideLetter(row.side)}{sideLetter(row.side) ? ' ' : ''}{fmt(row.line)}</span>
+            <span className="pl-num pl-proj">{fmt(row.projection)}</span>
+            <span className="pl-num">
+              {showHitRate && Number.isFinite(row.hitRate) ? `${Math.round(row.hitRate)}%` : (Number.isFinite(row.hitHits) && Number.isFinite(row.hitGames) ? `${row.hitHits}/${row.hitGames}` : '—')}
+              {showHitRate && Number.isFinite(row.hitHits) && Number.isFinite(row.hitGames) ? <small>{row.hitHits}/{row.hitGames}</small> : null}
+            </span>
+            <span className="pl-num pl-score" title={chrome.dampened ? chrome.rawTitle : undefined}>
+              {chrome.dampened ? fmtScore(chrome.display) : fmtScore(row.score)}
+              <CgOverMarks chrome={chrome} />
+            </span>
+          </div>
+        );
+      })}
     </div>
   );
 }

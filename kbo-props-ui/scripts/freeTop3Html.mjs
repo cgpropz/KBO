@@ -5,6 +5,7 @@
 // demon and goblin unders stay off, and their overs stay. Held, pulled and
 // removed lines, rows with no score and started games stay out.
 
+import { cgOverChrome } from '../src/cgOverTreatment.js';
 import { rowStartMs } from '../src/etStart.js';
 import { UNPROVEN_RANK_NOTE } from '../src/freePreviewCopy.js';
 import { publicFreeTopRows, rowsFromSnapshot } from '../src/publicBoard.js';
@@ -100,6 +101,18 @@ function fmt(value) {
   return Number.isInteger(n) ? String(n) : n.toFixed(1);
 }
 
+// Printed CG on the static list. Flags off: the same raw toFixed(1) as before.
+// Flags on: a display label, and the dampener number only. Which three rows
+// appear is still publicFreeTopRows on the raw score.
+export function freeTop3CgHtml(row, env) {
+  const chrome = cgOverChrome(row.score, row.side, env);
+  const shown = chrome.dampened ? Number(chrome.display).toFixed(1) : Number(row.score).toFixed(1);
+  let extra = '';
+  if (chrome.badge) extra += ` <em class="cg-score-unproven" title="${escapeHtml(chrome.badge.title)}">${escapeHtml(chrome.badge.label)}</em>`;
+  if (chrome.label) extra += ` <em class="cg-score-calibrated" title="${escapeHtml(chrome.rawTitle)}">${escapeHtml(chrome.label)}</em>`;
+  return `${shown}${extra}`;
+}
+
 function rowItem(row) {
   const side = sideText(row);
   const start = rowStartMs(row);
@@ -108,7 +121,8 @@ function rowItem(row) {
     ? ` · <time datetime="${new Date(start).toISOString()}">${escapeHtml(etKickoffLabel(start))}</time>`
     : '';
   const matchup = row.team ? ` (${escapeHtml(row.team)}${row.opponent ? ` vs ${escapeHtml(row.opponent)}` : ''})` : '';
-  return `<li${startAttr}><strong>${escapeHtml(row.player)}</strong>${matchup}: ${escapeHtml(row.stat)} ${side ? `${side} ` : ''}${escapeHtml(fmt(row.line))} · CG Score ${escapeHtml(Number(row.score).toFixed(1))}${when}</li>`;
+  const env = typeof process !== 'undefined' ? process.env : undefined;
+  return `<li${startAttr}><strong>${escapeHtml(row.player)}</strong>${matchup}: ${escapeHtml(row.stat)} ${side ? `${side} ` : ''}${escapeHtml(fmt(row.line))} · CG Score ${freeTop3CgHtml(row, env)}${when}</li>`;
 }
 
 // Each pick carries its own ET kickoff (rowItem). The stamp names no game

@@ -4,6 +4,8 @@ import { fetchApiDataset } from './apiData';
 import { kboRawRating, scoreFor } from './kboBoardScore';
 import { buildCgScoreExplainer } from './cgScoreExplainer';
 import { WhyThisScore } from './CgScoreExplainer';
+import { CgOverMarks } from './CgOverMarks';
+import { cgOverChrome } from './cgOverTreatment';
 import { kboHitPills, l10Display, nflHitPills, nhlHitPills, wnbaHitPills, wnbaLoggedValues } from './hitRateStrip';
 import { wnbaCgScore } from './wnba/wnbaScore';
 import { nflCgScore, nflHasProjection, nflRawScore } from './nfl/nflLineFloors';
@@ -288,6 +290,7 @@ export default function FreePicksPreview({ onSignUp, onOpenBoard, onSeePlans }) 
               {state.rows.map((row, i) => {
                 const over = num(row.projection) >= num(row.line);
                 const note = buildCgScoreExplainer(row.note);
+                const chrome = cgOverChrome(row.score);
                 return (
                   <li key={`${row.player}-${row.stat}-${row.line}-${i}`} className="ff-pick">
                     <span className="ff-pick-rank">{i + 1}</span>
@@ -302,7 +305,7 @@ export default function FreePicksPreview({ onSignUp, onOpenBoard, onSeePlans }) 
                     </div>
                     <div className="ff-pick-stats">
                       <span><b>{fmt(row.projection)}</b> proj</span>
-                      {note && <span><b>{note.score}</b> CG Score</span>}
+                      {note && <span><b>{chrome.dampened ? chrome.display.toFixed(1) : note.score}</b> CG Score<CgOverMarks chrome={chrome} /></span>}
                       {row.l10 && <span><b>{row.l10.text}</b> L10{row.l10.games ? ` · ${row.l10.games}` : ''}</span>}
                     </div>
                     {note && <WhyThisScore className="ff-pick-why" note={note} />}
