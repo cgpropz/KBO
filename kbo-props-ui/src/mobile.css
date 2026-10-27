@@ -1104,6 +1104,32 @@
     text-align: left;
   }
 
+  /* The tip badge is a sibling of the name. display:contents on the info
+     row turns it into its own grid item, and on the NBA card the empty odds
+     slot (column 3, beside the minutes pill) is where it lands. "Today's tip"
+     is nowrap, so that 56px slot paints past the card. Keep it on the name
+     row, in the space the name gives up. */
+  .prop-line-card :is(.nfl-lines-info, .wnba-lines-info) > .tip-lane {
+    grid-column: 2;
+    grid-row: 1;
+    justify-self: end;
+    align-self: center;
+    width: max-content;
+    max-width: 100%;
+    min-width: 0 !important;
+    margin-left: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 12px !important;
+    z-index: 1;
+  }
+
+  .prop-line-card :is(.nfl-player-link, .wnba-player-link):has(+ .tip-lane) {
+    justify-self: start;
+    width: auto;
+    max-width: calc(100% - 110px);
+  }
+
   .prop-line-card :is(.nfl-lines-tag, .wnba-lines-tag),
   .prop-line-card .kbo-player-cell small,
   .prop-line-card :is(.nhl-probable, .nhl-confirmed) {
