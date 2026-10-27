@@ -4,24 +4,24 @@
   "slate_date_iso": "2026-11-02",
   "timezone_basis": "ET-gameday",
   "schema_version": 2,
-  "frozen_at": "2026-10-27T14:28:34.284505+00:00",
+  "frozen_at": "2026-10-27T19:39:06.583978+00:00",
   "source": "nfl/projections.json",
-  "source_commit": "3874f1069a6b",
+  "source_commit": "ddcd23829eb7",
   "props": [
     {
       "projection": 32.5,
-      "edge": -1.0,
+      "edge": 0.0,
       "player": "Caleb Williams",
       "team": "CHI",
       "opponent": "SEA",
       "position": "QB",
       "stat": "Pass Attempts",
-      "line": 33.5,
+      "line": 32.5,
       "odds_type": "standard",
-      "recommendation": "UNDER",
+      "recommendation": "OVER",
       "projection_source": "nfl/build_projection_data.py",
       "projection_is_line_fallback": false,
-      "rating": 25,
+      "rating": 50,
       "game_date_iso": "2026-11-02",
       "season_average": 33.0,
       "games_played": 10,
@@ -29,7 +29,7 @@
       "dvp_rank": 17,
       "dvp_ratio": 1.01,
       "baseline_projection": 32.5,
-      "baseline_recommendation": "UNDER",
+      "baseline_recommendation": "OVER",
       "formula_mode": "tuned",
       "formula_applied": false,
       "projection_id": "16256852",
@@ -37,8 +37,8 @@
       "start_time_utc": "2026-11-03T01:15:00+00:00",
       "start_time_source": "nflverse_schedule",
       "first_frozen_at": "2026-10-27T02:03:49+00:00",
-      "last_pregame_frozen_at": "2026-10-27T14:28:34+00:00",
-      "source_commit": "3874f1069a6b"
+      "last_pregame_frozen_at": "2026-10-27T19:39:06+00:00",
+      "source_commit": "ddcd23829eb7"
     },
     {
       "projection": 21.5,
@@ -69,8 +69,8 @@
       "start_time_utc": "2026-11-03T01:15:00+00:00",
       "start_time_source": "nflverse_schedule",
       "first_frozen_at": "2026-10-27T02:03:49+00:00",
-      "last_pregame_frozen_at": "2026-10-27T14:28:34+00:00",
-      "source_commit": "3874f1069a6b"
+      "last_pregame_frozen_at": "2026-10-27T19:39:06+00:00",
+      "source_commit": "ddcd23829eb7"
     },
     {
       "projection": 234.9,
@@ -101,18 +101,18 @@
       "start_time_utc": "2026-11-03T01:15:00+00:00",
       "start_time_source": "nflverse_schedule",
       "first_frozen_at": "2026-10-27T00:07:56+00:00",
-      "last_pregame_frozen_at": "2026-10-27T14:28:34+00:00",
-      "source_commit": "3874f1069a6b"
+      "last_pregame_frozen_at": "2026-10-27T19:39:06+00:00",
+      "source_commit": "ddcd23829eb7"
     },
     {
       "projection": 255.9,
-      "edge": 11.4,
+      "edge": 10.4,
       "player": "Caleb Williams",
       "team": "CHI",
       "opponent": "SEA",
       "position": "QB",
       "stat": "Pass+Rush Yds",
-      "line": 244.5,
+      "line": 245.5,
       "odds_type": "standard",
       "recommendation": "OVER",
       "projection_source": "nfl/build_projection_data.py",
@@ -133,8 +133,40 @@
       "start_time_utc": "2026-11-03T01:15:00+00:00",
       "start_time_source": "nflverse_schedule",
       "first_frozen_at": "2026-10-27T02:03:49+00:00",
-      "last_pregame_frozen_at": "2026-10-27T14:28:34+00:00",
-      "source_commit": "3874f1069a6b"
+      "last_pregame_frozen_at": "2026-10-27T19:39:06+00:00",
+      "source_commit": "ddcd23829eb7"
+    },
+    {
+      "projection": 4.6,
+      "edge": 0.1,
+      "player": "Caleb Williams",
+      "team": "CHI",
+      "opponent": "SEA",
+      "position": "QB",
+      "stat": "Rush Attempts",
+      "line": 4.5,
+      "odds_type": "standard",
+      "recommendation": "OVER",
+      "projection_source": "nfl/build_projection_data.py",
+      "projection_is_line_fallback": false,
+      "rating": 75,
+      "game_date_iso": "2026-11-02",
+      "season_average": 4.8,
+      "games_played": 10,
+      "snap_count": 96.5,
+      "dvp_rank": 29,
+      "dvp_ratio": 1.26,
+      "baseline_projection": 4.6,
+      "baseline_recommendation": "OVER",
+      "formula_mode": "tuned",
+      "formula_applied": false,
+      "projection_id": "16294408",
+      "projection_schema": 2,
+      "start_time_utc": "2026-11-03T01:15:00+00:00",
+      "start_time_source": "nflverse_schedule",
+      "first_frozen_at": "2026-10-27T19:39:06+00:00",
+      "last_pregame_frozen_at": "2026-10-27T19:39:06+00:00",
+      "source_commit": "ddcd23829eb7"
     },
     {
       "projection": 24.0,
@@ -165,8 +197,8 @@
       "start_time_utc": "2026-11-03T01:15:00+00:00",
       "start_time_source": "nflverse_schedule",
       "first_frozen_at": "2026-10-27T00:07:56+00:00",
-      "last_pregame_frozen_at": "2026-10-27T14:28:34+00:00",
-      "source_commit": "3874f1069a6b"
+      "last_pregame_frozen_at": "2026-10-27T19:39:06+00:00",
+      "source_commit": "ddcd23829eb7"
     },
     {
       "projection": 40.8,
@@ -197,8 +229,8 @@
       "start_time_utc": "2026-11-03T01:15:00+00:00",
       "start_time_source": "nflverse_schedule",
       "first_frozen_at": "2026-10-27T00:07:56+00:00",
-      "last_pregame_frozen_at": "2026-10-27T14:28:34+00:00",
-      "source_commit": "3874f1069a6b"
+      "last_pregame_frozen_at": "2026-10-27T19:39:06+00:00",
+      "source_commit": "ddcd23829eb7"
     },
     {
       "projection": 98.5,
@@ -229,8 +261,8 @@
       "start_time_utc": "2026-11-03T01:15:00+00:00",
       "start_time_source": "nflverse_schedule",
       "first_frozen_at": "2026-10-27T00:07:56+00:00",
-      "last_pregame_frozen_at": "2026-10-27T14:28:34+00:00",
-      "source_commit": "3874f1069a6b"
+      "last_pregame_frozen_at": "2026-10-27T19:39:06+00:00",
+      "source_commit": "ddcd23829eb7"
     },
     {
       "projection": 7.1,
@@ -262,7 +294,11 @@
       "start_time_source": "nflverse_schedule",
       "first_frozen_at": "2026-10-27T07:49:04+00:00",
       "last_pregame_frozen_at": "2026-10-27T14:28:34+00:00",
-      "source_commit": "3874f1069a6b"
+      "source_commit": "3874f1069a6b",
+      "removed": true,
+      "removed_at": "2026-10-27T19:39:06.583683+00:00",
+      "pp_status": "removed",
+      "superseded_at": "2026-10-27T19:39:06.583683+00:00"
     },
     {
       "projection": 0.7,
@@ -293,8 +329,40 @@
       "start_time_utc": "2026-11-03T01:15:00+00:00",
       "start_time_source": "nflverse_schedule",
       "first_frozen_at": "2026-10-27T02:03:49+00:00",
-      "last_pregame_frozen_at": "2026-10-27T14:28:34+00:00",
-      "source_commit": "3874f1069a6b"
+      "last_pregame_frozen_at": "2026-10-27T19:39:06+00:00",
+      "source_commit": "ddcd23829eb7"
+    },
+    {
+      "projection": 22.9,
+      "edge": 0.4,
+      "player": "Kalif Raymond",
+      "team": "CHI",
+      "opponent": "SEA",
+      "position": "WR",
+      "stat": "Receiving Yards",
+      "line": 22.5,
+      "odds_type": "standard",
+      "recommendation": "OVER",
+      "projection_source": "nfl/build_projection_data.py",
+      "projection_is_line_fallback": false,
+      "rating": 43,
+      "game_date_iso": "2026-11-02",
+      "season_average": 24.2,
+      "games_played": 10,
+      "snap_count": 61.9,
+      "dvp_rank": 1,
+      "dvp_ratio": 0.56,
+      "baseline_projection": 20.2,
+      "baseline_recommendation": "UNDER",
+      "formula_mode": "tuned",
+      "formula_applied": true,
+      "projection_id": "16293247",
+      "projection_schema": 2,
+      "start_time_utc": "2026-11-03T01:15:00+00:00",
+      "start_time_source": "nflverse_schedule",
+      "first_frozen_at": "2026-10-27T19:39:06+00:00",
+      "last_pregame_frozen_at": "2026-10-27T19:39:06+00:00",
+      "source_commit": "ddcd23829eb7"
     },
     {
       "projection": 63.5,
@@ -325,8 +393,8 @@
       "start_time_utc": "2026-11-03T01:15:00+00:00",
       "start_time_source": "nflverse_schedule",
       "first_frozen_at": "2026-10-27T00:07:56+00:00",
-      "last_pregame_frozen_at": "2026-10-27T14:28:34+00:00",
-      "source_commit": "3874f1069a6b"
+      "last_pregame_frozen_at": "2026-10-27T19:39:06+00:00",
+      "source_commit": "ddcd23829eb7"
     },
     {
       "projection": 43.0,
@@ -357,8 +425,8 @@
       "start_time_utc": "2026-11-03T01:15:00+00:00",
       "start_time_source": "nflverse_schedule",
       "first_frozen_at": "2026-10-27T00:07:56+00:00",
-      "last_pregame_frozen_at": "2026-10-27T14:28:34+00:00",
-      "source_commit": "3874f1069a6b"
+      "last_pregame_frozen_at": "2026-10-27T19:39:06+00:00",
+      "source_commit": "ddcd23829eb7"
     },
     {
       "projection": 32.6,
@@ -389,8 +457,40 @@
       "start_time_utc": "2026-11-03T01:15:00+00:00",
       "start_time_source": "nflverse_schedule",
       "first_frozen_at": "2026-10-27T02:03:49+00:00",
-      "last_pregame_frozen_at": "2026-10-27T14:28:34+00:00",
-      "source_commit": "3874f1069a6b"
+      "last_pregame_frozen_at": "2026-10-27T19:39:06+00:00",
+      "source_commit": "ddcd23829eb7"
+    },
+    {
+      "projection": 20.2,
+      "edge": 0.7,
+      "player": "Sam Darnold",
+      "team": "SEA",
+      "opponent": "CHI",
+      "position": "QB",
+      "stat": "Pass Completions",
+      "line": 19.5,
+      "odds_type": "standard",
+      "recommendation": "OVER",
+      "projection_source": "nfl/build_projection_data.py",
+      "projection_is_line_fallback": false,
+      "rating": 50,
+      "game_date_iso": "2026-11-02",
+      "season_average": 18.8,
+      "games_played": 10,
+      "snap_count": 85.0,
+      "dvp_rank": 2,
+      "dvp_ratio": 0.65,
+      "baseline_projection": 20.2,
+      "baseline_recommendation": "OVER",
+      "formula_mode": "tuned",
+      "formula_applied": false,
+      "projection_id": "16289062",
+      "projection_schema": 2,
+      "start_time_utc": "2026-11-03T01:15:00+00:00",
+      "start_time_source": "nflverse_schedule",
+      "first_frozen_at": "2026-10-27T19:39:06+00:00",
+      "last_pregame_frozen_at": "2026-10-27T19:39:06+00:00",
+      "source_commit": "ddcd23829eb7"
     },
     {
       "projection": 0.9,
@@ -421,8 +521,8 @@
       "start_time_utc": "2026-11-03T01:15:00+00:00",
       "start_time_source": "nflverse_schedule",
       "first_frozen_at": "2026-10-27T02:03:49+00:00",
-      "last_pregame_frozen_at": "2026-10-27T14:28:34+00:00",
-      "source_commit": "3874f1069a6b"
+      "last_pregame_frozen_at": "2026-10-27T19:39:06+00:00",
+      "source_commit": "ddcd23829eb7"
     },
     {
       "projection": 224.6,
@@ -454,17 +554,21 @@
       "start_time_source": "nflverse_schedule",
       "first_frozen_at": "2026-10-27T00:07:56+00:00",
       "last_pregame_frozen_at": "2026-10-27T14:28:34+00:00",
-      "source_commit": "3874f1069a6b"
+      "source_commit": "3874f1069a6b",
+      "removed": true,
+      "removed_at": "2026-10-27T19:39:06.583683+00:00",
+      "pp_status": "removed",
+      "superseded_at": "2026-10-27T19:39:06.583683+00:00"
     },
     {
       "projection": 239.0,
-      "edge": -5.5,
+      "edge": -4.5,
       "player": "Sam Darnold",
       "team": "SEA",
       "opponent": "CHI",
       "position": "QB",
       "stat": "Pass+Rush Yds",
-      "line": 244.5,
+      "line": 243.5,
       "odds_type": "standard",
       "recommendation": "UNDER",
       "projection_source": "nfl/build_projection_data.py",
@@ -485,8 +589,8 @@
       "start_time_utc": "2026-11-03T01:15:00+00:00",
       "start_time_source": "nflverse_schedule",
       "first_frozen_at": "2026-10-27T02:03:49+00:00",
-      "last_pregame_frozen_at": "2026-10-27T14:28:34+00:00",
-      "source_commit": "3874f1069a6b"
+      "last_pregame_frozen_at": "2026-10-27T19:39:06+00:00",
+      "source_commit": "ddcd23829eb7"
     },
     {
       "projection": 14.2,
@@ -517,8 +621,8 @@
       "start_time_utc": "2026-11-03T01:15:00+00:00",
       "start_time_source": "nflverse_schedule",
       "first_frozen_at": "2026-10-27T00:07:56+00:00",
-      "last_pregame_frozen_at": "2026-10-27T14:28:34+00:00",
-      "source_commit": "3874f1069a6b"
+      "last_pregame_frozen_at": "2026-10-27T19:39:06+00:00",
+      "source_commit": "ddcd23829eb7"
     }
   ]
 }
