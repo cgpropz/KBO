@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { memo, useEffect, useMemo, useState } from 'react'
 import { lineResult, overHitRate } from '../hitRateStrip'
 import { lineMatchesStat } from '../cgScore'
 import { compareNflScores, nflCgScore, nflRawScore } from './nflLineFloors'
@@ -8,6 +8,8 @@ import { cgOverChrome } from '../cgOverTreatment'
 import { compareSymmetric, displayScoreText, symmetricRankOn } from '../sideRank'
 import { cgSide } from '../cgScore'
 import { fetchNflProjections } from './nflData'
+import { peekApiDataset } from '../apiData'
+import { rankWithTipLanes } from '../stableBoard'
 import { ShowAllLinesToggle, useShowAllLines } from '../ShowAllLinesToggle'
 import BoardStatus from '../BoardStatus'
 import { MemberPreviewNotice } from '../MemberPreviewNotice'
@@ -21,7 +23,7 @@ import { teamLogoUrl } from './nflTeams'
 import { opponentLabel } from '../cardMark'
 import { CardTeamLogo } from '../CardTeamLogo'
 import { LaneMark, TipLaneNote } from '../TipLane'
-import { stampTipLanes, tipKeys, tipRowClass } from '../tipFirst'
+import { tipRowClass } from '../tipFirst'
 import { lineClause } from '../lineCount'
 import { nflSeasonAverage } from './seasonAverage'
 import { ChartDateRow } from '../MiniHitBars'
@@ -59,7 +61,8 @@ function snapColor(pct) {
   return `rgb(${r}, ${g}, ${b})`
 }
 
-function ProjectionCard({ item, onSelectPlayer }) {
+const ProjectionCard = memo(function ProjectionCard({ item, onSelectPlayer, showTipLane }) {
+  const tipLane = showTipLane ? item.tipLane : null
   // Same ten games as the board chart, each with its own date and opponent.
   const bars = tailChartBars(item)
   const recent = bars.map((bar) => bar.value)
@@ -87,8 +90,8 @@ function ProjectionCard({ item, onSelectPlayer }) {
   const shownDvp = nflBoardDvpRank(item)
 
   return (
-    <article className={tipRowClass(item.tipLane, 'nfl-edge-card')}>
-      <div className="nfl-card-topline"><LaneMark lane={item.tipLane} /><span className="nfl-snap-badge" style={item.snapCount > 0 ? { borderColor: snapColor(item.snapCount), color: snapColor(item.snapCount) } : undefined}>{item.snapCount > 0 ? `${item.snapCount}% SNAP` : 'SNAP N/A'}</span><b className={sideClass}>{side ? `${side} ` : ''}{shownScore}</b></div>
+    <article className={tipRowClass(tipLane, 'nfl-edge-card')}>
+      <div className="nfl-card-topline"><LaneMark lane={tipLane} /><span className="nfl-snap-badge" style={item.snapCount > 0 ? { borderColor: snapColor(item.snapCount), color: snapColor(item.snapCount) } : undefined}>{item.snapCount > 0 ? `${item.snapCount}% SNAP` : 'SNAP N/A'}</span><b className={sideClass}>{side ? `${side} ` : ''}{shownScore}</b></div>
       <div className="nfl-card-player">
         <div className="nfl-card-avatar">{item.imageUrl ? <img src={fitImage(item.imageUrl, 42)} alt={item.player} width={42} height={42} loading="lazy" /> : initials(item.player)}</div>
         <div><h2 className="nfl-player-link" onClick={() => onSelectPlayer(item.player, item.prop)}>{item.player}</h2><p><b>{item.position}</b><CardTeamLogo team={item.team} src={teamLogoUrl(item.team) ? fitImage(teamLogoUrl(item.team), 16) : ''} /><span>{item.team}</span>{item.opponent ? <em>{opponentLabel(item.opponent)}</em> : null}</p></div>
@@ -106,29 +109,41 @@ function ProjectionCard({ item, onSelectPlayer }) {
       <ChartDateRow bars={bars} logoFor={teamLogoUrl} />
     </article>
   )
+})
+
+function readNflEdgeCache() {
+  const snap = peekApiDataset('nfl_projections')
+  if (!snap) return null
+  return {
+    projections: Array.isArray(snap.data) ? snap.data : [],
+    updatedAt: snap.updatedAt || null,
+    lockedCount: previewLockedCount(snap.preview === true, snap.lockedCount),
+    memberPreview: snap.preview === true,
+    refreshing: snap.refreshing === true,
+  }
 }
 
 export default function NflProjections({ onSelectPlayer }) {
-  const [projections, setProjections] = useState([])
+  const [projections, setProjections] = useState(() => readNflEdgeCache()?.projections || [])
   const [query, setQuery] = useState('')
   const [position, setPosition] = useState('ALL')
   const [prop, setProp] = useState('All props')
   const [matchup, setMatchup] = useState('All matchups')
   const [sort, setSort] = useState('CG Score')
   const [error, setError] = useState('')
-  const [loaded, setLoaded] = useState(false)
+  const [loaded, setLoaded] = useState(() => readNflEdgeCache() != null)
   const [loadAttempt, setLoadAttempt] = useState(0)
-  const [lockedCount, setLockedCount] = useState(0)
-  const [refreshing, setRefreshing] = useState(false)
-  const [memberPreview, setMemberPreview] = useState(false)
-  const [updatedAt, setUpdatedAt] = useState(null)
+  const [lockedCount, setLockedCount] = useState(() => readNflEdgeCache()?.lockedCount || 0)
+  const [refreshing, setRefreshing] = useState(() => readNflEdgeCache()?.refreshing === true)
+  const [memberPreview, setMemberPreview] = useState(() => readNflEdgeCache()?.memberPreview === true)
+  const [updatedAt, setUpdatedAt] = useState(() => readNflEdgeCache()?.updatedAt || null)
 
   useEffect(() => {
     let active = true
-    fetchNflProjections()
+    fetchNflProjections({ fresh: loadAttempt > 0 })
       .then(({ projections: next, updatedAt: publishedAt, preview, lockedCount: locked, refreshing: pendingRefresh }) => {
         if (!active) return
-        setProjections(next)
+        setProjections((current) => current === next ? current : next)
         setUpdatedAt(publishedAt || null)
         setLockedCount(previewLockedCount(preview, locked))
         setMemberPreview(preview === true)
@@ -168,21 +183,23 @@ export default function NflProjections({ onSelectPlayer }) {
   const matchupKey = (item) => [item.team, item.opponent].sort().join(' vs ')
   const props = useMemo(() => ['All props', ...new Set(boardProjections.map((item) => item.prop))].sort((a, b) => a === 'All props' ? -1 : a.localeCompare(b)), [boardProjections])
   const matchups = useMemo(() => ['All matchups', ...new Set(boardProjections.map(matchupKey))].sort((a, b) => a === 'All matchups' ? -1 : a.localeCompare(b)), [boardProjections])
-  const rows = useMemo(() => {
-    const scored = boardProjections
+  const scored = useMemo(() => {
+    const withScore = boardProjections
       .filter((item) => lineMatchesStat(item.prop, item.line))
       .map((item) => { const cgScore = nflTodayPick(item).cg; return { ...item, cgScore, score: nflCgScore(item.projection, item.line, item.prop) ?? 0, rawScore: nflRawScore(item.projection, item.line, item.prop) } })
     const byCg = (a, b) => (symmetricRankOn('nfl') ? compareSymmetric(a, b) : compareNflScores(a.score, a.rawScore, b.score, b.rawScore))
-    const shown = scored
+    return rankWithTipLanes(withScore, byCg, (item) => item.id)
+  }, [boardProjections])
+  const rows = useMemo(() => {
+    const needle = query.toLowerCase()
+    const filtered = scored
       .filter((item) => position === 'ALL' || item.position === position)
       .filter((item) => prop === 'All props' || item.prop === prop)
       .filter((item) => matchup === 'All matchups' || matchupKey(item) === matchup)
-      .filter((item) => item.player.toLowerCase().includes(query.toLowerCase()))
-      .sort((a, b) => (sort === 'CG Score' ? byCg(a, b) : b.hitRate - a.hitRate))
-    if (sort !== 'CG Score') return shown
-    return stampTipLanes(shown, tipKeys([...scored].sort(byCg), (item) => item.id), (item) => item.id)
-  }, [matchup, position, boardProjections, prop, query, sort])
-
+      .filter((item) => item.player.toLowerCase().includes(needle))
+    if (sort === 'CG Score') return filtered
+    return filtered.sort((a, b) => b.hitRate - a.hitRate)
+  }, [matchup, position, scored, prop, query, sort])
   return (
     <section className="nfl-edge-board">
       <div className="nfl-board-header">
@@ -209,7 +226,7 @@ export default function NflProjections({ onSelectPlayer }) {
       {!hold && !error && loaded && !boardProjections.length && lockedCount <= 0 && <div className="nfl-notice">No NFL props are on the PrizePicks board right now. Check back closer to kickoff.</div>}
       {!hold && !error && loaded && !!boardProjections.length && !rows.length && <div className="nfl-notice">No edges match these filters.</div>}
       {showPaywall && !error && loaded && lockedCount > 0 && <div className="nfl-notice">{boardProjections.length ? `Free preview: showing the top ${boardProjections.length} edge${boardProjections.length === 1 ? '' : 's'}. ${lockedCount} more are locked. Upgrade to see every edge.` : `The NFL board is locked. ${lockedCount} ${lineClause(lockedCount)} locked. Upgrade to see every edge.`}</div>}
-      {!hold && <div className="nfl-edge-grid">{rows.map((item) => <ProjectionCard key={item.id} item={item} onSelectPlayer={onSelectPlayer} />)}</div>}
+      {!hold && <div className="nfl-edge-grid">{rows.map((item) => <ProjectionCard key={item.id} item={item} onSelectPlayer={onSelectPlayer} showTipLane={sort === 'CG Score'} />)}</div>}
     </section>
   )
 }

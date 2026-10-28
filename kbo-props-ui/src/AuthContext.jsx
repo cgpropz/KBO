@@ -4,6 +4,7 @@ import { confirmSignOut, deferSignOutDuringRefresh, loadSupabase, markUserSignOu
 import { SET_PASSWORD_PATH, isPasswordRecoveryLocation } from './passwordRecovery';
 import { settlePlanCheck } from './planCheck.js';
 import { setSymmetricRankViewer } from './sideRank.js';
+import { clearDatasetCache } from './apiData';
 
 const EMPTY_DISCORD = { userId: null, username: null, discordOnly: false };
 const TIER_CACHE_KEY = 'cg_tier';
@@ -82,9 +83,17 @@ export function AuthProvider({ children }) {
   const initialCheck = useRef(0);
   const lastPaidDiscordSync = useRef(0);
 
+  const tierRef = useRef(tier);
   const applyTier = useCallback((next, userId) => {
-    setTier(next || 'free');
-    writeCachedTier(userId || userRef.current?.id, next || 'free');
+    const value = next || 'free';
+    // A tier change is full board vs preview. Drop the cached snapshot so the
+    // next paint does not reuse the other tier's rows.
+    if (tierRef.current !== value) {
+      tierRef.current = value;
+      clearDatasetCache();
+    }
+    setTier(value);
+    writeCachedTier(userId || userRef.current?.id, value);
   }, []);
 
   const fetchDiscord = useCallback(async (userId) => {
@@ -340,6 +349,8 @@ export function AuthProvider({ children }) {
     setUser(null);
     userRef.current = null;
     planGeneration.current += 1;
+    tierRef.current = 'free';
+    clearDatasetCache();
     setTier('free');
     setTierConfirmed(true);
     setPlanCheckExhausted(false);

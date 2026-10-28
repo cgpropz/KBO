@@ -73,7 +73,8 @@ function App() {
     return slipLinkFromSearch(window.location.search)
   });
   // Sport-tab clicks force the dashboard. The first load and a slip switch
-  // still honor a named sub-page. homeTick remounts the shell.
+  // still honor a named sub-page. homeTick asks the shell to go home without
+  // remounting boards that are already open.
   const [forceHome, setForceHome] = useState(false);
   const [homeTick, setHomeTick] = useState(0);
   const [sport, setSportState] = useState(() => {
@@ -288,7 +289,7 @@ function App() {
     /* WNBA section — separate sport shell behind the same auth */
     sportApp = (
       <WnbaApp
-        key={`wnba-${homeTick}`}
+        homeTick={homeTick}
         sport={visibleSport}
         setSport={chooseSport}
         onSlipSport={chooseSlipSport}
@@ -300,7 +301,7 @@ function App() {
   } else if (visibleSport === 'nba') {
     sportApp = (
       <NbaApp
-        key={`nba-${homeTick}`}
+        homeTick={homeTick}
         sport={visibleSport}
         setSport={chooseSport}
         onSlipSport={chooseSlipSport}
@@ -313,7 +314,7 @@ function App() {
   } else if (visibleSport === 'nhl') {
     sportApp = (
       <NhlApp
-        key={`nhl-${homeTick}`}
+        homeTick={homeTick}
         sport={visibleSport}
         setSport={chooseSport}
         onSlipSport={chooseSlipSport}
@@ -326,7 +327,7 @@ function App() {
   } else if (visibleSport === 'nfl') {
     sportApp = (
       <NflApp
-        key={`nfl-${homeTick}`}
+        homeTick={homeTick}
         sport={visibleSport}
         setSport={chooseSport}
         onSlipSport={chooseSlipSport}
@@ -340,7 +341,7 @@ function App() {
     /* KBO section — same nav + board shell as WNBA/NFL */
     sportApp = (
       <KboApp
-        key={`kbo-${homeTick}`}
+        homeTick={homeTick}
         sport={visibleSport}
         setSport={chooseSport}
         onSlipSport={chooseSlipSport}

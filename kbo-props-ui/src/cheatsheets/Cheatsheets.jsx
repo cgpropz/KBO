@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useAuth } from '../AuthContext'
 import { canSeeCheatsheets } from '../entitlements'
 import { STANDARD_LINE } from '../responsibleGambling'
@@ -12,6 +12,7 @@ import {
 import { selectedGame, toggleSort, visibleGames } from './boardControls'
 import GameProj from './GameProj'
 import { loadLivePack } from './loadLiveBoard'
+import { cachedLivePack } from './packCache'
 import { sourceLabel, waitingPack } from './liveBoard'
 import './cheatsheets.css'
 
@@ -53,10 +54,13 @@ export default function Cheatsheets() {
   const [minEdge, setMinEdge] = useState('0')
   const [rowMode, setRowMode] = useState('all')
   const [panel, setPanel] = useState('overview')
-  const [pack, setPack] = useState(() => waitingPack(leagueFromSearch(readSearch())))
+  const [pack, setPack] = useState(() => cachedLivePack(leagueFromSearch(readSearch())) || waitingPack(leagueFromSearch(readSearch())))
 
   const projectionOnly = pack.projectionOnly === true
-  const games = visibleGames(pack.games, { team, minEdge }, gameSort, { projectionOnly })
+  const games = useMemo(
+    () => visibleGames(pack.games, { team, minEdge }, gameSort, { projectionOnly }),
+    [pack.games, team, minEdge, gameSort, projectionOnly],
+  )
   const game = selectedGame(pack.games, games, gameId)
   const search = readSearch()
 
@@ -73,7 +77,7 @@ export default function Cheatsheets() {
   const pickLeague = (id) => {
     if (id === league) return
     setLeague(id)
-    setPack(waitingPack(id))
+    setPack(cachedLivePack(id) || waitingPack(id))
     setGameId(RESET.gameId)
     setGameSort(RESET.gameSort)
     setRowSort(RESET.rowSort)

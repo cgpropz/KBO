@@ -1,7 +1,9 @@
 import MiniHitBars from '../MiniHitBars'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { fetchNbaData, fetchNbaSnapshot } from './nbaData'
+import { peekApiDataset } from '../apiData'
+import { rankWithTipLanes } from '../stableBoard'
 import { ShowAllLinesToggle, useShowAllLines } from '../ShowAllLinesToggle'
 import BoardStatus from '../BoardStatus'
 import HitRateStrip from '../HitRateStrip'
@@ -11,7 +13,7 @@ import { BoardLine, BoardSurface, LockedPlaceholder } from '../PropLineCard'
 import { rememberBoardSort, withDefaultSort } from '../boardSort'
 import { usePhoneBoard } from '../usePhoneBoard'
 import { LaneMark, TipLaneNote } from '../TipLane'
-import { stampTipLanes, tipKeys, tipRowClass } from '../tipFirst'
+import { tipRowClass } from '../tipFirst'
 import { countedLines, lineWord } from '../lineCount'
 import { MemberPreviewNotice } from '../MemberPreviewNotice'
 import { QuietMemberPreview } from '../QuietMemberPreview'
@@ -101,7 +103,9 @@ function FilterIcon() {
 }
 
 
-function PropRow({ item, onSelectPlayer, locked, rowRef, whyOpen, onWhy, phone }) {
+const PropRow = memo(function PropRow({ item, onSelectPlayer, locked, rowRef, whyOpen, onWhy, phone, showTipLane }) {
+  const tipLane = showTipLane ? item.tipLane : null
+  const toggleNote = () => onWhy(item.id)
   const recent = Array.isArray(item.recent) ? item.recent : []
   const grade = dvpGrade(item.dvpRank)
   const minutesPill = item.side ? expectedMinutesPill(item.avgMins) : null
@@ -118,7 +122,7 @@ function PropRow({ item, onSelectPlayer, locked, rowRef, whyOpen, onWhy, phone }
   return (
     <BoardLine
       phone={phone}
-      className={tipRowClass(item.tipLane, `wnba-lines-row${locked ? ' locked' : ''}`)}
+      className={tipRowClass(tipLane, `wnba-lines-row${locked ? ' locked' : ''}`)}
       rowRef={whyOpen ? undefined : rowRef}
       cells={[
         { node: (
@@ -130,7 +134,7 @@ function PropRow({ item, onSelectPlayer, locked, rowRef, whyOpen, onWhy, phone }
             </div>
             <div className="wnba-lines-info">
               <button className="wnba-player-link" onClick={() => !locked && onSelectPlayer?.(item.player)}>{item.player}</button>
-              <LaneMark lane={item.tipLane} />
+              <LaneMark lane={tipLane} />
               <span className="wnba-lines-tag"><CardTeamLogo team={item.team} src={nbaLogoUrl(item.team) ? fitImage(nbaLogoUrl(item.team), 16) : ''} />{item.team}{item.position ? `, ${item.position}` : ''}</span>
               <div className={`wnba-lines-line ${sideClass(item.side)}${minutesPill ? ' has-min-pill' : ''}`}>
                 {minutesPill ? <><span className="nba-line-text">{lineLabel}</span><ExpectedMinutesPill minutes={item.avgMins} /></> : lineLabel}
@@ -140,7 +144,7 @@ function PropRow({ item, onSelectPlayer, locked, rowRef, whyOpen, onWhy, phone }
         ) },
         { className: 'hit-rate-chart', node: recent.length ? <MiniHitBars bars={Array.isArray(item.recentBars) ? item.recentBars : recent.map((value) => ({ value }))} line={item.line} chartClass="wnba-lines-chart" logoFor={nbaLogoUrl} /> : <span style={{ fontSize: 11, color: '#4d635e' }}>No data</span> },
         { className: `hit-rate-score ${sideClass(item.side)}`, node: (
-          <CgScoreCell scoreText={item.score.toFixed(1)} score={item.score} side={item.side} note={locked ? null : scoreNote} open={whyOpen} onToggle={onWhy} />
+          <CgScoreCell scoreText={item.score.toFixed(1)} score={item.score} side={item.side} note={locked ? null : scoreNote} open={whyOpen} onToggle={toggleNote} />
         ) },
         { className: 'hit-rate-col', node: <HitRateStrip pills={item.hitPills} /> },
         { className: 'hit-rate-extra', style: item.dvpRank ? { color: dvpColor(item.dvpRank) } : undefined, node: item.dvpRank ? ordinal(Math.round(item.dvpRank)) : '—' },
@@ -158,7 +162,7 @@ function PropRow({ item, onSelectPlayer, locked, rowRef, whyOpen, onWhy, phone }
         : null}
     />
   )
-}
+})
 
 function FilterRow({ id, label, value, expandedRow, onToggle, children }) {
   const expanded = expandedRow === id
@@ -332,10 +336,17 @@ function MiniRow({ rank, player, stat, side, primary, primaryColor, sub, onClick
   )
 }
 
+function readNbaCache() {
+  return peekApiDataset('nba_projections_standard')
+}
+
 export default function NbaDashboard({ onSelectPlayer, onNavigate, onNavigatePricing }) {
-  const [projections, setProjections] = useState(null)
+  const [projections, setProjections] = useState(() => {
+    const snap = readNbaCache()
+    return snap ? (Array.isArray(snap.data) ? snap.data : []) : null
+  })
   const [players, setPlayers] = useState(null)
-  const [projLoading, setProjLoading] = useState(true)
+  const [projLoading, setProjLoading] = useState(() => readNbaCache() == null)
   const [loadError, setLoadError] = useState('')
   const [loadAttempt, setLoadAttempt] = useState(0)
   const [propTab, setPropTab] = useState('All Props')
@@ -343,10 +354,13 @@ export default function NbaDashboard({ onSelectPlayer, onNavigate, onNavigatePri
   const [whyId, setWhyId] = useState(null)
   const [filters, setFilters] = useState(() => withDefaultSort(DEFAULT_FILTERS, 'nba', SORT_OPTIONS))
   const phone = usePhoneBoard()
-  const [lockedCount, setLockedCount] = useState(0)
-  const [refreshing, setRefreshing] = useState(false)
-  const [memberPreview, setMemberPreview] = useState(false)
-  const [updatedAt, setUpdatedAt] = useState(null)
+  const [lockedCount, setLockedCount] = useState(() => {
+    const snap = readNbaCache()
+    return snap ? previewLockedCount(snap.preview === true, snap.lockedCount) : 0
+  })
+  const [refreshing, setRefreshing] = useState(() => readNbaCache()?.refreshing === true)
+  const [memberPreview, setMemberPreview] = useState(() => readNbaCache()?.preview === true)
+  const [updatedAt, setUpdatedAt] = useState(() => readNbaCache()?.updatedAt || null)
 
   const tableWrapRef = useRef(null)
   const lastFreeRowRef = useRef(null)
@@ -368,20 +382,24 @@ export default function NbaDashboard({ onSelectPlayer, onNavigate, onNavigatePri
   useEffect(() => {
     let cancelled = false
     const load = async () => {
-      setProjLoading(true)
-      setLoadError('')
+      if (loadAttempt > 0 || readNbaCache() == null) {
+        setProjLoading(true)
+        setLoadError('')
+      }
       try {
         const [board, roster] = await Promise.all([
-          fetchNbaSnapshot('nba/projections_standard.json'),
+          fetchNbaSnapshot('nba/projections_standard.json', { fresh: loadAttempt > 0 }),
           fetchNbaData('nba/players.json').catch(() => []),
         ])
         if (cancelled) return
+        const nextRows = Array.isArray(board?.data) ? board.data : []
         setLockedCount(previewLockedCount(board?.preview === true, board?.lockedCount))
         setRefreshing(board?.refreshing === true)
         setMemberPreview(board?.preview === true)
         setUpdatedAt(board?.updatedAt || null)
-        setProjections(Array.isArray(board?.data) ? board.data : [])
-        setPlayers(Array.isArray(roster) ? roster : [])
+        const nextPlayers = Array.isArray(roster) ? roster : []
+        setProjections((current) => current === nextRows ? current : nextRows)
+        setPlayers((current) => current === nextPlayers ? current : nextPlayers)
       } catch (err) {
         if (!cancelled) {
           setProjections([])
@@ -435,13 +453,18 @@ export default function NbaDashboard({ onSelectPlayer, onNavigate, onNavigatePri
     return { min: Math.floor(Math.min(...lines) * 10) / 10, max: Math.ceil(Math.max(...lines) * 10) / 10 }
   }, [allRows])
 
-  const rows = useMemo(() => {
-    const sorted = filterAndSortRows(allRows, propTab, filters)
-    if (filters.sortBy !== 'CG Score') return sorted
-    const ranked = [...allRows].sort((a, b) => (b.score - a.score) || ((b._rawScore ?? 0) - (a._rawScore ?? 0)))
-    return stampTipLanes(sorted, tipKeys(ranked, (row) => row.id), (row) => row.id)
-  }, [allRows, propTab, filters])
+  const laneRows = useMemo(() => rankWithTipLanes(
+    allRows,
+    (a, b) => (b.score - a.score) || ((b._rawScore ?? 0) - (a._rawScore ?? 0)),
+    (row) => row.id,
+  ), [allRows])
 
+  const rows = useMemo(() => filterAndSortRows(laneRows, propTab, filters), [laneRows, propTab, filters])
+
+  const showTipLane = filters.sortBy === 'CG Score'
+  const toggleWhy = useCallback((id) => {
+    setWhyId((current) => current === id ? null : id)
+  }, [])
   const insightLimit = isPaid ? 5 : FREE_ROW_LIMIT
 
   const hotStreaks = useMemo(() => {
@@ -550,7 +573,8 @@ export default function NbaDashboard({ onSelectPlayer, onNavigate, onNavigatePri
                   locked={!isPaid && index >= FREE_ROW_LIMIT}
                   rowRef={index === lastFreeIndex ? lastFreeRowRef : undefined}
                   whyOpen={whyId === item.id}
-                  onWhy={() => setWhyId((current) => current === item.id ? null : item.id)}
+                  onWhy={toggleWhy}
+                  showTipLane={showTipLane}
                 />
               ))}
               {Array.from({ length: placeholderCount }, (_, index) => (

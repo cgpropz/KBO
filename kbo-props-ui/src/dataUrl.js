@@ -47,9 +47,9 @@ async function fetchStaticSnapshot(path) {
 }
 
 // Returns { data, updatedAt, source, preview, lockedCount }.
-export async function fetchDataSnapshot(path, { player, showAllLines = false } = {}) {
+export async function fetchDataSnapshot(path, { player, showAllLines = false, fresh = false } = {}) {
   const ds = FILE_TO_DATASET[path];
-  if (ds) return fetchApiDataset(ds, { devStaticPath: path, player, showAllLines });
+  if (ds) return fetchApiDataset(ds, { devStaticPath: path, player, showAllLines, fresh });
   if (PUBLIC_STATIC_FILES.has(path)) return fetchStaticSnapshot(path);
   throw new Error(`Unknown data file: ${path}`);
 }

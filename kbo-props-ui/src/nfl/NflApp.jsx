@@ -1,4 +1,6 @@
 import { lazy, Suspense, useState } from 'react'
+import VisitedPane from '../VisitedPane'
+import { useSportView } from '../useSportView'
 import { useAuth } from '../AuthContext'
 import Paywall from '../Paywall'
 import SportSwitcher from '../SportSwitcher'
@@ -6,7 +8,6 @@ import { PageMenu, PageMenuButton, usePageMenu } from '../PageMenu'
 import NflPlayerSearch from './NflPlayerSearch'
 import RouteFallback from '../RouteFallback'
 import { GuideNavLinks } from '../GuideLinks'
-import { viewOnLoad } from '../memberNav'
 import CheatsheetsNavLink from '../CheatsheetsNavLink'
 import './nfl.css'
 
@@ -28,15 +29,10 @@ const NAV_ITEMS = [
 
 const SlipBoard = lazy(() => import('../SlipBoard'))
 
-export default function NflApp({ sport, setSport, onSlipSport, onNavigateHome, onNavigatePricing, entry, forceHome }) {
+export default function NflApp({ sport, setSport, onSlipSport, onNavigateHome, onNavigatePricing, entry, forceHome, homeTick = 0 }) {
   const { tier } = useAuth()
   const menu = usePageMenu()
-  const [view, setView] = useState(() => viewOnLoad({
-    sport: 'nfl',
-    entry,
-    search: typeof window === 'undefined' ? '' : window.location.search,
-    forceHome,
-  }))
+  const [view, setView] = useSportView({ sport: 'nfl', entry, forceHome, homeTick })
   const [previousView, setPreviousView] = useState('dashboard')
   const [selectedPlayer, setSelectedPlayer] = useState(entry?.view === 'player' && entry.player ? { player: entry.player, prop: entry.prop || null } : null)
 
@@ -46,27 +42,9 @@ export default function NflApp({ sport, setSport, onSlipSport, onNavigateHome, o
     setView('player')
   }
 
-  const content = view === 'player' && selectedPlayer
-    ? <NflPlayerPage player={selectedPlayer.player} prop={selectedPlayer.prop} onBack={() => setView(previousView)} />
-    : view === 'projections'
-      ? <NflProjections onSelectPlayer={openPlayer} />
-      : view === 'sharp'
-        ? <NflSharpOdds onSelectPlayer={openPlayer} />
-        : view === 'markets'
-          ? <NflGameMarkets />
-          : view === 'lineups'
-            ? <NflLineups />
-            : view === 'slip'
-              ? (
-                <Suspense fallback={<p style={{ color: '#9fb5a8', textAlign: 'center', padding: 24 }}>Loading slip builder…</p>}>
-                  <SlipBoard sport="nfl" onSport={onSlipSport} drawer={entry?.drawer === true} />
-                </Suspense>
-              )
-            : <NflPropLines onSelectPlayer={openPlayer} onNavigatePricing={onNavigatePricing} />
-
   // The dashboard gates itself (top 3 free, rest blurred by membership), so it skips the full-page paywall.
   // Sharp Odds, Game Markets, the PrizePicks board, and lineups are paid boards.
-  const isDashboard = view === 'dashboard'
+  const paid = (node) => <Paywall onNavigate={onNavigatePricing} sport="nfl">{node}</Paywall>
 
   return (
     <div className="nfl-root">
@@ -89,9 +67,33 @@ export default function NflApp({ sport, setSport, onSlipSport, onNavigateHome, o
         </PageMenu>
       </nav>
       <main className="nfl-content" key={tier || 'free'}>
-        <Suspense fallback={<RouteFallback inset />}>
-          {isDashboard ? content : <Paywall onNavigate={onNavigatePricing} sport="nfl">{content}</Paywall>}
-        </Suspense>
+        {view === 'player' && selectedPlayer && (
+          <Suspense fallback={<RouteFallback inset />}>
+            {paid(<NflPlayerPage player={selectedPlayer.player} prop={selectedPlayer.prop} onBack={() => setView(previousView)} />)}
+          </Suspense>
+        )}
+        {view === 'slip' && (
+          <Suspense fallback={<p style={{ color: '#9fb5a8', textAlign: 'center', padding: 24 }}>Loading slip builder…</p>}>
+            {paid(<SlipBoard sport="nfl" onSport={onSlipSport} drawer={entry?.drawer === true} />)}
+          </Suspense>
+        )}
+        <VisitedPane active={view === 'dashboard'}>
+          <Suspense fallback={<RouteFallback inset />}>
+            <NflPropLines onSelectPlayer={openPlayer} onNavigatePricing={onNavigatePricing} />
+          </Suspense>
+        </VisitedPane>
+        <VisitedPane active={view === 'projections'}>
+          <Suspense fallback={<RouteFallback inset />}>{paid(<NflProjections onSelectPlayer={openPlayer} />)}</Suspense>
+        </VisitedPane>
+        <VisitedPane active={view === 'sharp'}>
+          <Suspense fallback={<RouteFallback inset />}>{paid(<NflSharpOdds onSelectPlayer={openPlayer} />)}</Suspense>
+        </VisitedPane>
+        <VisitedPane active={view === 'markets'}>
+          <Suspense fallback={<RouteFallback inset />}>{paid(<NflGameMarkets />)}</Suspense>
+        </VisitedPane>
+        <VisitedPane active={view === 'lineups'}>
+          <Suspense fallback={<RouteFallback inset />}>{paid(<NflLineups />)}</Suspense>
+        </VisitedPane>
       </main>
     </div>
   )

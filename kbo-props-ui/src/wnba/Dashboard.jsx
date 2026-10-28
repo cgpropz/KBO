@@ -1,7 +1,8 @@
 import MiniHitBars from '../MiniHitBars'
 import { gameChartBars } from '../chartLabels'
-import { useMemo, useState, useEffect, useRef } from 'react'
+import { memo, useCallback, useMemo, useState, useEffect, useRef } from 'react'
 import { fetchWnbaData, fetchWnbaSnapshot } from './wnbaData'
+import { peekApiDataset } from '../apiData'
 import { ShowAllLinesToggle, useShowAllLines } from '../ShowAllLinesToggle'
 import { explicitBoardOddsType } from '../standardBoard.js'
 import BoardStatus from '../BoardStatus'
@@ -162,7 +163,10 @@ function FilterIcon() {
 }
 
 
-function PropRow({ item, onSelectPlayer, locked, rowRef, open, onToggle, whyOpen, onWhy, odds, oddsState, seen, phone }) {
+const PropRow = memo(function PropRow({ item, onSelectPlayer, locked, rowRef, open, onToggle, whyOpen, onWhy, odds, oddsState, seen, phone, showTipLane }) {
+  const tipLane = showTipLane ? item.tipLane : null
+  const toggleRow = () => onToggle(item.id)
+  const toggleNote = () => onWhy(item.id)
   const recent = Array.isArray(item.recent) ? item.recent : []
   const side = item.side
   const grade = dvpGrade(item.dvpRank)
@@ -178,9 +182,9 @@ function PropRow({ item, onSelectPlayer, locked, rowRef, open, onToggle, whyOpen
   return (
     <BoardLine
       phone={phone}
-      className={tipRowClass(item.tipLane, `wnba-lines-row${locked ? ' locked' : ''}${open ? ' is-open' : ''}`)}
+      className={tipRowClass(tipLane, `wnba-lines-row${locked ? ' locked' : ''}${open ? ' is-open' : ''}`)}
       rowRef={open || whyOpen ? undefined : rowRef}
-      onClick={locked ? undefined : onToggle}
+      onClick={locked ? undefined : toggleRow}
       cells={[
         { node: (
           <div className="wnba-lines-player">
@@ -191,16 +195,16 @@ function PropRow({ item, onSelectPlayer, locked, rowRef, open, onToggle, whyOpen
             </div>
             <div className="wnba-lines-info">
               <button className="wnba-player-link" onClick={(event) => { event.stopPropagation(); if (!locked) onSelectPlayer?.(item.player) }}>{item.player}</button>
-              <LaneMark lane={item.tipLane} />
+              <LaneMark lane={tipLane} />
               <span className="wnba-lines-tag"><CardTeamLogo team={item.team} src={wnbaLogoUrl(item.team) ? fitImage(wnbaLogoUrl(item.team), 16) : ''} />{item.team}{item.position ? `, ${item.position}` : ''}</span>
               <div className={`wnba-lines-line ${sideClass(side)}`}>{side ? <b>{sideLetter(side)}</b> : null} {formatValue(item.line)} {item.prop}</div>
             </div>
-            <OddsChevron open={open} player={item.player} onToggle={onToggle} disabled={locked} />
+            <OddsChevron open={open} player={item.player} onToggle={toggleRow} disabled={locked} />
           </div>
         ) },
         { className: 'hit-rate-chart', node: recent.length ? <MiniHitBars bars={Array.isArray(item.recentBars) ? item.recentBars : recent.map((value) => ({ value }))} line={item.line} chartClass="wnba-lines-chart" logoFor={wnbaLogoUrl} /> : <span style={{ fontSize: 11, color: '#4d635e' }}>No data</span> },
         { className: `hit-rate-score ${sideClass(side)}`, node: (
-          <CgScoreCell scoreText={item.score.toFixed(1)} score={item.score} side={side} note={locked ? null : scoreNote} open={whyOpen} onToggle={onWhy} />
+          <CgScoreCell scoreText={item.score.toFixed(1)} score={item.score} side={side} note={locked ? null : scoreNote} open={whyOpen} onToggle={toggleNote} />
         ) },
         { className: 'hit-rate-col', node: <HitRateStrip pills={item.hitPills} /> },
         { className: 'hit-rate-extra', style: item.dvpRank ? { color: dvpColor(item.dvpRank) } : undefined, node: item.dvpRank ? ordinal(Math.round(item.dvpRank)) : '—' },
@@ -231,7 +235,7 @@ function PropRow({ item, onSelectPlayer, locked, rowRef, open, onToggle, whyOpen
       )}
     />
   )
-}
+})
 
 function FilterRow({ id, label, value, expandedRow, onToggle, children }) {
   const expanded = expandedRow === id
@@ -395,10 +399,17 @@ function MiniRow({ rank, player, stat, side, primary, primaryColor, sub, onClick
   )
 }
 
+function readWnbaCache() {
+  return peekApiDataset('wnba_projections_standard')
+}
+
 export default function Dashboard({ onSelectPlayer, onNavigate, onNavigatePricing }) {
-  const [projections, setProjections] = useState(null)
+  const [projections, setProjections] = useState(() => {
+    const snap = readWnbaCache()
+    return snap ? (Array.isArray(snap.data) ? snap.data : []) : null
+  })
   const [players, setPlayers] = useState(null)
-  const [projLoading, setProjLoading] = useState(true)
+  const [projLoading, setProjLoading] = useState(() => readWnbaCache() == null)
   const [loadError, setLoadError] = useState('')
   const [loadAttempt, setLoadAttempt] = useState(0)
 
@@ -409,10 +420,13 @@ export default function Dashboard({ onSelectPlayer, onNavigate, onNavigatePricin
   const [openId, setOpenId] = useState(null)
   const [whyId, setWhyId] = useState(null)
 
-  const [lockedCount, setLockedCount] = useState(0)
-  const [refreshing, setRefreshing] = useState(false)
-  const [memberPreview, setMemberPreview] = useState(false)
-  const [updatedAt, setUpdatedAt] = useState(null)
+  const [lockedCount, setLockedCount] = useState(() => {
+    const snap = readWnbaCache()
+    return snap ? previewLockedCount(snap.preview === true, snap.lockedCount) : 0
+  })
+  const [refreshing, setRefreshing] = useState(() => readWnbaCache()?.refreshing === true)
+  const [memberPreview, setMemberPreview] = useState(() => readWnbaCache()?.preview === true)
+  const [updatedAt, setUpdatedAt] = useState(() => readWnbaCache()?.updatedAt || null)
   const { index: oddsIndex, oddsState, reload: reloadOdds } = useBoardOdds(({ fresh = false } = {}) => fetchWnbaSnapshot('wnba/pp_line_matched_odds.json', { fresh }).then((snapshot) => {
     const payload = snapshot?.data
     const records = Array.isArray(payload?.records) ? payload.records : []
@@ -435,20 +449,24 @@ export default function Dashboard({ onSelectPlayer, onNavigate, onNavigatePricin
   useEffect(() => {
     let cancelled = false
     const load = async () => {
-      setProjLoading(true)
-      setLoadError('')
+      if (loadAttempt > 0 || readWnbaCache() == null) {
+        setProjLoading(true)
+        setLoadError('')
+      }
       try {
         const [pr, pl] = await Promise.all([
-          fetchWnbaSnapshot('wnba/projections_standard.json'),
+          fetchWnbaSnapshot('wnba/projections_standard.json', { fresh: loadAttempt > 0 }),
           fetchWnbaData('wnba/players.json'),
         ])
         if (cancelled) return
+        const nextRows = Array.isArray(pr?.data) ? pr.data : []
+        const nextPlayers = Array.isArray(pl) ? pl : []
         setLockedCount(previewLockedCount(pr?.preview === true, pr?.lockedCount))
         setRefreshing(pr?.refreshing === true)
         setMemberPreview(pr?.preview === true)
         setUpdatedAt(pr?.updatedAt || null)
-        setProjections(Array.isArray(pr?.data) ? pr.data : [])
-        setPlayers(Array.isArray(pl) ? pl : [])
+        setProjections((current) => current === nextRows ? current : nextRows)
+        setPlayers((current) => current === nextPlayers ? current : nextPlayers)
       } catch (err) {
         if (!cancelled) {
           setProjections([])
@@ -553,13 +571,18 @@ export default function Dashboard({ onSelectPlayer, onNavigate, onNavigatePricin
     return { min: Math.floor(Math.min(...lines) * 10) / 10, max: Math.ceil(Math.max(...lines) * 10) / 10 }
   }, [allRows])
 
+  const laneRows = useMemo(() => {
+    const ranked = sortWnbaRows(allRows, 'CG Score', SEASON_LABEL)
+    return stampTipLanes(ranked, tipKeys(ranked, (row) => row.id), (row) => row.id)
+  }, [allRows])
+
   const rows = useMemo(() => {
     const edgeMin = filters.edgeMin === '' ? -Infinity : Number(filters.edgeMin)
     const edgeMax = filters.edgeMax === '' ? Infinity : Number(filters.edgeMax)
     const lineMin = filters.lineMin === '' ? -Infinity : Number(filters.lineMin)
     const lineMax = filters.lineMax === '' ? Infinity : Number(filters.lineMax)
 
-    const filtered = allRows
+    const filtered = laneRows
       .filter(item => propTab === 'All Props' || item.prop === propTab)
       .filter(item => filters.side === 'All' || (filters.side === 'Overs' ? item.side === 'OVER' : item.side === 'UNDER'))
       .filter(item => item.hitRate >= filters.minHitRate)
@@ -573,11 +596,9 @@ export default function Dashboard({ onSelectPlayer, onNavigate, onNavigatePricin
         return grade && grade[0] === filters.grade
       })
 
-    const sorted = sortWnbaRows(filtered, filters.sortBy, SEASON_LABEL)
-    if (filters.sortBy !== 'CG Score') return sorted
-    const ranked = sortWnbaRows(allRows, 'CG Score', SEASON_LABEL)
-    return stampTipLanes(sorted, tipKeys(ranked, (row) => row.id), (row) => row.id)
-  }, [allRows, propTab, filters])
+    if (filters.sortBy === 'CG Score') return filtered
+    return sortWnbaRows(filtered, filters.sortBy, SEASON_LABEL)
+  }, [laneRows, propTab, filters])
 
   // ── Bonus insight panels (kept from the previous board) ──────────────────
   // Free tier matches Prop Lines: top FREE_ROW_LIMIT; paid keeps full insight lists.
@@ -614,7 +635,14 @@ export default function Dashboard({ onSelectPlayer, onNavigate, onNavigatePricin
     return top.reduce((s, r) => s + r.score, 0) / top.length
   }, [allRows])
 
-  const goPlayer = name => onSelectPlayer?.(name)
+  const goPlayer = (name) => onSelectPlayer?.(name)
+  const showTipLane = filters.sortBy === 'CG Score'
+  const toggleOpen = useCallback((id) => {
+    setOpenId((current) => current === id ? null : id)
+  }, [])
+  const toggleWhy = useCallback((id) => {
+    setWhyId((current) => current === id ? null : id)
+  }, [])
   const goProjections = () => onNavigate?.('projections')
 
   const hasLockedRows = showPaywall && (rows.length > FREE_ROW_LIMIT || lockedCount > 0)
@@ -694,9 +722,10 @@ export default function Dashboard({ onSelectPlayer, onNavigate, onNavigatePricin
                     locked={!isPaid && index >= FREE_ROW_LIMIT}
                     rowRef={index === lastFreeIndex ? lastFreeRowRef : undefined}
                     open={openId === item.id}
-                    onToggle={() => setOpenId((current) => current === item.id ? null : item.id)}
+                    onToggle={toggleOpen}
                     whyOpen={whyId === item.id}
-                    onWhy={() => setWhyId((current) => current === item.id ? null : item.id)}
+                    onWhy={toggleWhy}
+                    showTipLane={showTipLane}
                     odds={matched.odds}
                     seen={matched.seen}
                     oddsState={oddsState}

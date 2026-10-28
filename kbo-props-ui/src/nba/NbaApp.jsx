@@ -1,4 +1,6 @@
 import { lazy, Suspense, useState } from 'react'
+import VisitedPane from '../VisitedPane'
+import { useSportView } from '../useSportView'
 import { useAuth } from '../AuthContext'
 import '../wnba/wnba.css'
 import './nba.css'
@@ -6,7 +8,6 @@ import SportSwitcher from '../SportSwitcher'
 import { PageMenu, PageMenuButton, usePageMenu } from '../PageMenu'
 import RouteFallback from '../RouteFallback'
 import { GuideNavLinks } from '../GuideLinks'
-import { viewOnLoad } from '../memberNav'
 import CheatsheetsNavLink from '../CheatsheetsNavLink'
 
 const NbaPlayers = lazy(() => import('./NbaPlayers'))
@@ -53,15 +54,10 @@ function EmptyTab({ title, body }) {
   )
 }
 
-export default function NbaApp({ sport, setSport, onSlipSport, onNavigateHome, onNavigatePricing, entry, forceHome }) {
+export default function NbaApp({ sport, setSport, onSlipSport, onNavigateHome, onNavigatePricing, entry, forceHome, homeTick = 0 }) {
   const { tier } = useAuth()
   const menu = usePageMenu()
-  const [view, setView] = useState(() => viewOnLoad({
-    sport: 'nba',
-    entry,
-    search: typeof window === 'undefined' ? '' : window.location.search,
-    forceHome,
-  }))
+  const [view, setView] = useSportView({ sport: 'nba', entry, forceHome, homeTick })
   const [playerName, setPlayerName] = useState(entry?.player || '')
   const openView = (next) => {
     if (next !== 'players') setPlayerName('')
@@ -71,28 +67,6 @@ export default function NbaApp({ sport, setSport, onSlipSport, onNavigateHome, o
     setPlayerName(name || '')
     setView('players')
   }
-
-  let content
-  if (view === 'teams') content = <NbaTeams />
-  else if (view === 'dashboard') {
-    content = (
-      <NbaDashboard
-        onSelectPlayer={openPlayer}
-        onNavigate={openView}
-        onNavigatePricing={onNavigatePricing}
-      />
-    )
-  } else if (view === 'players') content = <NbaPlayers initialName={playerName} />
-  else if (view === 'projections') content = <NbaEdge />
-  else if (view === 'sharp') content = <NbaSharpOdds onSelectPlayer={openPlayer} />
-  else if (view === 'slip') {
-    content = (
-      <Suspense fallback={<p style={{ color: '#8b94a9', textAlign: 'center', padding: 24 }}>Loading slip builder…</p>}>
-        <SlipBoard sport="nba" onSport={onSlipSport} drawer={entry?.drawer === true} />
-      </Suspense>
-    )
-  }
-  else content = <EmptyTab {...(EMPTY_COPY[view] || EMPTY_COPY.lineups)} />
 
   return (
     <div className="wnba-root nba-root">
@@ -130,9 +104,37 @@ export default function NbaApp({ sport, setSport, onSlipSport, onNavigateHome, o
         </PageMenu>
       </nav>
       <div className="wnba-content" key={tier || 'free'}>
-        <Suspense fallback={<RouteFallback inset />}>
-          {content}
-        </Suspense>
+        {view === 'slip' && (
+          <Suspense fallback={<p style={{ color: '#8b94a9', textAlign: 'center', padding: 24 }}>Loading slip builder…</p>}>
+            <SlipBoard sport="nba" onSport={onSlipSport} drawer={entry?.drawer === true} />
+          </Suspense>
+        )}
+        {view === 'lineups' && <EmptyTab {...EMPTY_COPY.lineups} />}
+        <VisitedPane active={view === 'dashboard'}>
+          <Suspense fallback={<RouteFallback inset />}>
+            <NbaDashboard onSelectPlayer={openPlayer} onNavigate={openView} onNavigatePricing={onNavigatePricing} />
+          </Suspense>
+        </VisitedPane>
+        <VisitedPane active={view === 'projections'}>
+          <Suspense fallback={<RouteFallback inset />}>
+            <NbaEdge />
+          </Suspense>
+        </VisitedPane>
+        <VisitedPane active={view === 'sharp'}>
+          <Suspense fallback={<RouteFallback inset />}>
+            <NbaSharpOdds onSelectPlayer={openPlayer} />
+          </Suspense>
+        </VisitedPane>
+        <VisitedPane active={view === 'players'}>
+          <Suspense fallback={<RouteFallback inset />}>
+            <NbaPlayers initialName={playerName} />
+          </Suspense>
+        </VisitedPane>
+        <VisitedPane active={view === 'teams'}>
+          <Suspense fallback={<RouteFallback inset />}>
+            <NbaTeams />
+          </Suspense>
+        </VisitedPane>
       </div>
     </div>
   )

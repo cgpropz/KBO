@@ -1,4 +1,6 @@
 import { lazy, Suspense, useState } from 'react'
+import VisitedPane from '../VisitedPane'
+import { useSportView } from '../useSportView'
 import { useAuth } from '../AuthContext'
 import './wnba.css'
 import WnbaPlayerSearch from './WnbaPlayerSearch'
@@ -7,7 +9,6 @@ import { PageMenu, PageMenuButton, usePageMenu } from '../PageMenu'
 import Paywall from '../Paywall'
 import RouteFallback from '../RouteFallback'
 import { GuideNavLinks } from '../GuideLinks'
-import { viewOnLoad } from '../memberNav'
 import CheatsheetsNavLink from '../CheatsheetsNavLink'
 
 const Projections = lazy(() => import('./Projections'))
@@ -28,27 +29,10 @@ const NAV_ITEMS = [
 
 const SlipBoard = lazy(() => import('../SlipBoard'))
 
-// Paid WNBA views (mirrors KBO's PAID_VIEWS). Dashboard/Players/Teams stay free.
-const WNBA_PAID_VIEWS = new Set(['projections', 'lineups', 'slip'])
-
-function ComingSoon({ label }) {
-  return (
-    <div className="card" style={{ padding: 40, textAlign: 'center', color: '#8b94a9' }}>
-      <h2 style={{ margin: '0 0 8px', color: '#e6f3ce' }}>{label}</h2>
-      <p style={{ margin: 0, fontSize: 13 }}>This WNBA view is being migrated into the unified site.</p>
-    </div>
-  )
-}
-
-export default function WnbaApp({ sport, setSport, onSlipSport, onNavigateKbo, entry, forceHome }) {
+export default function WnbaApp({ sport, setSport, onSlipSport, onNavigateKbo, entry, forceHome, homeTick = 0 }) {
   const { tier } = useAuth()
   const menu = usePageMenu()
-  const [view, setView] = useState(() => viewOnLoad({
-    sport: 'wnba',
-    entry,
-    search: typeof window === 'undefined' ? '' : window.location.search,
-    forceHome,
-  }))
+  const [view, setView] = useSportView({ sport: 'wnba', entry, forceHome, homeTick })
   const [teamFilter, setTeamFilter] = useState('All')
   const [selectedPlayer, setSelectedPlayer] = useState(entry?.player || null)
   const [returnView, setReturnView] = useState('players')
@@ -65,25 +49,7 @@ export default function WnbaApp({ sport, setSport, onSlipSport, onNavigateKbo, e
     setView('players')
   }
 
-  const content = (() => {
-    switch (view) {
-      case 'projections': return <Projections onSelectPlayer={handleSelectPlayer} />
-      case 'dashboard':   return <Dashboard onSelectPlayer={handleSelectPlayer} onNavigate={setView} onNavigatePricing={() => onNavigateKbo('pricing')} />
-      case 'players':     return <PlayerMap onSelectPlayer={handleSelectPlayer} initialTeam={teamFilter} />
-      case 'teams':       return <Teams onSelectTeam={handleSelectTeam} />
-      case 'lineups':     return <Lineups />
-      case 'slip':        return (
-        <Suspense fallback={<p style={{ color: '#8b94a9', textAlign: 'center', padding: 24 }}>Loading slip builder…</p>}>
-          <SlipBoard sport="wnba" onSport={onSlipSport} drawer={entry?.drawer === true} />
-        </Suspense>
-      )
-      case 'playerDetail': return <WnbaPlayerPage playerName={selectedPlayer} onBack={() => setView(returnView)} />
-      default:            return <ComingSoon label="WNBA" />
-    }
-  })()
-
-  const needsPaywall = WNBA_PAID_VIEWS.has(view)
-
+  const paid = (node) => <Paywall onNavigate={onNavigateKbo} sport="wnba">{node}</Paywall>
 
   return (
     <div className="wnba-root">
@@ -110,11 +76,39 @@ export default function WnbaApp({ sport, setSport, onSlipSport, onNavigateKbo, e
         </PageMenu>
       </nav>
       <div className="wnba-content" key={tier || 'free'}>
-        <Suspense fallback={<RouteFallback inset />}>
-          {needsPaywall
-            ? <Paywall onNavigate={onNavigateKbo} sport="wnba">{content}</Paywall>
-            : content}
-        </Suspense>
+        {view === 'playerDetail' && (
+          <Suspense fallback={<RouteFallback inset />}>
+            <WnbaPlayerPage playerName={selectedPlayer} onBack={() => setView(returnView)} />
+          </Suspense>
+        )}
+        {view === 'slip' && (
+          <Suspense fallback={<p style={{ color: '#8b94a9', textAlign: 'center', padding: 24 }}>Loading slip builder…</p>}>
+            {paid(
+              <SlipBoard sport="wnba" onSport={onSlipSport} drawer={entry?.drawer === true} />
+            )}
+          </Suspense>
+        )}
+        <VisitedPane active={view === 'dashboard'}>
+          <Suspense fallback={<RouteFallback inset />}>
+            <Dashboard onSelectPlayer={handleSelectPlayer} onNavigate={setView} onNavigatePricing={() => onNavigateKbo('pricing')} />
+          </Suspense>
+        </VisitedPane>
+        <VisitedPane active={view === 'projections'}>
+          <Suspense fallback={<RouteFallback inset />}>{paid(<Projections onSelectPlayer={handleSelectPlayer} />)}</Suspense>
+        </VisitedPane>
+        <VisitedPane active={view === 'players'}>
+          <Suspense fallback={<RouteFallback inset />}>
+            <PlayerMap key={teamFilter} onSelectPlayer={handleSelectPlayer} initialTeam={teamFilter} />
+          </Suspense>
+        </VisitedPane>
+        <VisitedPane active={view === 'teams'}>
+          <Suspense fallback={<RouteFallback inset />}>
+            <Teams onSelectTeam={handleSelectTeam} />
+          </Suspense>
+        </VisitedPane>
+        <VisitedPane active={view === 'lineups'}>
+          <Suspense fallback={<RouteFallback inset />}>{paid(<Lineups />)}</Suspense>
+        </VisitedPane>
       </div>
     </div>
   )
