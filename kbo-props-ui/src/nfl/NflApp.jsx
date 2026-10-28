@@ -69,12 +69,12 @@ export default function NflApp({ sport, setSport, onSlipSport, onNavigateHome, o
       <main className="nfl-content" key={tier || 'free'}>
         {view === 'player' && selectedPlayer && (
           <Suspense fallback={<RouteFallback inset />}>
-            <NflPlayerPage player={selectedPlayer.player} prop={selectedPlayer.prop} onBack={() => setView(previousView)} />
+            {paid(<NflPlayerPage player={selectedPlayer.player} prop={selectedPlayer.prop} onBack={() => setView(previousView)} />)}
           </Suspense>
         )}
         {view === 'slip' && (
           <Suspense fallback={<p style={{ color: '#9fb5a8', textAlign: 'center', padding: 24 }}>Loading slip builder…</p>}>
-            <SlipBoard sport="nfl" onSport={onSlipSport} drawer={entry?.drawer === true} />
+            {paid(<SlipBoard sport="nfl" onSport={onSlipSport} drawer={entry?.drawer === true} />)}
           </Suspense>
         )}
         <VisitedPane active={view === 'dashboard'}>

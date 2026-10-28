@@ -66,12 +66,12 @@ export default function NhlApp({ sport, setSport, onSlipSport, onNavigateHome, o
       <main className="nfl-content" key={tier || 'free'}>
         {view === 'player' && (
           <Suspense fallback={<RouteFallback inset />}>
-            <NhlPlayerPage item={selected} onBack={() => setView('dashboard')} />
+            {paid(<NhlPlayerPage item={selected} onBack={() => setView('dashboard')} />)}
           </Suspense>
         )}
         {view === 'slip' && (
           <Suspense fallback={<p style={{ color: '#9fb5a8', textAlign: 'center', padding: 24 }}>Loading slip builder…</p>}>
-            <SlipBoard sport="nhl" onSport={onSlipSport} drawer={entry?.drawer === true} />
+            {paid(<SlipBoard sport="nhl" onSport={onSlipSport} drawer={entry?.drawer === true} />)}
           </Suspense>
         )}
         <VisitedPane active={view === 'dashboard'}>
