@@ -68,6 +68,7 @@ MUST_NOT_BE_PUBLIC = [
 	"/data/nba/projections_demon.json",
 	"/data/nba/projections_goblin.json",
 	"/data/nba/sharp_odds.json",
+	"/data/nba/game_markets.json",
 	"/data/nhl/projections.json",
 	"/data/nhl/lineups.json",
 	"/data/nhl/sharp_odds.json",

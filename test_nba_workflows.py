@@ -20,6 +20,7 @@ NBA_STATIC_PATHS = (
     "/data/nba/projections_standard.json",
     "/data/nba/projections_demon.json",
     "/data/nba/projections_goblin.json",
+    "/data/nba/game_markets.json",
 )
 
 

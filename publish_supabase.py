@@ -67,7 +67,7 @@ DATA_DIR = os.path.join(BASE, "kbo-props-ui", "public", "data")
 OPTIONAL_TABLES = {
     "board_status",
     "nfl_lineups", "nfl_sharp_odds", "nfl_game_markets", "graded_props_history", "wnba_sharp_odds",
-    "nba_sharp_odds",
+    "nba_sharp_odds", "nba_game_markets",
     "nhl_projections", "nhl_lineups", "nhl_sharp_odds",
     "nhl_dvp_f", "nhl_dvp_d", "nhl_dvp_g",
     # Correlation tables are created by sql/correlations.sql. A missing table
@@ -518,6 +518,8 @@ def missing_table_message(table):
         hint = " Apply sql/wnba_sharp_odds.sql in the Supabase SQL editor."
     elif table == "nba_sharp_odds":
         hint = " Apply sql/nba_sharp_odds.sql in the Supabase SQL editor."
+    elif table == "nba_game_markets":
+        hint = " Apply sql/nba_game_markets.sql in the Supabase SQL editor."
     elif table in CORRELATION_SQL_TABLES:
         hint = (
             " Apply sql/correlations.sql in the Supabase SQL editor, then "
@@ -963,6 +965,9 @@ TABLES = {
     "nba/projections_demon.json": "nba_projections_demon",
     "nba/projections_goblin.json": "nba_projections_goblin",
     "nba/sharp_odds.json": "nba_sharp_odds",
+    # Shadow game board. Projection-only until Code Green says otherwise.
+    # Missing file or missing table must not fail the player-prop publish.
+    "nba/game_markets.json": "nba_game_markets",
     # Published only when PUBLISH_ONLY_PREFIX starts with nhl/. A full publish
     # leaves these alone so a missing local snapshot cannot fail the other sports.
     "nhl/projections.json": "nhl_projections",
