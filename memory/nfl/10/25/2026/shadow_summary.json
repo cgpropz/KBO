@@ -4,7 +4,7 @@
   "slate_date": "10/25/2026",
   "slate_date_iso": "2026-10-25",
   "period": "week-of-2026-10-20",
-  "graded_at": "2026-10-27T02:26:31+00:00",
+  "graded_at": "2026-10-28T02:35:57+00:00",
   "status": "graded",
   "evaluation": {
     "excluded": false
@@ -37,57 +37,57 @@
     "top_bucket": "rows flagged top_current / top_shadow in shadow.json (top 20% of standard lines by |projection - line| / stat MAE, chosen pregame)"
   },
   "overall": {
-    "graded_props": 603,
+    "graded_props": 602,
     "current": {
-      "hits": 275,
+      "hits": 274,
       "misses": 306,
       "pushes": 22,
       "dnps": 9,
       "voids": 89,
       "no_pick": 0,
-      "hit_rate": 0.473322,
-      "hit_rate_pct": 47.3
+      "hit_rate": 0.472414,
+      "hit_rate_pct": 47.2
     },
     "shadow": {
-      "hits": 295,
+      "hits": 294,
       "misses": 286,
       "pushes": 22,
       "dnps": 9,
       "voids": 89,
       "no_pick": 0,
-      "hit_rate": 0.507745,
-      "hit_rate_pct": 50.8
+      "hit_rate": 0.506897,
+      "hit_rate_pct": 50.7
     },
     "hit_rate_delta_pct_points": 3.4,
     "paired": {
-      "n": 581,
-      "current_hits": 275,
-      "shadow_hits": 295,
-      "current_hit_rate_pct": 47.3,
-      "shadow_hit_rate_pct": 50.8
+      "n": 580,
+      "current_hits": 274,
+      "shadow_hits": 294,
+      "current_hit_rate_pct": 47.2,
+      "shadow_hit_rate_pct": 50.7
     },
     "current_edge": {
-      "hits": 254,
+      "hits": 253,
       "misses": 289,
       "pushes": 22,
       "dnps": 9,
       "voids": 89,
       "no_pick": 38,
-      "hit_rate": 0.467772,
-      "hit_rate_pct": 46.8
+      "hit_rate": 0.46679,
+      "hit_rate_pct": 46.7
     },
     "mae": {
-      "n": 580,
-      "current": 16.6847,
-      "shadow": 15.9473,
-      "delta": -0.7373,
-      "sum_abs_current": 9677.1,
-      "sum_abs_shadow": 9249.437
+      "n": 579,
+      "current": 16.7131,
+      "shadow": 15.9745,
+      "delta": -0.7386,
+      "sum_abs_current": 9676.9,
+      "sum_abs_shadow": 9249.237
     },
     "mae_shadow_all": {
-      "n": 584,
-      "shadow": 15.8886,
-      "sum_abs": 9278.919
+      "n": 583,
+      "shadow": 15.9155,
+      "sum_abs": 9278.719
     },
     "top_bucket": {
       "current": {
@@ -342,57 +342,57 @@
       }
     },
     "Pass TDs": {
-      "graded_props": 6,
+      "graded_props": 5,
       "current": {
-        "hits": 4,
+        "hits": 3,
         "misses": 1,
         "pushes": 1,
         "dnps": 0,
         "voids": 1,
         "no_pick": 0,
-        "hit_rate": 0.8,
-        "hit_rate_pct": 80.0
+        "hit_rate": 0.75,
+        "hit_rate_pct": 75.0
       },
       "shadow": {
-        "hits": 4,
+        "hits": 3,
         "misses": 1,
         "pushes": 1,
         "dnps": 0,
         "voids": 1,
         "no_pick": 0,
-        "hit_rate": 0.8,
-        "hit_rate_pct": 80.0
+        "hit_rate": 0.75,
+        "hit_rate_pct": 75.0
       },
       "hit_rate_delta_pct_points": 0.0,
       "paired": {
-        "n": 5,
-        "current_hits": 4,
-        "shadow_hits": 4,
-        "current_hit_rate_pct": 80.0,
-        "shadow_hit_rate_pct": 80.0
+        "n": 4,
+        "current_hits": 3,
+        "shadow_hits": 3,
+        "current_hit_rate_pct": 75.0,
+        "shadow_hit_rate_pct": 75.0
       },
       "current_edge": {
-        "hits": 4,
+        "hits": 3,
         "misses": 1,
         "pushes": 1,
         "dnps": 0,
         "voids": 1,
         "no_pick": 0,
-        "hit_rate": 0.8,
-        "hit_rate_pct": 80.0
+        "hit_rate": 0.75,
+        "hit_rate_pct": 75.0
       },
       "mae": {
-        "n": 6,
-        "current": 0.5,
-        "shadow": 0.5,
+        "n": 5,
+        "current": 0.56,
+        "shadow": 0.56,
         "delta": 0.0,
-        "sum_abs_current": 3.0,
-        "sum_abs_shadow": 3.0
+        "sum_abs_current": 2.8,
+        "sum_abs_shadow": 2.8
       },
       "mae_shadow_all": {
-        "n": 6,
-        "shadow": 0.5,
-        "sum_abs": 3.0
+        "n": 5,
+        "shadow": 0.56,
+        "sum_abs": 2.8
       },
       "top_bucket": {
         "current": {
@@ -1089,7 +1089,6 @@
     {"player":"Blake Corum","team":"LA","stat":"Rush+Rec Yds","odds_type":"standard","line":50.5,"actual":101.0,"result":"OVER","current_projection":52.2,"current_side":"OVER","current_result":"HIT","published_projection":49.1,"published_side":"UNDER","published_result":"MISS","shadow_projection":49.113,"shadow_side":"UNDER","shadow_result":"MISS","shadow_source":"candidate","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":48.8,"abs_err_shadow":51.887},
     {"player":"Bo Nix","team":"DEN","stat":"Pass Attempts","odds_type":"standard","line":32.5,"actual":29.0,"result":"UNDER","current_projection":32.9,"current_side":"OVER","current_result":"MISS","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":32.9,"shadow_side":"OVER","shadow_result":"MISS","shadow_source":"current","p_over":null,"current_edge_result":"MISS","top_current":false,"top_shadow":false,"abs_err_current":3.9,"abs_err_shadow":3.9},
     {"player":"Bo Nix","team":"DEN","stat":"Pass Completions","odds_type":"standard","line":21.5,"actual":15.0,"result":"UNDER","current_projection":20.1,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":20.1,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":5.1,"abs_err_shadow":5.1},
-    {"player":"Bo Nix","team":"DEN","stat":"Pass TDs","odds_type":"standard","line":1.5,"actual":1.0,"result":"UNDER","current_projection":0.8,"current_side":"UNDER","current_result":"HIT","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":0.8,"shadow_side":"UNDER","shadow_result":"HIT","shadow_source":"current","p_over":null,"current_edge_result":"HIT","top_current":false,"top_shadow":false,"abs_err_current":0.2,"abs_err_shadow":0.2},
     {"player":"Bo Nix","team":"DEN","stat":"Pass Yards","odds_type":"standard","line":220.5,"actual":222.0,"result":"OVER","current_projection":174.8,"current_side":"UNDER","current_result":"MISS","published_projection":195.1,"published_side":"UNDER","published_result":"MISS","shadow_projection":195.072,"shadow_side":"UNDER","shadow_result":"MISS","shadow_source":"candidate","p_over":null,"current_edge_result":"MISS","top_current":true,"top_shadow":false,"abs_err_current":47.2,"abs_err_shadow":26.928},
     {"player":"Bo Nix","team":"DEN","stat":"Pass+Rush Yds","odds_type":"standard","line":235.5,"actual":295.0,"result":"OVER","current_projection":186.1,"current_side":"UNDER","current_result":"MISS","published_projection":210.1,"published_side":"UNDER","published_result":"MISS","shadow_projection":210.122,"shadow_side":"UNDER","shadow_result":"MISS","shadow_source":"candidate","p_over":null,"current_edge_result":"MISS","top_current":true,"top_shadow":false,"abs_err_current":108.9,"abs_err_shadow":84.878},
     {"player":"Bo Nix","team":"DEN","stat":"Rush Attempts","odds_type":"standard","line":3.5,"actual":null,"result":"VOID","current_projection":4.0,"current_side":"OVER","current_result":"VOID","published_projection":null,"published_side":null,"published_result":null,"shadow_projection":4.0,"shadow_side":"OVER","shadow_result":"VOID","shadow_source":"current","p_over":null,"current_edge_result":"VOID","top_current":false,"top_shadow":false,"abs_err_current":null,"abs_err_shadow":null},
