@@ -62,7 +62,7 @@ function SortHead({ scope, label, sortKey, sort, onSort, align = '' }) {
   )
 }
 
-function GameBoard({ games, selectedId, sort, onSort, onSelect }) {
+function GameBoard({ games, selectedId, sort, onSort, onSelect, projectionOnly = false }) {
   return (
     <div className="gp-board" role="tablist" aria-label="Games" data-testid="cheatsheet-game-board">
       <table className="gp-tbl gp-games">
@@ -72,7 +72,9 @@ function GameBoard({ games, selectedId, sort, onSort, onSelect }) {
             <SortHead scope="games" label="Game" sortKey="game" sort={sort} onSort={onSort} />
             <SortHead scope="games" label="Kick" sortKey="kick" sort={sort} onSort={onSort} />
             <SortHead scope="games" label="Total" sortKey="total" sort={sort} onSort={onSort} align="r" />
-            <SortHead scope="games" label="Edge" sortKey="edge" sort={sort} onSort={onSort} align="r" />
+            {projectionOnly
+              ? <th className="r">Spread</th>
+              : <SortHead scope="games" label="Edge" sortKey="edge" sort={sort} onSort={onSort} align="r" />}
           </tr>
         </thead>
         <tbody>
@@ -97,8 +99,8 @@ function GameBoard({ games, selectedId, sort, onSort, onSelect }) {
                   </button>
                 </td>
                 <td>{game.listKick}</td>
-                <td className="r">{format1(game.market.total)}</td>
-                <td className="r gp-hi">{signed1(game.cg.total_edge)}</td>
+                <td className="r">{format1(projectionOnly ? game.cg.total : game.market.total)}</td>
+                <td className={projectionOnly ? 'r' : 'r gp-hi'}>{projectionOnly ? signed1(game.cg.side_proj) : signed1(game.cg.total_edge)}</td>
               </tr>
             )
           })}
@@ -126,22 +128,22 @@ function MarketStrip({ game }) {
       <div className="gp-mkt-b">
         <div className="gp-mkt-l">{totalLabel}</div>
         <div className="gp-mkt-v">{format1(market.total)}</div>
-        <div className="gp-mkt-s">O/U market</div>
+        <div className="gp-mkt-s">{market.total == null ? 'no posted line' : 'O/U market'}</div>
       </div>
       <div className="gp-mkt-b">
         <div className="gp-mkt-l">SPREAD</div>
         <div className="gp-mkt-v">{spread.favorite || '—'} {format1(spread.line)}</div>
-        <div className="gp-mkt-s">favorite</div>
+        <div className="gp-mkt-s">{spread.line == null ? 'no posted line' : 'favorite'}</div>
       </div>
       <div className="gp-mkt-b">
         <div className="gp-mkt-l">ML {home}</div>
         <div className="gp-mkt-v">{moneyline(market.ml?.[home])}</div>
-        <div className="gp-mkt-s">home</div>
+        <div className="gp-mkt-s">{market.ml?.[home] == null ? 'no posted line' : 'home'}</div>
       </div>
       <div className="gp-mkt-b">
         <div className="gp-mkt-l">ML {away}</div>
         <div className="gp-mkt-v">{moneyline(market.ml?.[away])}</div>
-        <div className="gp-mkt-s">away</div>
+        <div className="gp-mkt-s">{market.ml?.[away] == null ? 'no posted line' : 'away'}</div>
       </div>
     </div>
   )
@@ -327,6 +329,7 @@ function StandardView({ pack, game, games, gameSort, onGameSort, onSelectGame, r
   const awayRows = rowsFor(game, 'away_off', rowMode, rowSort.away)
   const homeRows = rowsFor(game, 'home_off', rowMode, rowSort.home)
   const exampleTag = pack.example ? ' · EXAMPLE' : ''
+  const projectionOnly = pack.projectionOnly === true
   return (
     <div data-testid="game-proj-standard">
       <header className="gp-top">
@@ -340,7 +343,7 @@ function StandardView({ pack, game, games, gameSort, onGameSort, onSelectGame, r
         <div className="gp-hero-main">
           <div className="gp-hero-head">
             <div>
-              <p className="gp-kick">CG MODEL VS MARKET</p>
+              <p className="gp-kick">{projectionOnly ? 'PROJECTION ONLY' : 'CG MODEL VS MARKET'}</p>
               <h2 className="gp-match" data-testid="game-proj-match">{away} <span>@</span> {home}</h2>
               <p className="gp-meta">
                 {[game.game.away.record, game.game.home.record, game.game.kickoff, game.game.venue].filter(Boolean).join(' · ')}
@@ -353,21 +356,25 @@ function StandardView({ pack, game, games, gameSort, onGameSort, onSelectGame, r
           </div>
           <div className="gp-edges">
             <article className="gp-edge">
-              <p className="lab">TOTAL EDGE</p>
-              <p className="big">{signed1(cg.total_edge)}</p>
-              <p className="sub">CG <b>{format1(cg.total)}</b> vs market <b>{format1(market.total)}</b></p>
+              <p className="lab">{projectionOnly ? 'PROJ TOTAL' : 'TOTAL EDGE'}</p>
+              <p className="big">{projectionOnly ? format1(cg.total) : signed1(cg.total_edge)}</p>
+              <p className="sub">{projectionOnly
+                ? <>Model total <b>{format1(cg.total)}</b>{market.total == null ? ' · no posted line' : <> vs market <b>{format1(market.total)}</b></>}</>
+                : <>CG <b>{format1(cg.total)}</b> vs market <b>{format1(market.total)}</b></>}</p>
               <div className="row">
-                {cg.total_lean ? <span className="gp-pill over">{cg.total_lean}</span> : null}
-                <ScorePill value={cg.cg_score_total} />
+                {!projectionOnly && cg.total_lean ? <span className="gp-pill over">{cg.total_lean}</span> : null}
+                {!projectionOnly ? <ScorePill value={cg.cg_score_total} /> : null}
               </div>
             </article>
             <article className="gp-edge">
-              <p className="lab">SPREAD EDGE</p>
-              <p className="big">{signed1(cg.side_edge)}</p>
-              <p className="sub">CG <b>{cg.side_lean} {format1(cg.side_proj)}</b> vs mkt {market.spread?.favorite || '—'} {format1(market.spread?.line)}</p>
+              <p className="lab">{projectionOnly ? 'PROJ SPREAD' : 'SPREAD EDGE'}</p>
+              <p className="big">{projectionOnly ? signed1(cg.side_proj) : signed1(cg.side_edge)}</p>
+              <p className="sub">{projectionOnly
+                ? <>Home minus away <b>{signed1(cg.side_proj)}</b></>
+                : <>CG <b>{cg.side_lean} {format1(cg.side_proj)}</b> vs mkt {market.spread?.favorite || '—'} {format1(market.spread?.line)}</>}</p>
               <div className="row">
-                {cg.side_lean ? <span className="gp-pill side">{cg.side_lean} SIDE</span> : null}
-                <ScorePill value={cg.cg_score_spread} />
+                {!projectionOnly && cg.side_lean ? <span className="gp-pill side">{cg.side_lean} SIDE</span> : null}
+                {!projectionOnly ? <ScorePill value={cg.cg_score_spread} /> : null}
               </div>
             </article>
           </div>
@@ -377,14 +384,14 @@ function StandardView({ pack, game, games, gameSort, onGameSort, onSelectGame, r
               <div className="n">{format1(cg.away_score)}</div>
               <div className="gp-mid gp-mini">{away}</div>
             </div>
-            <div className="vs">CG PROJ</div>
+            <div className="vs">{projectionOnly ? 'PROJ' : 'CG PROJ'}</div>
             <div className="team">
               <TeamBadge abbr={home} color={game.game.home.color} />
               <div className="n">{format1(cg.home_score)}</div>
               <div className="gp-mid gp-mini">{home}</div>
             </div>
             <div className="tot">
-              <p className="gp-kick">CG TOTAL</p>
+              <p className="gp-kick">{projectionOnly ? 'PROJ TOTAL' : 'CG TOTAL'}</p>
               <div className="n">{format1(cg.total)}</div>
               <HitChips game={game} compact />
             </div>
@@ -392,7 +399,7 @@ function StandardView({ pack, game, games, gameSort, onGameSort, onSelectGame, r
         </div>
         <div className="gp-rail">
           <section className="gp-card">
-            <p className="gp-kick">MARKET · {marketCaption(market)}{exampleTag}</p>
+            <p className="gp-kick">{projectionOnly && market.total == null ? `MARKET · NO POSTED LINE${exampleTag}` : `MARKET · ${marketCaption(market)}${exampleTag}`}</p>
             <MarketStrip game={game} />
           </section>
           {game.historical_totals?.length ? (
@@ -403,7 +410,7 @@ function StandardView({ pack, game, games, gameSort, onGameSort, onSelectGame, r
           ) : null}
           <section className="gp-card">
             <p className="gp-kick">THIS WEEK{exampleTag}</p>
-            <GameBoard games={games} selectedId={game.id} sort={gameSort} onSort={onGameSort} onSelect={onSelectGame} />
+            <GameBoard games={games} selectedId={game.id} sort={gameSort} onSort={onGameSort} onSelect={onSelectGame} projectionOnly={projectionOnly} />
           </section>
         </div>
       </div>
@@ -459,6 +466,7 @@ function ProView({ pack, game, games, gameSort, onGameSort, onSelectGame, rowSor
   const awayRows = rowsFor(game, 'away_off', rowMode, rowSort.away)
   const homeRows = rowsFor(game, 'home_off', rowMode, rowSort.home)
   const exampleTag = pack.example ? ' · EXAMPLE' : ''
+  const projectionOnly = pack.projectionOnly === true
   const showOverview = panel === 'overview'
   const showTotals = panel === 'overview' || panel === 'totals'
   const showPace = panel === 'overview' || panel === 'pace'
@@ -476,12 +484,12 @@ function ProView({ pack, game, games, gameSort, onGameSort, onSelectGame, rowSor
         <LayoutToggle layout={layout} onLayout={onLayout} />
         <span className="gp-pro-badge">PRO / ADVANCED</span>
         <Banner label={pack.label} />
-        <PanelTabs panel={panel} onPanel={onPanel} score={cg.cg_score_total} />
+        <PanelTabs panel={panel} onPanel={onPanel} score={projectionOnly ? null : cg.cg_score_total} />
       </header>
       <div className="gp-pro-body">
         <aside className="gp-pro-rail">
           <p className="gp-kick">THIS WEEK{exampleTag}</p>
-          <GameBoard games={games} selectedId={game.id} sort={gameSort} onSort={onGameSort} onSelect={onSelectGame} />
+          <GameBoard games={games} selectedId={game.id} sort={gameSort} onSort={onGameSort} onSelect={onSelectGame} projectionOnly={projectionOnly} />
         </aside>
         <div className="gp-pro-main">
           <section className="gp-card gp-pro-head">
@@ -514,7 +522,7 @@ function ProView({ pack, game, games, gameSort, onGameSort, onSelectGame, rowSor
                 <MarketStrip game={game} />
               </section>
               <section className="gp-card">
-                <p className="gp-kick">CG FULL-GAME PROJECTION</p>
+                <p className="gp-kick">{projectionOnly ? 'FULL-GAME PROJECTION' : 'CG FULL-GAME PROJECTION'}</p>
                 <div className="gp-proj">
                   <div className="team">
                     <TeamBadge abbr={away.abbr} color={away.color} />
@@ -523,10 +531,10 @@ function ProView({ pack, game, games, gameSort, onGameSort, onSelectGame, rowSor
                   </div>
                   <div className="mid">
                     <div className="tot">{format1(cg.total)}</div>
-                    <div className="gp-mid gp-mini">CG TOTAL</div>
+                    <div className="gp-mid gp-mini">{projectionOnly ? 'PROJ TOTAL' : 'CG TOTAL'}</div>
                     <div className="pills">
-                      {cg.total_lean ? <span className="gp-pill over">{cg.total_lean} {signed1(cg.total_edge)} vs {format1(market.total)}</span> : null}
-                      {cg.side_lean ? <span className="gp-pill side">{cg.side_lean} SIDE</span> : null}
+                      {!projectionOnly && cg.total_lean ? <span className="gp-pill over">{cg.total_lean} {signed1(cg.total_edge)} vs {format1(market.total)}</span> : null}
+                      {!projectionOnly && cg.side_lean ? <span className="gp-pill side">{cg.side_lean} SIDE</span> : null}
                     </div>
                   </div>
                   <div className="team">
@@ -536,8 +544,12 @@ function ProView({ pack, game, games, gameSort, onGameSort, onSelectGame, rowSor
                   </div>
                 </div>
                 <div className="gp-sidebar">
-                  <span>Side proj <b>{cg.side_lean} {format1(cg.side_proj)}</b> vs mkt {market.spread?.favorite || '—'} {format1(market.spread?.line)} · edge <b className="gp-hi">{signed1(cg.side_edge)}</b></span>
-                  <ScorePill value={cg.cg_score_total} />
+                  {projectionOnly ? (
+                    <span>Proj spread <b>{signed1(cg.side_proj)}</b>{market.spread?.line == null ? ' · no posted line' : <> vs mkt {market.spread?.favorite || '—'} {format1(market.spread?.line)}</>}</span>
+                  ) : (
+                    <span>Side proj <b>{cg.side_lean} {format1(cg.side_proj)}</b> vs mkt {market.spread?.favorite || '—'} {format1(market.spread?.line)} · edge <b className="gp-hi">{signed1(cg.side_edge)}</b></span>
+                  )}
+                  {!projectionOnly ? <ScorePill value={cg.cg_score_total} /> : null}
                 </div>
               </section>
             </div>

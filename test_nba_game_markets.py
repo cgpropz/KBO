@@ -299,6 +299,19 @@ class PublishTests(unittest.TestCase):
         self.assertNotIn("unabated", steps.lower())
         self.assertNotIn("nba/game_markets.py", Path(".github/workflows/nba-props-refresh.yml").read_text(encoding="utf-8"))
 
+    def test_agent_reader_grant_matches_nfl_and_skips_board_reader(self):
+        grant = Path("sql/security/10_nba_game_markets_agent_reader.sql").read_text(encoding="utf-8").lower()
+        setup = Path("sql/nba_game_markets.sql").read_text(encoding="utf-8").lower()
+        for text in (grant, setup):
+            self.assertIn("grant select on public.nba_game_markets to agent_reader", text)
+            self.assertIn("agent_reader_select", text)
+            self.assertNotIn("to anon", text)
+            self.assertNotIn("to authenticated", text)
+            self.assertNotIn("to board_reader", text)
+            self.assertIn("enable row level security", setup)
+        lockdown = Path("sql/security/02_lock_down_rls.sql").read_text(encoding="utf-8")
+        self.assertIn("'nba_game_markets'", lockdown)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -54,11 +54,15 @@ function compareGame(a, b, key) {
   return (a?.boardIndex ?? 0) - (b?.boardIndex ?? 0)
 }
 
-export function sortGames(games, sort) {
-  const key = sort?.key || 'board'
-  const dir = sort?.dir === 'desc' ? -1 : 1
+export function sortGames(games, sort, { projectionOnly = false } = {}) {
+  const neutralized = projectionOnly && sort?.key === 'edge'
+  const key = neutralized ? 'board' : (sort?.key || 'board')
+  const dir = neutralized || sort?.dir !== 'desc' ? 1 : -1
   return [...(games || [])].sort((a, b) => {
     if (key === 'total' || key === 'edge') {
+      if (projectionOnly && key === 'total') {
+        return cmpNum(numeric(a?.cg?.total), numeric(b?.cg?.total), dir)
+      }
       const field = key === 'total' ? 'market' : 'cg'
       const prop = key === 'total' ? 'total' : 'total_edge'
       return cmpNum(numeric(a?.[field]?.[prop]), numeric(b?.[field]?.[prop]), dir)
@@ -68,8 +72,9 @@ export function sortGames(games, sort) {
   })
 }
 
-export function visibleGames(games, filters, sort) {
-  return sortGames(filterGames(games, filters), sort)
+export function visibleGames(games, filters, sort, { projectionOnly = false } = {}) {
+  const nextFilters = projectionOnly ? { ...filters, minEdge: 0 } : filters
+  return sortGames(filterGames(games, nextFilters), sort, { projectionOnly })
 }
 
 export function selectedGame(games, visible, gameId) {

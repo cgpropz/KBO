@@ -2,22 +2,23 @@
 // publishes. This file does not score, rank, or price a game.
 //
 // NFL: nfl_game_markets (nflGameSheet.js), plus lineup record and roof.
-// NBA: nba_teams[].game when home/away was published. No game-total model.
+// NBA: nba_game_markets. Projections only. Leans, game CG Score, and |edge|
+// ranking stay off. A missing market stays blank.
 // NHL: nhl lineups, or projection rows that already name awayTeam/homeTeam.
 // WNBA: Rotowire lineups (visitor / home / gameTime). No game-total model.
 // KBO: matchup_data games, plus moneyline, spread, and total when game lines
 // were attached. Pitcher and batter props are not summed into a team score.
 
-import { finite } from '../nfl/gameCardModel.js'
-import { formatTip } from '../nba/nbaPlayersList.js'
+import { finite, kickoffLabel } from '../nfl/gameCardModel.js'
 import { TEAM_NAMES } from '../nhl/nhlTeams.js'
+import teamMappings from '../../../nba/mappings/team_mappings.json' with { type: 'json' }
 import { landingTeamFill } from '../playerMark.js'
 import { teamColor as wnbaTeamColor } from '../wnba/utils/formatters.js'
 import { CHEATSHEET_SPORTS } from './access.js'
 import { indexGames } from './sheetModel.js'
 
 export const LIVE_GAPS = {
-  nba: 'NBA has no game-total model. This slate is the published team schedule. Totals, spreads, moneylines, and CG scores are not on that feed.',
+  nba: 'Projection-only NBA game markets. Published scores, spread, and total only. No lean and no game CG Score. Posted odds stay off while the market is missing. Not proven to beat the closing line.',
   nhl: 'NHL has no game-total model. This slate is the live lineup or prop board. Totals, spreads, moneylines, and CG scores are not published.',
   wnba: 'WNBA has no game-total model. This slate is the live lineup feed. Totals, spreads, moneylines, and CG scores are not published.',
   kbo: 'KBO has no team-score model. Market totals, spreads, and moneylines are shown only when the matchup feed already has them. Player props are not added into a team score.',
@@ -27,9 +28,9 @@ export const UNAVAILABLE_NOTES = {
   nflPreview: 'The NFL game-markets feed is still a preview. This sheet waits for the full snapshot and does not show the example game.',
   nflEmpty: 'No games are on the NFL game-markets feed.',
   nflLoad: 'The NFL game-markets feed did not load.',
-  nbaPreview: 'The NBA team schedule is still a preview. This sheet waits for the full snapshot.',
-  nbaEmpty: 'No NBA game with a published home and away is on the team schedule. Player props are not used as a game total.',
-  nbaLoad: 'The NBA team schedule did not load.',
+  nbaPreview: 'The NBA game-markets feed is still a preview. This sheet waits for the full snapshot and does not rank games by edge.',
+  nbaEmpty: 'No games are on the NBA game-markets feed. Player props are not used as a game total.',
+  nbaLoad: 'The NBA game-markets feed did not load.',
   nhlPreview: 'The NHL slate is still a preview. This sheet waits for the full lineup or prop snapshot.',
   nhlEmpty: 'No NHL games are on the lineup or prop feed.',
   nhlLoad: 'The NHL slate did not load.',
@@ -180,52 +181,122 @@ function slateWeek(sportId, games, fallback) {
   return fallback
 }
 
-export function gamesFromNbaTeams(teams) {
-  const list = Array.isArray(teams) ? teams : []
-  const byAbbr = new Map(list.map((team) => [String(team?.abbr || '').toUpperCase(), team]))
-  const seen = new Set()
-  const games = []
-  for (const team of list) {
-    const posted = team?.game
-    if (!posted || posted.home !== true) continue
-    const home = String(team.abbr || '').toUpperCase()
-    const away = String(posted.opponent || '').toUpperCase()
-    if (!home || !away) continue
-    const day = datePrefix(posted.date)
-    const key = `${day}|${away}@${home}`
-    if (seen.has(key)) continue
-    seen.add(key)
-    const awayTeam = byAbbr.get(away)
-    const kick = formatTip(posted.tip)
-    games.push(shellGame({
-      id: `nba-${day || 'slate'}-${away}-${home}`,
-      listKick: kick || day,
-      kickSort: posted.tip || posted.date || '',
-      away: {
-        abbr: away,
-        name: awayTeam?.fullName || away,
-        city: '',
-        record: '',
-        color: colorOf(awayTeam?.color) || '#3f3f46',
-      },
-      home: {
-        abbr: home,
-        name: team.fullName || home,
-        city: '',
-        record: '',
-        color: colorOf(team.color) || '#3f3f46',
-      },
-      kickoff: [day, kick].filter(Boolean).join(' · '),
-    }))
-  }
-  return games
+// Feed abbreviations that are not the keys in team_mappings.json. The sheet
+// still shows the abbreviation the snapshot published.
+const NBA_ALIAS = {
+  NYK: 'NY',
+  NOP: 'NO',
+  GSW: 'GS',
+  SAS: 'SA',
+  UTA: 'UTAH',
+  WAS: 'WSH',
+  BRK: 'BKN',
+  CHO: 'CHA',
+  PHO: 'PHX',
 }
 
-export function liveNbaPack({ teams, preview = false } = {}) {
-  if (preview) return null
-  const games = gamesFromNbaTeams(teams)
+function nbaSide(abbr, publishedName) {
+  const id = String(abbr || '').toUpperCase()
+  const row = teamMappings[NBA_ALIAS[id] || id] || {}
+  const full = String(row.fullName || '')
+  const nick = String(publishedName || '').trim()
+  let city = ''
+  if (full && nick && full.toLowerCase().endsWith(nick.toLowerCase())) {
+    city = full.slice(0, full.length - nick.length).trim()
+  } else if (full && !nick) {
+    const parts = full.split(' ')
+    city = parts.slice(0, -1).join(' ')
+  }
+  return {
+    abbr: id,
+    name: nick || full || id,
+    city,
+    record: '',
+    color: colorOf(row.color) || '#3f3f46',
+  }
+}
+
+// NBA spread is home minus away. A positive number means the home team is
+// favored. The sheet shows the favorite and a negative line.
+function homeFavorite(homeSpread, away, home) {
+  const line = finite(homeSpread)
+  if (line == null) return { team: '', line: null }
+  if (line > 0) return { team: home, line: -line }
+  if (line < 0) return { team: away, line }
+  return { team: 'PK', line: 0 }
+}
+
+export function gameFromNbaMarket(game) {
+  const away = String(game?.awayTeam || game?.away_team || '').toUpperCase()
+  const home = String(game?.homeTeam || game?.home_team || '').toUpperCase()
+  if (!away || !home) return null
+  const missing = game?.missing_market !== false
+  const marketSpread = missing ? null : finite(game.market_spread ?? game.spread?.line)
+  const favorite = homeFavorite(marketSpread, away, home)
+  const book = missing ? '' : (game.spread?.book || game.total?.book || game.moneyline?.book || '')
+  const kick = kickoffLabel(game)
+  const day = datePrefix(game?.gameday || game?.slate_date || game?.tip_et)
+  return {
+    id: String(game.id || game.game_id || `${day || 'slate'}-${away}-${home}`),
+    listKick: kick,
+    kickSort: game.tip_et || game.kickoff_at || `${day}T${game.gametime || ''}`,
+    game: {
+      away: nbaSide(away, game.awayName),
+      home: nbaSide(home, game.homeName),
+      kickoff: kick,
+      venue: '',
+      surface: '',
+    },
+    market: {
+      books: null,
+      bookName: book,
+      total: missing ? null : finite(game.market_total ?? game.total?.line),
+      spread: { favorite: favorite.team, line: favorite.line },
+      ml: missing ? {} : {
+        [home]: finite(game.market_ml_home ?? game.moneyline?.homePrice ?? game.moneyline?.line),
+        [away]: finite(game.moneyline?.awayPrice),
+      },
+    },
+    cg: {
+      away_score: finite(game.proj_away ?? game.awayScore),
+      home_score: finite(game.proj_home ?? game.homeScore),
+      total: finite(game.proj_total ?? game.total?.projection),
+      total_edge: null,
+      total_lean: '',
+      side_proj: finite(game.proj_spread ?? game.spread?.projection),
+      side_lean: '',
+      side_edge: null,
+      cg_score_total: null,
+      cg_score_spread: null,
+    },
+    hit_rates_over: null,
+    historical_totals: null,
+    matchups: null,
+    pace: null,
+    dvp: null,
+    components: null,
+  }
+}
+
+export function liveNbaPack(payload, { preview = false } = {}) {
+  if (preview || payload?.preview === true) return null
+  const rows = Array.isArray(payload?.games) ? payload.games : []
+  const games = rows.map(gameFromNbaMarket).filter(Boolean)
   if (!games.length) return null
-  return slatePack('nba', slateWeek('nba', games, 'NBA · live slate'), games, LIVE_GAPS.nba)
+  const day = datePrefix(payload.slate_date) || datePrefix(games[0].kickSort)
+  return {
+    id: 'nba',
+    sport: 'NBA',
+    weekLabel: day ? `NBA · ${day}` : 'NBA',
+    example: false,
+    status: 'live',
+    model: 'game-markets',
+    projectionOnly: true,
+    label: '',
+    chart: null,
+    detailNote: LIVE_GAPS.nba,
+    games: indexGames(games),
+  }
 }
 
 function nhlSide(abbr, name) {

@@ -47,12 +47,54 @@ const LIVE = {
     spreadLine: -99,
     totalLine: 99,
   }],
-  nba_teams: [
-    { abbr: 'BOS', fullName: 'Boston Celtics', color: '#007A33', game: { date: '2026-11-02', opponent: 'NYK', home: false, tip: '2026-11-02T23:00:00Z' } },
-    { abbr: 'NYK', fullName: 'New York Knicks', color: '#006BB6', game: { date: '2026-11-02', opponent: 'BOS', home: true, tip: '2026-11-02T23:00:00Z' } },
-    { abbr: 'MIL', fullName: 'Milwaukee Bucks', color: '#00471B', game: { date: '2026-11-02', opponent: 'CHI', home: false, tip: '2026-11-03T01:00:00Z' } },
-    { abbr: 'CHI', fullName: 'Chicago Bulls', color: '#CE1141', game: { date: '2026-11-02', opponent: 'MIL', home: true, tip: '2026-11-03T01:00:00Z' } },
-  ],
+  nba_game_markets: {
+    slate_date: '2026-11-02',
+    status: 'lines_unavailable',
+    proven: false,
+    games: [
+      {
+        id: '2026-11-02-BOS-NY',
+        gameday: '2026-11-02',
+        weekday: 'Monday',
+        gametime: '19:00',
+        awayTeam: 'BOS',
+        homeTeam: 'NY',
+        awayName: 'Celtics',
+        homeName: 'Knicks',
+        proj_away: 112.2,
+        proj_home: 114.4,
+        proj_spread: 2.2,
+        proj_total: 226.6,
+        market_total: null,
+        market_spread: null,
+        edge_total: 6,
+        lean_total: 'over',
+        lean_spread: 'home',
+        game_edge_score: 88,
+        missing_market: true,
+        spread: { line: 9.5, projection: 2.2, edge: 4, book: 'Circa' },
+        total: { line: 220, projection: 226.6, edge: 6, book: 'Circa' },
+      },
+      {
+        id: '2026-11-02-MIL-CHI',
+        gameday: '2026-11-02',
+        weekday: 'Monday',
+        gametime: '20:00',
+        awayTeam: 'MIL',
+        homeTeam: 'CHI',
+        awayName: 'Bucks',
+        homeName: 'Bulls',
+        proj_away: 118.1,
+        proj_home: 113.3,
+        proj_spread: -4.8,
+        proj_total: 231.4,
+        missing_market: true,
+        lean_total: 'under',
+        edge_total: 12,
+        game_edge_score: 90,
+      },
+    ],
+  },
   nhl_lineups: [{
     gameday: '2026-10-27',
     weekday: 'Monday',
@@ -128,11 +170,22 @@ async function exerciseTabs(page) {
 
   await page.getByTestId('cheatsheets-sport-nba').click()
   await settle(page, 'nba')
-  await expect(page.getByTestId('cheatsheet-source')).toHaveText('Live slate')
-  await expect(page.getByTestId('game-proj-match')).toHaveText(/BOS\s*@\s*NYK/)
-  await page.getByTestId('cheatsheet-game-nba-2026-11-02-MIL-CHI').locator('td').last().click()
+  await expect(page.getByTestId('cheatsheets-page')).toHaveAttribute('data-model', 'game-markets')
+  await expect(page.getByTestId('cheatsheets-page')).toHaveAttribute('data-projection', 'only')
+  await expect(page.getByTestId('cheatsheet-source')).toHaveText('Live game markets')
+  await expect(page.getByTestId('game-proj-match')).toHaveText(/BOS\s*@\s*NY/)
+  await expect(page.getByTestId('game-proj-standard')).toContainText('226.6')
+  await expect(page.getByTestId('game-proj-standard')).toContainText('112.2')
+  await expect(page.getByTestId('game-proj-standard')).toContainText('no posted line')
+  await expect(page.getByTestId('game-proj-standard')).not.toContainText('Circa')
+  await expect(page.getByTestId('game-proj-standard')).not.toContainText('9.5')
+  await expect(page.getByTestId('game-proj-standard')).not.toContainText('OVER')
+  await expect(page.getByTestId('game-proj-standard')).not.toContainText('CG 88')
+  await expect(page.getByTestId('sort-games-edge')).toHaveCount(0)
+  await expect(page.getByTestId('cheatsheet-filter-edge')).toBeDisabled()
+  await page.getByTestId('cheatsheet-game-2026-11-02-MIL-CHI').locator('td').last().click()
   await expect(page.getByTestId('game-proj-match')).toHaveText(/MIL\s*@\s*CHI/)
-  await expect(page.getByTestId('cheatsheet-game-nba-2026-11-02-MIL-CHI')).toHaveClass(/on/)
+  await expect(page.getByTestId('cheatsheet-game-2026-11-02-MIL-CHI')).toHaveClass(/on/)
 
   await page.getByTestId('game-proj-toggle-pro').click()
   await expect(page.getByTestId('game-proj-pro')).toBeVisible()
@@ -140,7 +193,8 @@ async function exerciseTabs(page) {
   await expect(page.getByTestId('game-proj-pro')).toHaveAttribute('data-panel', 'pace')
   await expect(page.locator('.gp-pro-head')).toContainText('Milwaukee')
   await expect(page.locator('.gp-pro-head')).toContainText('Chicago')
-  await expect(page.getByTestId('cheatsheet-detail-note')).toContainText('no game-total model')
+  await expect(page.getByTestId('cheatsheet-detail-note')).toContainText('no game CG Score')
+  await expect(page.getByTestId('game-proj-pro')).not.toContainText('UNDER')
   await page.getByTestId('game-proj-toggle-standard').click()
   await expect(page.getByTestId('game-proj-standard')).toBeVisible()
 
@@ -170,7 +224,7 @@ test('an empty live feed stays blank instead of the example sheet', async ({ pag
   await installFeeds(page, {
     nfl_game_markets: { week: 9, games: [] },
     nfl_lineups: [],
-    nba_teams: [],
+    nba_game_markets: { games: [] },
     nhl_lineups: [],
     nhl_projections: [],
     wnba_lineups: [],

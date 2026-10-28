@@ -3,9 +3,12 @@
 import assert from 'node:assert/strict'
 import { test, beforeEach } from 'node:test'
 import {
+  NBA_FREE_TOP3_DATASETS,
   NBA_OWNER_EMAIL as SERVER_EMAIL,
   nbaAccessDecision,
   nbaAllowed,
+  previewNbaGameMarkets,
+  shapeForTier,
   sportAccess as serverAccess,
 } from '../api/_dataAccess.js'
 import { assembleNbaPlayerRows, handleDataRequest, _clearCache, _setTimeouts, timeouts } from '../api/data.js'
@@ -280,6 +283,23 @@ function mockClient({ flag = false, profileErrorFor = null, hangAuth = false } =
             if (flag === 'missing') return Promise.resolve({ data: null, error: null })
             return Promise.resolve({ data: { value: flag === true }, error: null })
           }
+          if (table === 'nba_game_markets') {
+            return Promise.resolve({
+              data: {
+                data: {
+                  slate_date: '2026-10-28',
+                  proven: false,
+                  status: 'lines_unavailable',
+                  games: [
+                    { id: 'low', awayTeam: 'CHA', homeTeam: 'DET', proj_total: 220.4, edge_total: 0.2, lean_total: null, lean_spread: null, missing_market: true, game_edge_score: null },
+                    { id: 'high', awayTeam: 'MIL', homeTeam: 'CHI', proj_total: 231.4, edge_total: 12, lean_total: 'over', lean_spread: 'home', missing_market: true, game_edge_score: 80 },
+                  ],
+                },
+                updated_at: '2026-10-28T00:33:15Z',
+              },
+              error: null,
+            })
+          }
           if (table === 'nba_sharp_odds') {
             return Promise.resolve({
               data: {
@@ -526,4 +546,42 @@ test('non-NBA datasets still preview when the token is invalid', async () => {
   assert.equal(res.body.preview, true)
   assert.deepEqual(Object.keys(res.body.access), ['kbo', 'wnba', 'nfl', 'nhl'])
   assert.deepEqual(res.body.access, { kbo: false, wnba: false, nfl: false, nhl: false })
+})
+
+test('nba game markets stay off the free top 3 and do not rank by edge', async () => {
+  assert.equal(NBA_FREE_TOP3_DATASETS.has('nba_game_markets'), false)
+  const payload = {
+    proven: false,
+    games: [
+      { id: 'low', total: { edge: 0.2 }, lean_total: null, proj_total: 220 },
+      { id: 'high', total: { edge: 12 }, lean_total: 'over', game_edge_score: 80, proj_total: 231 },
+    ],
+  }
+  const preview = previewNbaGameMarkets(payload)
+  assert.deepEqual(preview.data.games, [])
+  assert.equal(preview.lockedCount, 2)
+  assert.equal(preview.data.games.some((game) => game.id === 'high'), false)
+  const shaped = shapeForTier('nba_game_markets', payload, 'owner')
+  assert.equal(shaped.preview, true)
+  assert.deepEqual(shaped.data.games, [])
+
+  _clearCache()
+  const owner = await call('nba_game_markets', 'tok-owner', { flag: false })
+  assert.equal(owner.res.statusCode, 200)
+  assert.equal(owner.res.body.preview, false)
+  assert.deepEqual(owner.res.body.data.games.map((game) => game.id), ['low', 'high'])
+  assert.equal(owner.res.body.data.games[0].proj_total, 220.4)
+  assert.equal(owner.res.body.data.games[0].missing_market, true)
+  assert.equal(owner.res.body.data.games[0].lean_spread, null)
+  assert.equal(owner.res.body.data.games[1].game_edge_score, 80)
+  assert.equal(Object.hasOwn(owner.res.body.data.games[0], 'cg_score'), false)
+  assert.equal(Object.hasOwn(owner.res.body.data.games[1], 'cgScore'), false)
+
+  _clearCache()
+  for (const token of [undefined, 'tok-kbo', 'tok-discord']) {
+    const denied = await call('nba_game_markets', token, { flag: true })
+    assert.equal(denied.res.statusCode, 403, String(token))
+    assert.equal(denied.res.body.data, undefined)
+    assert.equal(denied.client.calls.some((entry) => entry.table === 'nba_game_markets'), false)
+  }
 })

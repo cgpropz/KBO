@@ -3,7 +3,7 @@
 // unavailable pack, not the EXAMPLE fixtures.
 
 import { fetchDataSnapshot } from '../dataUrl.js'
-import { fetchNbaSnapshot } from '../nba/nbaData.js'
+import { fetchNbaGameMarkets } from '../nba/nbaData.js'
 import { fetchNflGameMarkets, fetchNflLineups } from '../nfl/nflData.js'
 import { fetchNhlLineups, fetchNhlProjections } from '../nhl/nhlData.js'
 import { fetchWnbaSnapshot } from '../wnba/wnbaData.js'
@@ -30,9 +30,9 @@ async function loadNfl() {
 }
 
 async function loadNba() {
-  const snap = await fetchNbaSnapshot('nba/teams.json')
-  if (snap?.preview === true) return unavailablePack('nba', UNAVAILABLE_NOTES.nbaPreview)
-  return liveNbaPack({ teams: snap?.data, preview: false })
+  const markets = await fetchNbaGameMarkets()
+  if (markets?.preview === true) return unavailablePack('nba', UNAVAILABLE_NOTES.nbaPreview)
+  return liveNbaPack(markets?.payload, { preview: false })
     || unavailablePack('nba', UNAVAILABLE_NOTES.nbaEmpty)
 }
 

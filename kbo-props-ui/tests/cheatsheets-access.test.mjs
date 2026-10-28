@@ -160,25 +160,122 @@ test('live NFL game markets map published numbers and refuse a free preview', ()
 })
 
 test('other sports use the published slate and leave team scores empty', () => {
-  assert.equal(liveNbaPack({ preview: true, teams: [{ abbr: 'LAL', game: { home: true, opponent: 'DEN' } }] }), null)
-  assert.equal(liveNbaPack({ teams: [] }), null)
+  assert.equal(liveNbaPack({ games: [{ awayTeam: 'BOS', homeTeam: 'NY' }] }, { preview: true }), null)
+  assert.equal(liveNbaPack({ games: [] }), null)
+  assert.equal(liveNbaPack({ preview: true, games: [{ awayTeam: 'BOS', homeTeam: 'NY', proj_total: 220 }] }), null)
   const nba = liveNbaPack({
-    teams: [
-      { abbr: 'DEN', fullName: 'Denver Nuggets', color: '0E2240', game: { date: '2026-11-02', opponent: 'LAL', home: false, tip: '2026-11-02T02:00:00Z' } },
-      { abbr: 'LAL', fullName: 'Los Angeles Lakers', color: '#552583', game: { date: '2026-11-02', opponent: 'DEN', home: true, tip: '2026-11-02T02:00:00Z' } },
+    slate_date: '2026-11-02',
+    status: 'lines_unavailable',
+    proven: false,
+    games: [
+      {
+        id: '2026-11-02-BOS-NY',
+        gameday: '2026-11-02',
+        weekday: 'Monday',
+        gametime: '19:00',
+        awayTeam: 'BOS',
+        homeTeam: 'NY',
+        awayName: 'Celtics',
+        homeName: 'Knicks',
+        proj_away: 112.2,
+        proj_home: 114.4,
+        proj_spread: 2.2,
+        proj_total: 226.6,
+        market_spread: null,
+        market_total: null,
+        edge_spread: 1,
+        edge_total: 1,
+        lean_spread: 'home',
+        lean_total: 'over',
+        game_edge_score: 40,
+        missing_market: true,
+        spread: { line: 9.5, projection: 2.2, edge: 1, book: 'Circa' },
+        total: { line: 220, projection: 226.6, edge: 1, book: 'Circa' },
+      },
+      {
+        id: '2026-11-02-MIL-CHI',
+        gameday: '2026-11-02',
+        weekday: 'Monday',
+        gametime: '20:00',
+        awayTeam: 'MIL',
+        homeTeam: 'CHI',
+        awayName: 'Bucks',
+        homeName: 'Bulls',
+        proj_away: 118.1,
+        proj_home: 113.3,
+        proj_spread: -4.8,
+        proj_total: 231.4,
+        edge_total: 12,
+        lean_total: 'under',
+        lean_spread: 'away',
+        game_edge_score: 90,
+        missing_market: true,
+      },
     ],
   })
   assert.equal(nba.example, false)
-  assert.equal(nba.model, 'slate')
-  assert.equal(nba.games.length, 1)
-  assert.equal(nba.games[0].game.away.abbr, 'DEN')
-  assert.equal(nba.games[0].game.home.abbr, 'LAL')
-  assert.equal(nba.games[0].game.home.color, '#552583')
-  assert.equal(nba.games[0].cg.total, null)
-  assert.equal(nba.games[0].cg.away_score, null)
+  assert.equal(nba.model, 'game-markets')
+  assert.equal(nba.projectionOnly, true)
+  assert.equal(sourceLabel(nba), 'Live game markets')
+  assert.equal(nba.weekLabel, 'NBA · 2026-11-02')
+  assert.equal(nba.games.length, 2)
+  assert.deepEqual(nba.games.map((game) => game.id), ['2026-11-02-BOS-NY', '2026-11-02-MIL-CHI'])
+  assert.equal(nba.games[0].game.away.abbr, 'BOS')
+  assert.equal(nba.games[0].game.home.abbr, 'NY')
+  assert.equal(nba.games[0].game.home.city, 'New York')
+  assert.equal(nba.games[0].game.home.color, '#1d428a')
+  assert.equal(nba.games[0].cg.away_score, 112.2)
+  assert.equal(nba.games[0].cg.home_score, 114.4)
+  assert.equal(nba.games[0].cg.total, 226.6)
+  assert.equal(nba.games[0].cg.side_proj, 2.2)
+  assert.equal(nba.games[0].cg.total_edge, null)
+  assert.equal(nba.games[0].cg.side_edge, null)
+  assert.equal(nba.games[0].cg.total_lean, '')
+  assert.equal(nba.games[0].cg.side_lean, '')
+  assert.equal(nba.games[0].cg.cg_score_total, null)
+  assert.equal(nba.games[0].cg.cg_score_spread, null)
   assert.equal(nba.games[0].market.total, null)
+  assert.equal(nba.games[0].market.spread.line, null)
+  assert.equal(nba.games[0].market.bookName, '')
+  assert.equal(nba.games[1].game.away.city, 'Milwaukee')
+  assert.equal(nba.games[1].cg.side_proj, -4.8)
   assert.equal(nba.detailNote, LIVE_GAPS.nba)
-  assert.notEqual(nba.games[0].id, 'nba-den-lal')
+  assert.match(nba.detailNote, /no game CG Score/)
+  assert.match(nba.detailNote, /Not proven to beat the closing line/)
+  const ranked = visibleGames(nba.games, { minEdge: 2 }, { key: 'edge', dir: 'desc' }, { projectionOnly: true })
+  assert.deepEqual(ranked.map((game) => game.id), ['2026-11-02-BOS-NY', '2026-11-02-MIL-CHI'])
+  const posted = liveNbaPack({
+    slate_date: '2026-11-03',
+    games: [{
+      id: '2026-11-03-LAL-BOS',
+      awayTeam: 'LAL',
+      homeTeam: 'BOS',
+      awayName: 'Lakers',
+      homeName: 'Celtics',
+      proj_away: 110,
+      proj_home: 118,
+      proj_spread: 8,
+      proj_total: 228,
+      market_spread: 3.5,
+      market_total: 224.5,
+      market_ml_home: -150,
+      missing_market: false,
+      lean_spread: 'home',
+      lean_total: 'over',
+      edge_total: 3.5,
+      game_edge_score: 70,
+      spread: { line: 3.5, book: 'Circa' },
+      total: { line: 224.5, book: 'Circa' },
+    }],
+  })
+  assert.equal(posted.games[0].market.total, 224.5)
+  assert.equal(posted.games[0].market.spread.favorite, 'BOS')
+  assert.equal(posted.games[0].market.spread.line, -3.5)
+  assert.equal(posted.games[0].market.bookName, 'Circa')
+  assert.equal(posted.games[0].market.ml.BOS, -150)
+  assert.equal(posted.games[0].cg.total_lean, '')
+  assert.equal(posted.games[0].cg.total_edge, null)
+  assert.equal(posted.games[0].cg.cg_score_total, null)
 
   const nhl = liveNhlPack({
     lineupsLoaded: true,

@@ -55,7 +55,8 @@ export default function Cheatsheets() {
   const [panel, setPanel] = useState('overview')
   const [pack, setPack] = useState(() => waitingPack(leagueFromSearch(readSearch())))
 
-  const games = visibleGames(pack.games, { team, minEdge }, gameSort)
+  const projectionOnly = pack.projectionOnly === true
+  const games = visibleGames(pack.games, { team, minEdge }, gameSort, { projectionOnly })
   const game = selectedGame(pack.games, games, gameId)
   const search = readSearch()
 
@@ -94,6 +95,7 @@ export default function Cheatsheets() {
       data-sport={league}
       data-source={pack.example ? 'example' : (pack.status || 'live')}
       data-model={pack.model || ''}
+      data-projection={projectionOnly ? 'only' : ''}
     >
       <header className="cs-primary">
         <a className="cs-brand" href={homeHref(search)}>cg<span>propz</span></a>
@@ -130,7 +132,9 @@ export default function Cheatsheets() {
         <label>
           Min edge
           <select
-            value={minEdge}
+            value={projectionOnly ? '0' : minEdge}
+            disabled={projectionOnly}
+            title={projectionOnly ? 'This sheet does not rank by edge' : undefined}
             data-testid="cheatsheet-filter-edge"
             onChange={(event) => setMinEdge(event.target.value)}
           >
@@ -166,7 +170,10 @@ export default function Cheatsheets() {
         game={game}
         games={games}
         gameSort={gameSort}
-        onGameSort={(key) => setGameSort((current) => toggleSort(current, key))}
+        onGameSort={(key) => {
+          if (projectionOnly && key === 'edge') return
+          setGameSort((current) => toggleSort(current, key))
+        }}
         onSelectGame={setGameId}
         rowSort={rowSort}
         onRowSort={(scope, key) => setRowSort((current) => ({ ...current, [scope]: toggleSort(current[scope], key) }))}
