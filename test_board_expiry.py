@@ -45,6 +45,9 @@ class BoardExpiryTests(unittest.TestCase):
         updated, _note, dropped = expire_snapshot("nfl_game_markets", payload, now=NOW)
         self.assertEqual(dropped, 1)
         self.assertEqual([game["id"] for game in updated["games"]], ["sun"])
+        nba, _nba_note, nba_dropped = expire_snapshot("nba_game_markets", payload, now=NOW)
+        self.assertEqual(nba_dropped, 1)
+        self.assertEqual([game["id"] for game in nba["games"]], ["sun"])
         self.assertEqual(updated["games"][0]["locked"], False)
         self.assertTrue(updated["generated_at"])
 

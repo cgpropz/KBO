@@ -9,6 +9,8 @@ name: Refresh NBA Data
 # Paid JSON under kbo-props-ui/public/data/nba/ is published, never committed.
 # A 2026-27 box score file is committed only if the refresh script has written
 # one. This job does not call Unabated or apply_live_formula.py.
+# nba/game_markets.py is the projection-only shadow board. It does not
+# download odds unless a later run sets the odds flag. Leans stay empty.
 #
 # The 4:00 AM ET cron is the post-finals full refresh. Props lines stay on
 # nba-props-refresh.yml inside tip-5h..tip+3h, so they are not a substitute
@@ -145,6 +147,19 @@ jobs:
       - name: Build NBA prop correlations
         continue-on-error: true
         run: python pipeline/build_correlations.py --sport nba
+
+      # Shadow spread/total board. Projection-only. A failure here must not
+      # block the player-prop publish below. Memory archive is the dated
+      # snapshot used later for closing-line value.
+      - name: Build NBA game-market projections
+        continue-on-error: true
+        run: python nba/game_markets.py
+
+      - name: Publish NBA game-market memory archive
+        if: always()
+        continue-on-error: true
+        run: |
+          bash pipeline/memory/commit_memory.sh "chore: nba game market archive"
 
       - name: Publish NBA snapshots to Supabase
         timeout-minutes: 10

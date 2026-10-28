@@ -23,7 +23,7 @@ PLAYER_TABLES = {
     "nba_projections_demon",
     "nba_projections_goblin",
 }
-GAME_TABLES = {"nfl_game_markets"}
+GAME_TABLES = {"nfl_game_markets", "nba_game_markets"}
 
 START_KEYS = (
     "start_time",
