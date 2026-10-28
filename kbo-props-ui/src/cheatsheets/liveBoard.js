@@ -10,8 +10,8 @@
 // were attached. Pitcher and batter props are not summed into a team score.
 
 import { finite, kickoffLabel } from '../nfl/gameCardModel.js'
+import { nbaTeam } from '../nba/nbaTeams.js'
 import { TEAM_NAMES } from '../nhl/nhlTeams.js'
-import teamMappings from '../../../nba/mappings/team_mappings.json' with { type: 'json' }
 import { landingTeamFill } from '../playerMark.js'
 import { teamColor as wnbaTeamColor } from '../wnba/utils/formatters.js'
 import { CHEATSHEET_SPORTS } from './access.js'
@@ -181,23 +181,9 @@ function slateWeek(sportId, games, fallback) {
   return fallback
 }
 
-// Feed abbreviations that are not the keys in team_mappings.json. The sheet
-// still shows the abbreviation the snapshot published.
-const NBA_ALIAS = {
-  NYK: 'NY',
-  NOP: 'NO',
-  GSW: 'GS',
-  SAS: 'SA',
-  UTA: 'UTAH',
-  WAS: 'WSH',
-  BRK: 'BKN',
-  CHO: 'CHA',
-  PHO: 'PHX',
-}
-
 function nbaSide(abbr, publishedName) {
   const id = String(abbr || '').toUpperCase()
-  const row = teamMappings[NBA_ALIAS[id] || id] || {}
+  const row = nbaTeam(id)
   const full = String(row.fullName || '')
   const nick = String(publishedName || '').trim()
   let city = ''

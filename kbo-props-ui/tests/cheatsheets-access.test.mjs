@@ -14,6 +14,7 @@ import { chartPct, formatStat, heatColor, moneyline, signed1 } from '../src/chea
 import { CHEATSHEET_PACKS } from '../src/cheatsheets/packs.js'
 import { attachNflLineupContext, liveNflPack } from '../src/cheatsheets/nflGameSheet.js'
 import { filterGames, filterRows, sortGames, sortRows, toggleSort, visibleGames } from '../src/cheatsheets/boardControls.js'
+import { nbaTeam } from '../src/nba/nbaTeams.js'
 import {
   LIVE_GAPS,
   UNAVAILABLE_NOTES,
@@ -30,6 +31,7 @@ const example = JSON.parse(readFileSync(new URL('../src/cheatsheets/gameProjExam
 const proj = readFileSync(new URL('../src/cheatsheets/GameProj.jsx', import.meta.url), 'utf8')
 const app = readFileSync(new URL('../src/App.jsx', import.meta.url), 'utf8')
 const sheets = readFileSync(new URL('../src/cheatsheets/Cheatsheets.jsx', import.meta.url), 'utf8')
+const liveBoard = readFileSync(new URL('../src/cheatsheets/liveBoard.js', import.meta.url), 'utf8')
 
 test('only the admin email can open cheatsheets', () => {
   assert.equal(NBA_OWNER_EMAIL, 'cgpropz@gmail.com')
@@ -224,6 +226,10 @@ test('other sports use the published slate and leave team scores empty', () => {
   assert.equal(nba.games[0].game.home.abbr, 'NY')
   assert.equal(nba.games[0].game.home.city, 'New York')
   assert.equal(nba.games[0].game.home.color, '#1d428a')
+  assert.equal(nbaTeam('NYK').fullName, 'New York Knicks')
+  assert.equal(nbaTeam('NY').color, '#1d428a')
+  assert.doesNotMatch(liveBoard, /\.\.\/\.\.\/\.\.\//)
+  assert.doesNotMatch(liveBoard, /nba\/mappings/)
   assert.equal(nba.games[0].cg.away_score, 112.2)
   assert.equal(nba.games[0].cg.home_score, 114.4)
   assert.equal(nba.games[0].cg.total, 226.6)
