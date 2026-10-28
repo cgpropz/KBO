@@ -1,10 +1,14 @@
 // Maps a full nfl_game_markets snapshot onto the cheatsheet sheet.
 // Reads the published scores, lines, and edges. Does not rescore them.
 // A free preview is refused: that payload drops prices and can drop total edge.
+// Lineup rows may add the published record and roof. Their nflverse spread
+// and total are not the posted market (see nfl/game_markets.py) and are ignored.
 
 import { teamColor } from '../nfl/nflTeams.js'
 import { kickoffLabel, finite } from '../nfl/gameCardModel.js'
 import { indexGames } from './sheetModel.js'
+
+export const NFL_DETAIL_NOTE = 'Matchup splits, pace, and DvP are not on the NFL game-markets feed.'
 
 const CITY = {
   ARI: 'Arizona', ATL: 'Atlanta', BAL: 'Baltimore', BUF: 'Buffalo', CAR: 'Carolina',
@@ -104,9 +108,38 @@ export function liveNflPack(payload, { preview = false } = {}) {
     sport: 'NFL',
     weekLabel: week,
     example: false,
+    status: 'live',
+    model: 'game-markets',
     label: '',
     chart: null,
-    detailNote: 'Matchup splits, pace, and DvP are not on the NFL game-markets feed.',
+    detailNote: NFL_DETAIL_NOTE,
     games: indexGames(games),
+  }
+}
+
+export function attachNflLineupContext(pack, matchups) {
+  if (!pack?.games?.length || !Array.isArray(matchups) || !matchups.length) return pack
+  const byPair = new Map()
+  for (const row of matchups) {
+    const away = String(row?.awayTeam || '').toUpperCase()
+    const home = String(row?.homeTeam || '').toUpperCase()
+    if (away && home) byPair.set(`${away}@${home}`, row)
+  }
+  return {
+    ...pack,
+    games: pack.games.map((game) => {
+      const row = byPair.get(`${game.game.away.abbr}@${game.game.home.abbr}`)
+      if (!row) return game
+      const surface = row.roof || game.game.surface || ''
+      return {
+        ...game,
+        game: {
+          ...game.game,
+          away: { ...game.game.away, record: row.awayRecord || game.game.away.record || '' },
+          home: { ...game.game.home, record: row.homeRecord || game.game.home.record || '' },
+          surface,
+        },
+      }
+    }),
   }
 }

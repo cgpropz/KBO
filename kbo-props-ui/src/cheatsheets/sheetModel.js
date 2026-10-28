@@ -1,5 +1,5 @@
-// Turns the locked NFL example, hand-built sport examples, and a live NFL
-// game-markets snapshot into one sheet shape. Display only.
+// Sheet shape shared by the EXAMPLE fixtures and the live board mappers.
+// Display only. This file does not score a game.
 
 import example from './gameProjExample.json' with { type: 'json' }
 

@@ -1,7 +1,9 @@
 import { canSeeCheatsheets } from '../entitlements.js'
 
-// Sport tabs on the cheatsheets page. NFL upgrades to nfl_game_markets when
-// a full (non-preview) snapshot loads. Other sports have no game-proj feed.
+// Sport tabs on the cheatsheets page. The page loads live feeds (see
+// loadLiveBoard.js). It does not mount the EXAMPLE packs in packs.js.
+// NFL reads nfl_game_markets. NBA, NHL, WNBA, and KBO read the slate that
+// already exists and leave team-score fields empty when no game model is published.
 export const CHEATSHEET_SPORTS = [
   { id: 'nfl', name: 'NFL' },
   { id: 'nba', name: 'NBA' },

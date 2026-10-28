@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react'
 import { useAuth } from '../AuthContext'
 import { canSeeCheatsheets } from '../entitlements'
 import { STANDARD_LINE } from '../responsibleGambling'
-import { fetchNflGameMarkets } from '../nfl/nflData'
 import {
   CHEATSHEET_SPORTS,
   cheatsheetsHref,
@@ -12,8 +11,8 @@ import {
 } from './access'
 import { selectedGame, toggleSort, visibleGames } from './boardControls'
 import GameProj from './GameProj'
-import { liveNflPack } from './nflGameSheet'
-import { packFor } from './packs'
+import { loadLivePack } from './loadLiveBoard'
+import { sourceLabel, waitingPack } from './liveBoard'
 import './cheatsheets.css'
 
 function readSearch() {
@@ -54,31 +53,26 @@ export default function Cheatsheets() {
   const [minEdge, setMinEdge] = useState('0')
   const [rowMode, setRowMode] = useState('all')
   const [panel, setPanel] = useState('overview')
-  const [livePack, setLivePack] = useState(null)
+  const [pack, setPack] = useState(() => waitingPack(leagueFromSearch(readSearch())))
 
-  const base = packFor(league)
-  const pack = league === 'nfl' && livePack ? livePack : base
   const games = visibleGames(pack.games, { team, minEdge }, gameSort)
   const game = selectedGame(pack.games, games, gameId)
   const search = readSearch()
 
   useEffect(() => {
-    if (league !== 'nfl') return undefined
     let cancelled = false
-    fetchNflGameMarkets()
-      .then((snap) => {
-        if (cancelled) return
-        const next = liveNflPack(snap?.payload, { preview: snap?.preview === true })
-        if (next) setLivePack(next)
-      })
-      .catch(() => {})
+    loadLivePack(league).then((next) => {
+      if (!cancelled) setPack(next)
+    })
     return () => { cancelled = true }
   }, [league])
 
   if (!canSeeCheatsheets(user)) return null
 
   const pickLeague = (id) => {
+    if (id === league) return
     setLeague(id)
+    setPack(waitingPack(id))
     setGameId(RESET.gameId)
     setGameSort(RESET.gameSort)
     setRowSort(RESET.rowSort)
@@ -98,7 +92,8 @@ export default function Cheatsheets() {
       className="cs-page"
       data-testid="cheatsheets-page"
       data-sport={league}
-      data-source={pack.example ? 'example' : 'live'}
+      data-source={pack.example ? 'example' : (pack.status || 'live')}
+      data-model={pack.model || ''}
     >
       <header className="cs-primary">
         <a className="cs-brand" href={homeHref(search)}>cg<span>propz</span></a>
@@ -159,7 +154,12 @@ export default function Cheatsheets() {
         <p className="cs-count" data-testid="cheatsheet-game-count" aria-live="polite">
           {games.length} of {pack.games.length} games
         </p>
-        <p className="cs-source" data-testid="cheatsheet-source">{pack.example ? 'Example sheet' : 'Live game markets'}</p>
+        <p
+          className={`cs-source${pack.status === 'unavailable' ? ' is-gap' : ''}${pack.status === 'waiting' ? ' is-wait' : ''}`}
+          data-testid="cheatsheet-source"
+        >
+          {sourceLabel(pack)}
+        </p>
       </div>
       <GameProj
         pack={pack}

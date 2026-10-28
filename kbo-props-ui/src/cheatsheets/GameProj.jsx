@@ -109,11 +109,18 @@ function GameBoard({ games, selectedId, sort, onSort, onSelect }) {
   )
 }
 
+function marketCaption(market) {
+  if (market?.bookName) return market.bookName
+  if (market?.books) return `${market.books} BOOKS`
+  return 'MARKET'
+}
+
 function MarketStrip({ game }) {
   const { market } = game
   const away = game.game.away.abbr
   const home = game.game.home.abbr
-  const totalLabel = market.bookName ? `TOTAL · ${market.bookName}` : `TOTAL · ${market.books} BOOKS`
+  const spread = market.spread || {}
+  const totalLabel = market.bookName || market.books ? `TOTAL · ${marketCaption(market)}` : 'TOTAL'
   return (
     <div className="gp-mkt">
       <div className="gp-mkt-b">
@@ -123,7 +130,7 @@ function MarketStrip({ game }) {
       </div>
       <div className="gp-mkt-b">
         <div className="gp-mkt-l">SPREAD</div>
-        <div className="gp-mkt-v">{market.spread.favorite || '—'} {format1(market.spread.line)}</div>
+        <div className="gp-mkt-v">{spread.favorite || '—'} {format1(spread.line)}</div>
         <div className="gp-mkt-s">favorite</div>
       </div>
       <div className="gp-mkt-b">
@@ -357,7 +364,7 @@ function StandardView({ pack, game, games, gameSort, onGameSort, onSelectGame, r
             <article className="gp-edge">
               <p className="lab">SPREAD EDGE</p>
               <p className="big">{signed1(cg.side_edge)}</p>
-              <p className="sub">CG <b>{cg.side_lean} {format1(cg.side_proj)}</b> vs mkt {market.spread.favorite} {format1(market.spread.line)}</p>
+              <p className="sub">CG <b>{cg.side_lean} {format1(cg.side_proj)}</b> vs mkt {market.spread?.favorite || '—'} {format1(market.spread?.line)}</p>
               <div className="row">
                 {cg.side_lean ? <span className="gp-pill side">{cg.side_lean} SIDE</span> : null}
                 <ScorePill value={cg.cg_score_spread} />
@@ -385,7 +392,7 @@ function StandardView({ pack, game, games, gameSort, onGameSort, onSelectGame, r
         </div>
         <div className="gp-rail">
           <section className="gp-card">
-            <p className="gp-kick">MARKET · {market.bookName || `${market.books} BOOKS`}{exampleTag}</p>
+            <p className="gp-kick">MARKET · {marketCaption(market)}{exampleTag}</p>
             <MarketStrip game={game} />
           </section>
           {game.historical_totals?.length ? (
@@ -529,7 +536,7 @@ function ProView({ pack, game, games, gameSort, onGameSort, onSelectGame, rowSor
                   </div>
                 </div>
                 <div className="gp-sidebar">
-                  <span>Side proj <b>{cg.side_lean} {format1(cg.side_proj)}</b> vs mkt {market.spread.favorite} {format1(market.spread.line)} · edge <b className="gp-hi">{signed1(cg.side_edge)}</b></span>
+                  <span>Side proj <b>{cg.side_lean} {format1(cg.side_proj)}</b> vs mkt {market.spread?.favorite || '—'} {format1(market.spread?.line)} · edge <b className="gp-hi">{signed1(cg.side_edge)}</b></span>
                   <ScorePill value={cg.cg_score_total} />
                 </div>
               </section>
@@ -572,10 +579,16 @@ function ProView({ pack, game, games, gameSort, onGameSort, onSelectGame, rowSor
   )
 }
 
-function EmptyBoard() {
+function EmptyBoard({ pack }) {
+  const filtered = pack?.status === 'live' && pack.games?.length
+  const message = pack?.status === 'waiting'
+    ? 'Loading the live board.'
+    : filtered
+      ? 'No games match this filter.'
+      : (pack?.detailNote || 'No live games on this sheet.')
   return (
-    <div className="gp-empty-board" data-testid="cheatsheet-empty-board">
-      <p>No games match this filter.</p>
+    <div className="gp-empty-board" data-testid="cheatsheet-empty-board" data-status={pack?.status || 'empty'}>
+      <p>{message}</p>
     </div>
   )
 }
@@ -597,7 +610,7 @@ export default function GameProj({
 }) {
   return (
     <div className={`gp${layout === 'pro' ? ' is-pro' : ''}`} data-layout={layout}>
-      {!game ? <EmptyBoard /> : layout === 'pro' ? (
+      {!game ? <EmptyBoard pack={pack} /> : layout === 'pro' ? (
         <ProView
           pack={pack}
           game={game}

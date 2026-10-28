@@ -1,8 +1,7 @@
-// Per-sport cheatsheet packs.
-// NFL starts from the locked DAL@PHI example, plus other example games so the
-// game tabs have somewhere to go. NBA, NHL, WNBA, and KBO have no game-projection
-// feed in the pipeline, so their sheets stay labeled EXAMPLE and use that sport's
-// teams and stats. Display fixtures only — not CG Score, ranking, or pricing.
+// EXAMPLE fixture packs for the locked draft and for tests of sort, filter,
+// and the EXAMPLE label. The cheatsheets page does not render these. Live
+// numbers come from loadLiveBoard.js. Display fixtures only — not CG Score,
+// ranking, or pricing.
 
 import { gameFromLockedExample, indexGames, makeGame, hits, bars, statRows, paceBlock, dvpBlock, componentRows } from './sheetModel.js'
 
