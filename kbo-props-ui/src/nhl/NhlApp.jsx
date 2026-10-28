@@ -1,4 +1,6 @@
 import { lazy, Suspense, useState } from 'react'
+import VisitedPane from '../VisitedPane'
+import { useSportView } from '../useSportView'
 import { useAuth } from '../AuthContext'
 import Paywall from '../Paywall'
 import { sportAccess } from '../entitlements'
@@ -7,7 +9,6 @@ import { PageMenu, PageMenuButton, usePageMenu } from '../PageMenu'
 import { useNhlOpen } from '../useNhlOpen'
 import RouteFallback from '../RouteFallback'
 import { GuideNavLinks } from '../GuideLinks'
-import { viewOnLoad } from '../memberNav'
 import CheatsheetsNavLink from '../CheatsheetsNavLink'
 import '../nfl/nfl.css'
 import './nhl.css'
@@ -30,17 +31,12 @@ const NAV = [
 
 const SlipBoard = lazy(() => import('../SlipBoard'))
 
-export default function NhlApp({ sport, setSport, onSlipSport, onNavigateHome, onNavigatePricing, entry, forceHome }) {
+export default function NhlApp({ sport, setSport, onSlipSport, onNavigateHome, onNavigatePricing, entry, forceHome, homeTick = 0 }) {
   const { tier } = useAuth()
   const menu = usePageMenu()
   const { open: serverOpen } = useNhlOpen()
   const unlocked = sportAccess(tier).nhl || serverOpen === true
-  const [view, setView] = useState(() => viewOnLoad({
-    sport: 'nhl',
-    entry,
-    search: typeof window === 'undefined' ? '' : window.location.search,
-    forceHome,
-  }))
+  const [view, setView] = useSportView({ sport: 'nhl', entry, forceHome, homeTick })
   const [selected, setSelected] = useState(entry?.item || null)
 
   const openPlayer = (item) => {
@@ -48,19 +44,7 @@ export default function NhlApp({ sport, setSport, onSlipSport, onNavigateHome, o
     setView('player')
   }
 
-  let content = <NhlPropLines onSelectPlayer={openPlayer} />
-  if (view === 'player') content = <NhlPlayerPage item={selected} onBack={() => setView('dashboard')} />
-  else if (view === 'projections') content = <NhlProjections onSelectPlayer={openPlayer} />
-  else if (view === 'sharp') content = <NhlSharpOdds onSelectPlayer={openPlayer} />
-  else if (view === 'lineups') content = <NhlLineups />
-  else if (view === 'dvp') content = <NhlDvp />
-  else if (view === 'slip') {
-    content = (
-      <Suspense fallback={<p style={{ color: '#9fb5a8', textAlign: 'center', padding: 24 }}>Loading slip builder…</p>}>
-        <SlipBoard sport="nhl" onSport={onSlipSport} drawer={entry?.drawer === true} />
-      </Suspense>
-    )
-  }
+  const paid = (node) => <Paywall onNavigate={onNavigatePricing} sport="nhl" unlocked={unlocked}>{node}</Paywall>
 
   return (
     <div className="nfl-root nhl-root">
@@ -80,11 +64,33 @@ export default function NhlApp({ sport, setSport, onSlipSport, onNavigateHome, o
         </PageMenu>
       </nav>
       <main className="nfl-content" key={tier || 'free'}>
-        <Suspense fallback={<RouteFallback inset />}>
-          {view === 'dashboard' ? content : (
-            <Paywall onNavigate={onNavigatePricing} sport="nhl" unlocked={unlocked}>{content}</Paywall>
-          )}
-        </Suspense>
+        {view === 'player' && (
+          <Suspense fallback={<RouteFallback inset />}>
+            <NhlPlayerPage item={selected} onBack={() => setView('dashboard')} />
+          </Suspense>
+        )}
+        {view === 'slip' && (
+          <Suspense fallback={<p style={{ color: '#9fb5a8', textAlign: 'center', padding: 24 }}>Loading slip builder…</p>}>
+            <SlipBoard sport="nhl" onSport={onSlipSport} drawer={entry?.drawer === true} />
+          </Suspense>
+        )}
+        <VisitedPane active={view === 'dashboard'}>
+          <Suspense fallback={<RouteFallback inset />}>
+            <NhlPropLines onSelectPlayer={openPlayer} />
+          </Suspense>
+        </VisitedPane>
+        <VisitedPane active={view === 'projections'}>
+          <Suspense fallback={<RouteFallback inset />}>{paid(<NhlProjections onSelectPlayer={openPlayer} />)}</Suspense>
+        </VisitedPane>
+        <VisitedPane active={view === 'sharp'}>
+          <Suspense fallback={<RouteFallback inset />}>{paid(<NhlSharpOdds onSelectPlayer={openPlayer} />)}</Suspense>
+        </VisitedPane>
+        <VisitedPane active={view === 'lineups'}>
+          <Suspense fallback={<RouteFallback inset />}>{paid(<NhlLineups />)}</Suspense>
+        </VisitedPane>
+        <VisitedPane active={view === 'dvp'}>
+          <Suspense fallback={<RouteFallback inset />}>{paid(<NhlDvp />)}</Suspense>
+        </VisitedPane>
       </main>
     </div>
   )

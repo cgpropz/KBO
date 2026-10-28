@@ -11,10 +11,10 @@ const FILE_TO_DATASET = {
   'nba/projections_standard.json': 'nba_projections_standard',
 }
 
-export async function fetchNbaSnapshot(path, { player, showAllLines = false } = {}) {
+export async function fetchNbaSnapshot(path, { player, showAllLines = false, fresh = false } = {}) {
   const ds = FILE_TO_DATASET[path]
   if (!ds) throw new Error(`Unknown NBA data file: ${path}`)
-  return fetchApiDataset(ds, { devStaticPath: path, player, showAllLines })
+  return fetchApiDataset(ds, { devStaticPath: path, player, showAllLines, fresh })
 }
 
 export async function fetchNbaData(path, options) {

@@ -1,10 +1,11 @@
 import MiniHitBars from '../MiniHitBars'
 import { tailChartBars } from '../chartLabels'
-import { useEffect, useMemo, useState } from 'react'
+import { memo, useCallback, useEffect, useMemo, useState } from 'react'
 import NhlAvatar from './NhlAvatar.jsx'
 import { dvpGrade } from '../nfl/matchupGrade'
 import { BoardOddsPanel, OddsChevron, boardOddsFor, useBoardOdds } from '../nfl/BoardOddsPanel'
 import { fetchNhlProjections, fetchNhlSharpOdds } from './nhlData'
+import { peekApiDataset } from '../apiData'
 import { ShowAllLinesToggle, useShowAllLines } from '../ShowAllLinesToggle'
 import { MemberPreviewNotice } from '../MemberPreviewNotice'
 import { QuietMemberPreview } from '../QuietMemberPreview'
@@ -87,7 +88,9 @@ export function sortBoard(rows, sortBy) {
   })
 }
 
-function PropRow({ item, onSelectPlayer, open, onToggle, odds, oddsState, seen, phone }) {
+const PropRow = memo(function PropRow({ item, onSelectPlayer, open, onToggle, odds, oddsState, seen, phone, showTipLane }) {
+  const tipLane = showTipLane ? item.tipLane : null
+  const toggleRow = () => onToggle(item.id || `${item.player}-${item.prop}-${item.line}`)
   const recent = Array.isArray(item.recent) ? item.recent : []
   const score = rowScore(item)
   const side = pickSide(item.projection, item.line, score)
@@ -105,15 +108,15 @@ function PropRow({ item, onSelectPlayer, open, onToggle, odds, oddsState, seen, 
   return (
     <BoardLine
       phone={phone}
-      className={tipRowClass(item.tipLane, `nfl-lines-row${open ? ' is-open' : ''}`)}
-      onClick={onToggle}
+      className={tipRowClass(tipLane, `nfl-lines-row${open ? ' is-open' : ''}`)}
+      onClick={toggleRow}
       cells={[
         { node: (
           <div className="nfl-lines-player">
             <div className="nfl-lines-avatar"><NhlAvatar item={item} initials={initials(item.player)} /></div>
             <div className="nfl-lines-info">
               <button className="nfl-player-link" onClick={(event) => { event.stopPropagation(); onSelectPlayer(item) }}>{item.player}</button>
-              <LaneMark lane={item.tipLane} />
+              <LaneMark lane={tipLane} />
               {item.goalieStatus === 'probable' && <span className="nhl-probable">PROBABLE</span>}
               {item.goalieStatus === 'confirmed' && <span className="nhl-confirmed">CONFIRMED</span>}
               <span className="nfl-lines-tag"><CardTeamLogo team={item.team} src={teamLogo ? fitImage(teamLogo, 16) : ''} />{item.team}, {item.position}</span>
@@ -121,7 +124,7 @@ function PropRow({ item, onSelectPlayer, open, onToggle, odds, oddsState, seen, 
                 {side ? <b>{sideLetter(side)}</b> : null} {formatValue(item.line)} {item.prop}
               </div>
             </div>
-            <OddsChevron open={open} player={item.player} onToggle={onToggle} />
+            <OddsChevron open={open} player={item.player} onToggle={toggleRow} />
           </div>
         ) },
         { className: 'hit-rate-chart', node: <MiniHitBars bars={tailChartBars(item)} line={Number(item.line)} chartClass="nfl-lines-chart" logoFor={teamLogoUrl} /> },
@@ -156,12 +159,24 @@ function PropRow({ item, onSelectPlayer, open, onToggle, odds, oddsState, seen, 
       )}
     />
   )
+})
+
+function readNhlCache() {
+  const snap = peekApiDataset('nhl_projections')
+  if (!snap) return null
+  return {
+    projections: Array.isArray(snap.data) ? snap.data : [],
+    updatedAt: snap.updatedAt || null,
+    lockedCount: previewLockedCount(snap.preview === true, snap.lockedCount),
+    memberPreview: snap.preview === true,
+    refreshing: snap.refreshing === true,
+  }
 }
 
 export default function NhlPropLines({ onSelectPlayer }) {
-  const [projections, setProjections] = useState([])
+  const [projections, setProjections] = useState(() => readNhlCache()?.projections || [])
   const [error, setError] = useState('')
-  const [loaded, setLoaded] = useState(false)
+  const [loaded, setLoaded] = useState(() => readNhlCache() != null)
   const [loadAttempt, setLoadAttempt] = useState(0)
   const [tab, setTab] = useState('All Props')
   const [filtersOpen, setFiltersOpen] = useState(false)
@@ -178,10 +193,10 @@ export default function NhlPropLines({ onSelectPlayer }) {
     setFilters(DEFAULT_NHL_FILTERS)
     rememberBoardSort('nhl', DEFAULT_NHL_FILTERS.sortBy)
   }
-  const [lockedCount, setLockedCount] = useState(0)
-  const [refreshing, setRefreshing] = useState(false)
-  const [memberPreview, setMemberPreview] = useState(false)
-  const [updatedAt, setUpdatedAt] = useState(null)
+  const [lockedCount, setLockedCount] = useState(() => readNhlCache()?.lockedCount || 0)
+  const [refreshing, setRefreshing] = useState(() => readNhlCache()?.refreshing === true)
+  const [memberPreview, setMemberPreview] = useState(() => readNhlCache()?.memberPreview === true)
+  const [updatedAt, setUpdatedAt] = useState(() => readNhlCache()?.updatedAt || null)
   const [openId, setOpenId] = useState(null)
   const { index: oddsIndex, oddsState, reload: reloadOdds } = useBoardOdds(
     ({ fresh = false } = {}) => fetchNhlSharpOdds({ fresh }).then(({ records, preview }) => ({ records, preview })),
@@ -189,10 +204,10 @@ export default function NhlPropLines({ onSelectPlayer }) {
 
   useEffect(() => {
     let active = true
-    fetchNhlProjections()
+    fetchNhlProjections({ fresh: loadAttempt > 0 })
       .then(({ projections: next, preview, lockedCount: locked, updatedAt: publishedAt, refreshing: pendingRefresh }) => {
         if (!active) return
-        setProjections(next)
+        setProjections((current) => current === next ? current : next)
         setLockedCount(previewLockedCount(preview, locked))
         setMemberPreview(preview === true)
         setRefreshing(pendingRefresh === true)
@@ -235,12 +250,20 @@ export default function NhlPropLines({ onSelectPlayer }) {
     () => prepareBoardRows(boardProjections).filter((item) => lineMatchesStat(item.prop, item.line)),
     [boardProjections],
   )
-  const rows = useMemo(() => {
+  const ranked = useMemo(() => {
     const rowKey = (item) => item.id || `${item.player}|${item.prop}|${item.line}`
-    const shown = sortBoard(filterNhlRows(prepared, { propTab: tab, filters }), sortKey)
-    if (sortKey !== 'CG Score') return shown
-    return stampTipLanes(shown, tipKeys(sortBoard(prepared, 'CG Score'), rowKey), rowKey)
-  }, [prepared, tab, filters, sortKey])
+    const ordered = sortBoard(prepared, 'CG Score')
+    return stampTipLanes(ordered, tipKeys(ordered, rowKey), rowKey)
+  }, [prepared])
+  const rows = useMemo(() => {
+    const filtered = filterNhlRows(ranked, { propTab: tab, filters })
+    if (sortKey === 'CG Score') return filtered
+    return sortBoard(filtered, sortKey)
+  }, [ranked, tab, filters, sortKey])
+  const showTipLane = sortKey === 'CG Score'
+  const toggleOpen = useCallback((id) => {
+    setOpenId((current) => current === id ? null : id)
+  }, [])
   const bounds = useMemo(() => nhlLineBounds(prepared), [prepared])
   const teams = useMemo(() => nhlTeamOptions(prepared), [prepared])
   const matchups = useMemo(() => nhlMatchupOptions(prepared), [prepared])
@@ -292,10 +315,11 @@ export default function NhlPropLines({ onSelectPlayer }) {
                 phone={phone}
                 onSelectPlayer={onSelectPlayer}
                 open={openId === id}
-                onToggle={() => setOpenId((current) => current === id ? null : id)}
+                onToggle={toggleOpen}
                 odds={matched.odds}
                 seen={matched.seen}
                 oddsState={oddsState}
+                showTipLane={showTipLane}
               />
             )
           })}

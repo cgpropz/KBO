@@ -1,4 +1,5 @@
 import { publishedAtFromPayload } from './boardFreshness';
+import { datasetCache, datasetCacheKey } from './datasetCache';
 import { runRefreshAttempts } from './refreshAttempts.mjs';
 import { memberPreviewIsDowngrade } from './memberPreview';
 import { filterStandardBoard } from './standardBoard';
@@ -112,7 +113,29 @@ function notifyRefreshing() {
   for (const listener of refreshListeners) listener(active);
 }
 
+function cacheableDataset(ds, presented) {
+  if (!presented || presented.refreshExhausted) return false;
+  if (!Object.prototype.hasOwnProperty.call(presented, 'data')) return false;
+  // A preview the member should not have seen is not the board we keep.
+  if (presented.preview && cachedMemberPreviewIsDowngrade(ds, presented)) return false;
+  return true;
+}
+
+function rememberDataset(ds, presented, { player, showAllLines = false } = {}) {
+  if (!cacheableDataset(ds, presented)) return;
+  datasetCache.write(datasetCacheKey(ds, { player, showAllLines }), presented);
+}
+
+export function peekApiDataset(ds, { player, showAllLines = false } = {}) {
+  return datasetCache.read(datasetCacheKey(ds, { player, showAllLines }));
+}
+
+export function clearDatasetCache() {
+  datasetCache.clear();
+}
+
 function publishDataset(ds, presented) {
+  rememberDataset(ds, presented, { showAllLines: presented?.showAllLines === true });
   const set = datasetWatchers.get(ds);
   if (!set) return;
   for (const listener of set) listener(presented);
@@ -227,12 +250,22 @@ async function loadDataset(ds, opts, managed) {
 
 export function fetchApiDataset(ds, { devStaticPath, priority, player, fresh = false, timeoutMs, retried = false, accessToken: suppliedToken, showAllLines = false } = {}) {
   const opts = { devStaticPath, priority, player, fresh, timeoutMs, retried, suppliedToken, showAllLines: showAllLines === true };
+  const storedKey = datasetCacheKey(ds, opts);
+  // A tab or sport switch reuses the snapshot from this session. A retry and
+  // a fresh pull still hit the network and replace that copy.
+  if (!fresh && !retried) {
+    const hit = datasetCache.read(storedKey);
+    if (hit) return Promise.resolve(hit);
+  }
   const key = inflightKey(ds, opts);
   const existing = inflight.get(key);
   if (existing) return existing;
   // Set the map before any await so the board and the nav search share one
   // request. A player page and a fresh retry stay on their own keys.
-  const pending = loadDataset(ds, opts, Number.isFinite(timeoutMs));
+  const pending = loadDataset(ds, opts, Number.isFinite(timeoutMs)).then((presented) => {
+    rememberDataset(ds, presented, opts);
+    return presented;
+  });
   // Return the finally-chain. A bare pending.finally() rejects on its own,
   // and that rejection is uncaught when the caller only handles `pending`.
   const tracked = pending.finally(() => {

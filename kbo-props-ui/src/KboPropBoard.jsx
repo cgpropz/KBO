@@ -1,6 +1,6 @@
 import MiniHitBars from './MiniHitBars'
 import { headChartBars } from './chartLabels'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { fetchDataSnapshot } from './dataUrl'
 import { ShowAllLinesToggle, useShowAllLines } from './ShowAllLinesToggle'
 import BoardStatus from './BoardStatus'
@@ -18,7 +18,9 @@ import { BoardLine, BoardSurface, LockedPlaceholder } from './PropLineCard'
 import { rememberBoardSort, withDefaultSort } from './boardSort'
 import { usePhoneBoard } from './usePhoneBoard'
 import { LaneMark, TipLaneNote } from './TipLane'
-import { stampTipLanes, tipKeys, tipRowClass } from './tipFirst'
+import { peekApiDataset } from './apiData'
+import { rankWithTipLanes } from './stableBoard'
+import { tipRowClass } from './tipFirst'
 import { countedLines, lineWord } from './lineCount'
 import { MemberPreviewNotice } from './MemberPreviewNotice'
 import { QuietMemberPreview } from './QuietMemberPreview'
@@ -144,7 +146,7 @@ function Filters({ open, close, filters, setFilters, propTabs, propTab, setPropT
   )
 }
 
-function KboBoardRow({ card, prop, score, direction, hitPills, breakEvenWindows, showBreakEven, photo, locked, rowRef, onSelectPlayer, onExpand, phone, tipLane }) {
+const KboBoardRow = memo(function KboBoardRow({ card, prop, score, direction, hitPills, breakEvenWindows, showBreakEven, photo, locked, rowRef, onSelectPlayer, onExpand, phone, tipLane }) {
   const [whyOpen, setWhyOpen] = useState(false)
   const sideMark = direction === 'over' ? 'O' : direction === 'under' ? 'U' : ''
   const scoreNote = buildCgScoreExplainer({
@@ -212,11 +214,15 @@ function KboBoardRow({ card, prop, score, direction, hitPills, breakEvenWindows,
       )}
     />
   )
+})
+
+function readKboCache() {
+  return peekApiDataset('prizepicks_props')
 }
 
 export default function KboPropBoard({ onNavigatePricing, onSelectPlayer }) {
-  const [snapshot, setSnapshot] = useState(null)
-  const [updatedAt, setUpdatedAt] = useState(null)
+  const [snapshot, setSnapshot] = useState(() => readKboCache()?.data ?? null)
+  const [updatedAt, setUpdatedAt] = useState(() => readKboCache()?.updatedAt || null)
   const [photos, setPhotos] = useState({})
   const [error, setError] = useState('')
   const [loadAttempt, setLoadAttempt] = useState(0)
@@ -224,9 +230,12 @@ export default function KboPropBoard({ onNavigatePricing, onSelectPlayer }) {
   const [filters, setFilters] = useState(() => withDefaultSort(DEFAULT_FILTERS, 'kbo', SORT_OPTIONS))
   const phone = usePhoneBoard()
   const [filtersOpen, setFiltersOpen] = useState(false)
-  const [lockedCount, setLockedCount] = useState(0)
-  const [refreshing, setRefreshing] = useState(false)
-  const [memberPreview, setMemberPreview] = useState(false)
+  const [lockedCount, setLockedCount] = useState(() => {
+    const snap = readKboCache()
+    return snap ? previewLockedCount(snap.preview === true, snap.lockedCount) : 0
+  })
+  const [refreshing, setRefreshing] = useState(() => readKboCache()?.refreshing === true)
+  const [memberPreview, setMemberPreview] = useState(() => readKboCache()?.preview === true)
   const [whyRevision, setWhyRevision] = useState(0)
 
   const tableWrapRef = useRef(null)
@@ -235,14 +244,14 @@ export default function KboPropBoard({ onNavigatePricing, onSelectPlayer }) {
 
   useEffect(() => {
     let active = true
-    const load = async () => {
+    const load = async ({ fresh = false } = {}) => {
       try {
         const [props, playerPhotos] = await Promise.all([
-          fetchDataSnapshot('prizepicks_props.json'),
+          fetchDataSnapshot('prizepicks_props.json', { fresh: fresh || loadAttempt > 0 }),
           fetchDataSnapshot('player_photos.json').catch(() => ({ data: {} })),
         ])
         if (!active) return
-        setSnapshot(props.data)
+        setSnapshot((current) => current === props.data ? current : props.data)
         setUpdatedAt(props.updatedAt || null)
         setLockedCount(previewLockedCount(props.preview === true, props.lockedCount))
         setRefreshing(props.refreshing === true)
@@ -257,7 +266,7 @@ export default function KboPropBoard({ onNavigatePricing, onSelectPlayer }) {
       }
     }
     load()
-    const refresh = window.setInterval(load, 30 * 60 * 1000)
+    const refresh = window.setInterval(() => load({ fresh: true }), 30 * 60 * 1000)
     return () => { active = false; window.clearInterval(refresh) }
   }, [loadAttempt])
 
@@ -300,27 +309,33 @@ export default function KboPropBoard({ onNavigatePricing, onSelectPlayer }) {
     }),
   }))), [activeSnapshot])
   const propTabs = useMemo(() => ['All Props', ...[...new Set(allRows.map(({ prop }) => prop.stat))].sort()], [allRows])
+  const laneRows = useMemo(() => {
+    const rank = (row) => (row.score == null || !Number.isFinite(row.score) ? -Infinity : row.score)
+    const kboKey = (row) => `${row.card?.name}|${row.prop?.stat}|${row.prop?.line}|${row.prop?.odds_type || ''}`
+    return rankWithTipLanes(allRows, (left, right) => rank(right) - rank(left), kboKey)
+  }, [allRows])
   const rows = useMemo(() => {
     const minimumScore = filters.minScore === '' ? -Infinity : Number(filters.minScore)
-    const visible = allRows
+    const visible = laneRows
       .filter(({ prop }) => propTab === 'All Props' || prop.stat === propTab)
       .filter(({ card }) => filters.playerType === 'All' || card.type === (filters.playerType === 'Pitchers' ? 'pitcher' : 'batter'))
       .filter(({ direction }) => filters.direction === 'All' || direction === (filters.direction === 'Overs' ? 'over' : 'under'))
       .filter(({ prop }) => Number(prop.hit_rate_l10 ?? 0) >= filters.minL10)
       .filter(({ score }) => filters.minScore === '' || (score != null && score >= minimumScore))
-    const rank = (row) => (row.score == null || !Number.isFinite(row.score) ? -Infinity : row.score)
-    const sorted = visible.sort((left, right) => {
-      if (filters.sortBy === 'L10 Hit Rate') return Number(right.prop.hit_rate_l10 ?? 0) - Number(left.prop.hit_rate_l10 ?? 0)
-      if (filters.sortBy === 'Full Hit Rate') return Number(right.prop.hit_rate_all ?? 0) - Number(left.prop.hit_rate_all ?? 0)
-      if (filters.sortBy === 'Player Name') return left.card.name.localeCompare(right.card.name)
-      return rank(right) - rank(left)
-    })
-    if (filters.sortBy !== 'CG Score') return sorted
-    const kboKey = (row) => `${row.card?.name}|${row.prop?.stat}|${row.prop?.line}|${row.prop?.odds_type || ''}`
-    const ranked = [...allRows].sort((left, right) => rank(right) - rank(left))
-    return stampTipLanes(sorted, tipKeys(ranked, kboKey), kboKey)
-  }, [allRows, filters, propTab])
+    if (filters.sortBy === 'L10 Hit Rate') {
+      return visible.sort((left, right) => Number(right.prop.hit_rate_l10 ?? 0) - Number(left.prop.hit_rate_l10 ?? 0))
+    }
+    if (filters.sortBy === 'Full Hit Rate') {
+      return visible.sort((left, right) => Number(right.prop.hit_rate_all ?? 0) - Number(left.prop.hit_rate_all ?? 0))
+    }
+    if (filters.sortBy === 'Player Name') {
+      return visible.sort((left, right) => left.card.name.localeCompare(right.card.name))
+    }
+    return visible
+  }, [laneRows, filters, propTab])
 
+  const showTipLane = filters.sortBy === 'CG Score'
+  const bumpWhy = useCallback(() => setWhyRevision((current) => current + 1), [])
   const boardEmpty = !!snapshot && !allRows.length
   const hasLockedRows = showPaywall && (rows.length > FREE_ROW_LIMIT || lockedCount > 0)
   const lastFreeIndex = Math.min(rows.length, FREE_ROW_LIMIT) - 1
@@ -380,7 +395,7 @@ export default function KboPropBoard({ onNavigatePricing, onSelectPlayer }) {
         >
           {rows.map(({ card, prop, score, direction, hitPills, breakEvenWindows, tipLane }, index) => (
             <KboBoardRow
-              key={`${card.name}-${prop.stat}-${prop.line}-${prop.odds_type}-${index}`}
+              key={`${card.name}-${prop.stat}-${prop.line}-${prop.odds_type || ''}`}
               card={card}
               prop={prop}
               score={score}
@@ -392,9 +407,9 @@ export default function KboPropBoard({ onNavigatePricing, onSelectPlayer }) {
               locked={!isPaid && index >= FREE_ROW_LIMIT}
               rowRef={index === lastFreeIndex ? lastFreeRowRef : undefined}
               onSelectPlayer={onSelectPlayer}
-              onExpand={() => setWhyRevision((current) => current + 1)}
+              onExpand={bumpWhy}
               phone={phone}
-              tipLane={tipLane}
+              tipLane={showTipLane ? tipLane : null}
             />
           ))}
           {Array.from({ length: placeholderCount }, (_, index) => (

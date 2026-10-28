@@ -59,12 +59,18 @@ function kboSlipRow(row) {
 // sports stay on the plain line. NBA is bounded 0-100 like its board.
 // The More/Less side is still projection versus the posted line, so a
 // short yardage over does not flip to Less.
+const slipCgCache = new WeakMap()
+
 export function slipCg(row) {
+  if (row && typeof row === 'object' && slipCgCache.has(row)) return slipCgCache.get(row)
   const stat = row?.prop ?? row?.stat
-  if (nflSlipRow(row)) return nflCgScore(row?.projection, row?.line, stat)
-  const score = cgScore(row?.projection, row?.line, stat)
+  const score = nflSlipRow(row)
+    ? nflCgScore(row?.projection, row?.line, stat)
+    : cgScore(row?.projection, row?.line, stat)
   // NBA and KBO are bounded 0-100 like their boards; rawSlipCg breaks ties at the cap.
-  return nbaSlipRow(row) || kboSlipRow(row) ? boundCg(score) : score
+  const shown = !nflSlipRow(row) && (nbaSlipRow(row) || kboSlipRow(row)) ? boundCg(score) : score
+  if (row && typeof row === 'object') slipCgCache.set(row, shown)
+  return shown
 }
 
 // Side of the shown CG. Exactly 50 is no pick: EVEN, so it is not a MORE

@@ -1,6 +1,6 @@
 import MiniHitBars from '../MiniHitBars'
 import { tailChartBars } from '../chartLabels'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { fetchNflProjections, fetchNflSharpOdds } from './nflData'
 import { ShowAllLinesToggle, useShowAllLines } from '../ShowAllLinesToggle'
 import { MemberPreviewNotice } from '../MemberPreviewNotice'
@@ -32,7 +32,9 @@ import { countedLines, lineClause, lineWord } from '../lineCount'
 import { opponentLabel } from '../cardMark'
 import { CardTeamLogo } from '../CardTeamLogo'
 import { LaneMark, TipLaneNote } from '../TipLane'
-import { stampTipLanes, tipKeys, tipRowClass } from '../tipFirst'
+import { peekApiDataset } from '../apiData'
+import { rankWithTipLanes } from '../stableBoard'
+import { tipRowClass } from '../tipFirst'
 
 const FREE_ROW_LIMIT = 3
 
@@ -98,8 +100,11 @@ function FilterIcon() {
 }
 
 
-function PropRow({ item, onSelectPlayer, locked, rowRef, open, onToggle, whyOpen, onWhy, odds, oddsState, seen, phone, matchupDefense }) {
+const PropRow = memo(function PropRow({ item, onSelectPlayer, locked, rowRef, open, onToggle, whyOpen, onWhy, odds, oddsState, seen, phone, matchupDefense, showTipLane }) {
   const recent = Array.isArray(item.recent) ? item.recent : []
+  const tipLane = showTipLane ? item.tipLane : null
+  const toggleRow = () => onToggle(item.id)
+  const toggleNote = () => onWhy(item.id)
   // Side from the CG Score. Exactly 50 is no pick: no O/U letter, no color.
   const pending = item.cgScore === null
   const side = pending ? null : cgSide(item.score)
@@ -136,25 +141,25 @@ function PropRow({ item, onSelectPlayer, locked, rowRef, open, onToggle, whyOpen
   return (
     <BoardLine
       phone={phone}
-      className={tipRowClass(item.tipLane, `nfl-lines-row${locked ? ' locked' : ''}${open ? ' is-open' : ''}`)}
+      className={tipRowClass(tipLane, `nfl-lines-row${locked ? ' locked' : ''}${open ? ' is-open' : ''}`)}
       rowRef={open || whyOpen ? undefined : rowRef}
-      onClick={locked ? undefined : onToggle}
+      onClick={locked ? undefined : toggleRow}
       cells={[
         { node: (
           <div className="nfl-lines-player">
             <div className="nfl-lines-avatar">{item.imageUrl ? <img src={fitImage(item.imageUrl, 42)} alt={item.player} width={42} height={42} loading="lazy" /> : initials(item.player)}</div>
             <div className="nfl-lines-info">
               <button className="nfl-player-link" onClick={(event) => { event.stopPropagation(); if (!locked) onSelectPlayer(item.player, item.prop) }}>{item.player}</button>
-              <LaneMark lane={item.tipLane} />
+              <LaneMark lane={tipLane} />
               <span className="nfl-lines-tag"><CardTeamLogo team={item.team} src={teamLogoUrl(item.team) ? fitImage(teamLogoUrl(item.team), 16) : ''} />{item.team}, {item.position}</span>
               <div className={`nfl-lines-line ${sideClass}`}>{side ? <b>{side === 'OVER' ? 'O' : 'U'}</b> : null} {formatValue(item.line)} {item.prop}</div>
             </div>
-            <OddsChevron open={open} player={item.player} onToggle={onToggle} disabled={locked} />
+            <OddsChevron open={open} player={item.player} onToggle={toggleRow} disabled={locked} />
           </div>
         ) },
         { className: 'hit-rate-chart', node: <MiniHitBars bars={tailChartBars(item)} line={item.line} chartClass="nfl-lines-chart" logoFor={teamLogoUrl} /> },
         { className: `hit-rate-score ${sideClass}`, node: (
-          <CgScoreCell scoreText={pending ? 'Pending' : item.score.toFixed(1)} score={pending ? null : item.score} side={pending ? null : item.side} symmetric={symmetricRankOn('nfl')} note={locked ? null : scoreNote} open={whyOpen} onToggle={onWhy} />
+          <CgScoreCell scoreText={pending ? 'Pending' : item.score.toFixed(1)} score={pending ? null : item.score} side={pending ? null : item.side} symmetric={symmetricRankOn('nfl')} note={locked ? null : scoreNote} open={whyOpen} onToggle={toggleNote} />
         ) },
         { className: 'hit-rate-col', node: <HitRateStrip pills={item.hitPills} /> },
         { className: 'hit-rate-extra', style: shownDvp ? { color: dvpColor(shownDvp) } : undefined, node: <><span className="nfl-dvp-label">DvP</span> <span data-testid="nfl-board-dvp">{shownDvp ? ordinal(shownDvp) : '—'}</span></> },
@@ -174,7 +179,7 @@ function PropRow({ item, onSelectPlayer, locked, rowRef, open, onToggle, whyOpen
       )}
     />
   )
-}
+})
 
 function FilterRow({ id, label, value, expandedRow, onToggle, children }) {
   const expanded = expandedRow === id
@@ -275,11 +280,23 @@ function FiltersPanel({ open, onClose, filters, updateFilter, resetFilters, prop
   )
 }
 
+function readNflCache() {
+  const snap = peekApiDataset('nfl_projections')
+  if (!snap) return null
+  return {
+    projections: Array.isArray(snap.data) ? snap.data : [],
+    updatedAt: snap.updatedAt || null,
+    lockedCount: previewLockedCount(snap.preview === true, snap.lockedCount),
+    memberPreview: snap.preview === true,
+    refreshing: snap.refreshing === true,
+  }
+}
+
 export default function NflPropLines({ onSelectPlayer, onNavigatePricing }) {
   const matchupDefense = useNflMatchupDefense()
-  const [projections, setProjections] = useState([])
+  const [projections, setProjections] = useState(() => readNflCache()?.projections || [])
   const [error, setError] = useState('')
-  const [loaded, setLoaded] = useState(false)
+  const [loaded, setLoaded] = useState(() => readNflCache() != null)
   const [loadAttempt, setLoadAttempt] = useState(0)
   const [propTab, setPropTab] = useState('All Props')
   const [filtersOpen, setFiltersOpen] = useState(false)
@@ -288,10 +305,10 @@ export default function NflPropLines({ onSelectPlayer, onNavigatePricing }) {
   const [openId, setOpenId] = useState(null)
   const [whyId, setWhyId] = useState(null)
 
-  const [lockedCount, setLockedCount] = useState(0)
-  const [refreshing, setRefreshing] = useState(false)
-  const [memberPreview, setMemberPreview] = useState(false)
-  const [updatedAt, setUpdatedAt] = useState(null)
+  const [lockedCount, setLockedCount] = useState(() => readNflCache()?.lockedCount || 0)
+  const [refreshing, setRefreshing] = useState(() => readNflCache()?.refreshing === true)
+  const [memberPreview, setMemberPreview] = useState(() => readNflCache()?.memberPreview === true)
+  const [updatedAt, setUpdatedAt] = useState(() => readNflCache()?.updatedAt || null)
   const { index: oddsIndex, oddsState, reload: reloadOdds } = useBoardOdds(
     ({ fresh = false } = {}) => fetchNflSharpOdds({ fresh }).then(({ records, preview }) => ({ records, preview })),
     { enabled: loaded },
@@ -303,7 +320,16 @@ export default function NflPropLines({ onSelectPlayer, onNavigatePricing }) {
 
   useEffect(() => {
     let active = true
-    fetchNflProjections().then(({ projections: next, updatedAt: publishedAt, preview, lockedCount: locked, refreshing: pendingRefresh }) => { if (!active) return; setProjections(next); setUpdatedAt(publishedAt || null); setLockedCount(previewLockedCount(preview, locked)); setMemberPreview(preview === true); setRefreshing(pendingRefresh === true); setError(''); setLoaded(true) }).catch((loadError) => active && setError(loadError))
+    fetchNflProjections({ fresh: loadAttempt > 0 }).then(({ projections: next, updatedAt: publishedAt, preview, lockedCount: locked, refreshing: pendingRefresh }) => {
+      if (!active) return
+      setProjections((current) => current === next ? current : next)
+      setUpdatedAt(publishedAt || null)
+      setLockedCount(previewLockedCount(preview, locked))
+      setMemberPreview(preview === true)
+      setRefreshing(pendingRefresh === true)
+      setError('')
+      setLoaded(true)
+    }).catch((loadError) => active && setError(loadError))
     return () => { active = false }
   }, [loadAttempt])
 
@@ -349,7 +375,7 @@ export default function NflPropLines({ onSelectPlayer, onNavigatePricing }) {
     return { min: Math.floor(Math.min(...lines) * 10) / 10, max: Math.ceil(Math.max(...lines) * 10) / 10 }
   }, [boardProjections])
 
-  const rows = useMemo(() => {
+  const scoredRows = useMemo(() => {
     const withScore = boardProjections.filter((item) => lineMatchesStat(item.prop, item.line)).map((item) => {
       const pills = nflHitPills(item)
       const byId = Object.fromEntries(pills.map((pill) => [pill.id, pill]))
@@ -372,12 +398,18 @@ export default function NflPropLines({ onSelectPlayer, onNavigatePricing }) {
         side: nflBoardSide(item),
       }
     })
+    const symmetric = symmetricRankOn('nfl')
+    const byCg = (a, b) => (symmetric ? compareSymmetric(a, b) : compareNflScores(a.score, a.rawScore, b.score, b.rawScore))
+    return rankWithTipLanes(withScore, byCg, (item) => item.id)
+  }, [boardProjections])
+
+  const rows = useMemo(() => {
     const edgeMin = filters.edgeMin === '' ? -Infinity : Number(filters.edgeMin)
     const edgeMax = filters.edgeMax === '' ? Infinity : Number(filters.edgeMax)
     const lineMin = filters.lineMin === '' ? -Infinity : Number(filters.lineMin)
     const lineMax = filters.lineMax === '' ? Infinity : Number(filters.lineMax)
 
-    const filtered = withScore
+    const filtered = scoredRows
       .filter((item) => propTab === 'All Props' || item.prop === propTab)
       .filter((item) => filters.side === 'All' || (filters.side === 'Overs' ? item.side === 'OVER' : item.side === 'UNDER'))
       .filter((item) => item.hitRate >= filters.minHitRate)
@@ -391,20 +423,22 @@ export default function NflPropLines({ onSelectPlayer, onNavigatePricing }) {
         return grade && grade[0] === filters.grade
       })
 
-    const symmetric = symmetricRankOn('nfl')
-    const byCg = (a, b) => (symmetric ? compareSymmetric(a, b) : compareNflScores(a.score, a.rawScore, b.score, b.rawScore))
-    const sorted = filtered.sort((a, b) => {
-      if (filters.sortBy === 'CG Score') return byCg(a, b)
+    if (filters.sortBy === 'CG Score') return filtered
+    return filtered.sort((a, b) => {
       if (filters.sortBy === `${SEASON_LABEL} Hit Rate`) return (b.seasonHitRate ?? -1) - (a.seasonHitRate ?? -1)
       if (filters.sortBy === 'H2H Hit Rate') return (b.h2hHitRate ?? -1) - (a.h2hHitRate ?? -1)
       if (filters.sortBy === 'DVP Rank') return (b.dvpRank ?? 0) - (a.dvpRank ?? 0)
       return b.hitRate - a.hitRate
     })
-    if (filters.sortBy !== 'CG Score') return sorted
-    const ranked = [...withScore].sort(byCg)
-    return stampTipLanes(sorted, tipKeys(ranked, (item) => item.id), (item) => item.id)
-  }, [boardProjections, propTab, filters])
+  }, [scoredRows, propTab, filters])
 
+  const showTipLane = filters.sortBy === 'CG Score'
+  const toggleOpen = useCallback((id) => {
+    setOpenId((current) => current === id ? null : id)
+  }, [])
+  const toggleWhy = useCallback((id) => {
+    setWhyId((current) => current === id ? null : id)
+  }, [])
   const paintCount = usePhonePaintCount(phone, rows.length)
   const visibleRows = rows.slice(0, paintCount)
   const hasLockedRows = showPaywall && (rows.length > FREE_ROW_LIMIT || lockedCount > 0)
@@ -489,13 +523,14 @@ export default function NflPropLines({ onSelectPlayer, onNavigatePricing }) {
                 locked={!isPaid && index >= FREE_ROW_LIMIT}
                 rowRef={index === lastFreeIndex ? lastFreeRowRef : undefined}
                 open={openId === item.id}
-                onToggle={() => setOpenId((current) => current === item.id ? null : item.id)}
+                onToggle={toggleOpen}
                 whyOpen={whyId === item.id}
-                onWhy={() => setWhyId((current) => current === item.id ? null : item.id)}
+                onWhy={toggleWhy}
                 odds={matched.odds}
                 seen={matched.seen}
                 oddsState={oddsState}
                 matchupDefense={matchupDefense}
+                showTipLane={showTipLane}
               />
             )
           })}

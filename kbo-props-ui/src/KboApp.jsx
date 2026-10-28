@@ -1,4 +1,6 @@
 import { lazy, Suspense, useState } from 'react'
+import VisitedPane from './VisitedPane'
+import { useSportView } from './useSportView'
 import { useAuth } from './AuthContext'
 import { hasAnyPaidAccess } from './entitlements'
 import Paywall from './Paywall'
@@ -7,7 +9,6 @@ import { PageMenu, PageMenuButton, usePageMenu } from './PageMenu'
 import PlayerSearch from './PlayerSearch'
 import RouteFallback from './RouteFallback'
 import { GuideNavLinks } from './GuideLinks'
-import { viewOnLoad } from './memberNav'
 import CheatsheetsNavLink from './CheatsheetsNavLink'
 import './KboPropBoard.css'
 
@@ -34,22 +35,15 @@ if (import.meta.env.DEV) NAV_ITEMS.push({ id: 'tutorial', label: 'Tutorial' })
 
 const SlipBoard = lazy(() => import('./SlipBoard'))
 
-/* Views that require a paid subscription (mirrors the pre-redesign App.jsx gate).
-   'board' is excluded: it self-gates with a top-3-free / rest-locked preview,
-   matching the WNBA and NFL dashboards. */
-const PAID_VIEWS = new Set(['projections', 'batters', 'optimizer', 'matchups'])
-
-export default function KboApp({ sport, setSport, onSlipSport, onNavigateHome, initialView, entry, forceHome }) {
+export default function KboApp({ sport, setSport, onSlipSport, onNavigateHome, initialView, entry, forceHome, homeTick = 0 }) {
   const { signOut, user, tier } = useAuth()
   const menu = usePageMenu()
-  const [view, setView] = useState(() => {
-    if (!forceHome && initialView === 'pricing') return 'pricing'
-    return viewOnLoad({
-      sport: 'kbo',
-      entry,
-      search: typeof window === 'undefined' ? '' : window.location.search,
-      forceHome,
-    })
+  const [view, setView] = useSportView({
+    sport: 'kbo',
+    entry,
+    forceHome,
+    homeTick,
+    initialView: !forceHome && initialView === 'pricing' ? 'pricing' : null,
   })
   const [previousView, setPreviousView] = useState('board')
   const [selectedPlayer, setSelectedPlayer] = useState(entry?.view === 'player' ? entry.player : null)
@@ -61,26 +55,7 @@ export default function KboApp({ sport, setSport, onSlipSport, onNavigateHome, i
     setView('player')
   }
 
-  const content = (() => {
-    switch (view) {
-      case 'projections': return <StrikeoutProjections onNavigate={setView} />
-      case 'batters':     return <BatterProjections />
-      case 'rankings':    return <PitcherRankings />
-      case 'tracker':     return <PropTracker />
-      case 'optimizer':   return (
-        <Suspense fallback={<p style={{ color: '#888', textAlign: 'center', padding: 24 }}>Loading slip builder…</p>}>
-          <SlipBoard sport="kbo" onSport={onSlipSport} drawer={entry?.drawer === true} />
-        </Suspense>
-      )
-      case 'matchups':    return <MatchupDeepDive />
-      case 'pricing':     return <SubscriptionPage />
-      case 'tutorial':    return <TutorialPage onNavigate={setView} />
-      case 'player':      return <KboPlayerPage playerName={selectedPlayer} onBack={() => setView(previousView)} />
-      default:            return <KboPropBoard onNavigatePricing={() => setView('pricing')} onSelectPlayer={openPlayer} />
-    }
-  })()
-
-  const needsPaywall = PAID_VIEWS.has(view)
+  const paid = (node) => <Paywall onNavigate={setView} sport="kbo">{node}</Paywall>
 
   return (
     <div className="kbo-app-root">
@@ -105,9 +80,50 @@ export default function KboApp({ sport, setSport, onSlipSport, onNavigateHome, i
       </nav>
       {/* keyed on tier so data views refetch (full vs. preview) when the tier changes */}
       <main className="kbo-app-content" key={tier || 'free'}>
-        <Suspense fallback={<RouteFallback inset />}>
-          {needsPaywall ? <Paywall onNavigate={setView} sport="kbo">{content}</Paywall> : content}
-        </Suspense>
+        {view === 'player' && (
+          <Suspense fallback={<RouteFallback inset />}>
+            <KboPlayerPage playerName={selectedPlayer} onBack={() => setView(previousView)} />
+          </Suspense>
+        )}
+        {view === 'optimizer' && (
+          <Suspense fallback={<p style={{ color: '#888', textAlign: 'center', padding: 24 }}>Loading slip builder…</p>}>
+            {paid(<SlipBoard sport="kbo" onSport={onSlipSport} drawer={entry?.drawer === true} />)}
+          </Suspense>
+        )}
+        {view === 'pricing' && (
+          <Suspense fallback={<RouteFallback inset />}>
+            <SubscriptionPage />
+          </Suspense>
+        )}
+        {view === 'tutorial' && (
+          <Suspense fallback={<RouteFallback inset />}>
+            <TutorialPage onNavigate={setView} />
+          </Suspense>
+        )}
+        <VisitedPane active={view === 'board'}>
+          <Suspense fallback={<RouteFallback inset />}>
+            <KboPropBoard onNavigatePricing={() => setView('pricing')} onSelectPlayer={openPlayer} />
+          </Suspense>
+        </VisitedPane>
+        <VisitedPane active={view === 'projections'}>
+          <Suspense fallback={<RouteFallback inset />}>{paid(<StrikeoutProjections onNavigate={setView} />)}</Suspense>
+        </VisitedPane>
+        <VisitedPane active={view === 'batters'}>
+          <Suspense fallback={<RouteFallback inset />}>{paid(<BatterProjections />)}</Suspense>
+        </VisitedPane>
+        <VisitedPane active={view === 'rankings'}>
+          <Suspense fallback={<RouteFallback inset />}>
+            <PitcherRankings />
+          </Suspense>
+        </VisitedPane>
+        <VisitedPane active={view === 'tracker'}>
+          <Suspense fallback={<RouteFallback inset />}>
+            <PropTracker />
+          </Suspense>
+        </VisitedPane>
+        <VisitedPane active={view === 'matchups'}>
+          <Suspense fallback={<RouteFallback inset />}>{paid(<MatchupDeepDive />)}</Suspense>
+        </VisitedPane>
       </main>
     </div>
   )

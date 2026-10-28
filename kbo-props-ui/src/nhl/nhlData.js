@@ -1,7 +1,7 @@
 import { fetchApiDataset } from '../apiData'
 
-export async function fetchNhlProjections({ showAllLines = false } = {}) {
-  const snapshot = await fetchApiDataset('nhl_projections', { devStaticPath: 'nhl/projections.json', showAllLines })
+export async function fetchNhlProjections({ showAllLines = false, fresh = false } = {}) {
+  const snapshot = await fetchApiDataset('nhl_projections', { devStaticPath: 'nhl/projections.json', showAllLines, fresh })
   return {
     projections: Array.isArray(snapshot.data) ? snapshot.data : [],
     updatedAt: snapshot.updatedAt,

@@ -17,6 +17,7 @@ import {
   unavailablePack,
   UNAVAILABLE_NOTES,
 } from './liveBoard.js'
+import { cachedLivePack, rememberLivePack } from './packCache.js'
 
 async function loadNfl() {
   const markets = await fetchNflGameMarkets()
@@ -81,8 +82,12 @@ const LOADERS = {
 
 export async function loadLivePack(sportId) {
   const id = LOADERS[sportId] ? sportId : 'nfl'
+  const cached = cachedLivePack(id)
+  if (cached) return cached
   try {
-    return await LOADERS[id]()
+    const pack = await LOADERS[id]()
+    rememberLivePack(id, pack)
+    return pack
   } catch {
     const note = UNAVAILABLE_NOTES[`${id}Load`] || `${sportName(id)} live board did not load.`
     return unavailablePack(id, note)
