@@ -55,7 +55,8 @@ declare
     -- NBA
     'nba_players', 'nba_teams',
     'nba_dvp_pg', 'nba_dvp_sg', 'nba_dvp_sf', 'nba_dvp_pf', 'nba_dvp_c',
-    'nba_projections_standard', 'nba_projections_demon', 'nba_projections_goblin'
+    'nba_projections_standard', 'nba_projections_demon', 'nba_projections_goblin',
+    'nba_game_markets'
   ];
 begin
   foreach t in array paid_tables loop

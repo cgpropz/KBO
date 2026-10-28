@@ -490,6 +490,21 @@ export function previewNflGameMarkets(payload, options = {}) {
   };
 }
 
+// NBA game markets are not a free board and are not in NBA_FREE_TOP3_DATASETS.
+// If a preview builder is ever called, it must not rank by |edge| the way
+// previewNflGameMarkets does. No games are returned, so a lean or an edge
+// cannot feature a game. Entitled readers get the stored snapshot from
+// handleNbaRequest when the access decision is full. Player CG Score is a
+// different dataset and is not touched here.
+export function previewNbaGameMarkets(payload) {
+  const games = Array.isArray(payload?.games) ? payload.games : [];
+  const base = payload && typeof payload === 'object' && !Array.isArray(payload) ? { ...payload } : {};
+  return {
+    data: { ...base, games: [] },
+    lockedCount: games.length,
+  };
+}
+
 // PrizePicks odds board: free preview keeps the best Flex PP-edge rows.
 // Older snapshots that only stored sportsbook EV still sort on that.
 // A null or missing edge, and a null or missing EV, stay missing. They are
@@ -920,6 +935,9 @@ export const DATASETS = {
   // All-access only. Not in NBA_FREE_TOP3_DATASETS, so the free switch cannot
   // open it. A non-finite score drops every row if a preview builder is called.
   nba_sharp_odds: { table: 'nba_sharp_odds', sport: 'nba', free: previewObjectList('records', () => Number.NaN) },
+  // Cheatsheets game card. Not a free top-3 board. previewNbaGameMarkets
+  // returns no games, so |edge| cannot rank a free preview.
+  nba_game_markets: { table: 'nba_game_markets', sport: 'nba', free: previewNbaGameMarkets },
   // NHL. Full rows for all-access and the admin email; everyone else gets the preview.
   nhl_projections: { table: 'nhl_projections', sport: 'nhl', free: previewList(nhlScore) },
   nhl_lineups: { table: 'nhl_lineups', sport: 'nhl', free: previewList(() => 0) },

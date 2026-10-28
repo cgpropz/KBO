@@ -22,6 +22,21 @@ export async function fetchNbaData(path, options) {
   return snapshot.data
 }
 
+export async function fetchNbaGameMarkets() {
+  const snapshot = await fetchApiDataset('nba_game_markets', { devStaticPath: 'nba/game_markets.json' })
+  const payload = snapshot.data && typeof snapshot.data === 'object' && !Array.isArray(snapshot.data)
+    ? snapshot.data
+    : { games: Array.isArray(snapshot.data) ? snapshot.data : [], status: 'ok' }
+  return {
+    payload,
+    games: Array.isArray(payload.games) ? payload.games : [],
+    updatedAt: snapshot.updatedAt,
+    preview: snapshot.preview,
+    lockedCount: snapshot.lockedCount,
+    refreshing: !!snapshot.refreshing,
+  }
+}
+
 export async function fetchNbaSharpOdds({ fresh = false, showAllLines = false } = {}) {
   const snapshot = await fetchApiDataset('nba_sharp_odds', { devStaticPath: 'nba/sharp_odds.json', fresh, showAllLines })
   const payload = snapshot.data && typeof snapshot.data === 'object' && !Array.isArray(snapshot.data)
