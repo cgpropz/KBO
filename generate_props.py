@@ -469,6 +469,15 @@ def _apply_pulled_lines(payload, status=None):
     payload, pulled = mark_pulled_board(payload, status)
     if status is None:
         print("ℹ KBO pulled-line check: no current PrizePicks pull status; nothing marked")
+    elif status.get("status") == "confirmed_empty":
+        kept = 0
+        for card in payload.get("cards") or []:
+            if isinstance(card, dict):
+                kept += len(card.get("props") or [])
+        print(
+            f"ℹ KBO pulled-line check (confirmed_empty): PrizePicks posted 0 KBO lines; "
+            f"keeping {kept} cached prop(s) with projections"
+        )
     elif pulled:
         print(f"⚠ KBO pulled-line check ({status.get('status')}): {pulled} prop(s) marked pulled")
     else:
@@ -498,9 +507,15 @@ def _mark_projection_files(status=None):
             continue
         before = json.dumps(data, sort_keys=True)
         data, pulled = mark_pulled_projections(data, status)
-        if json.dumps(data, sort_keys=True) != before:
+        rows = data.get("projections") if isinstance(data, dict) else None
+        row_count = len(rows) if isinstance(rows, list) else 0
+        changed = json.dumps(data, sort_keys=True) != before
+        if changed:
             with open(path, "w") as f:
                 json.dump(data, f, indent=2)
+        if status.get("status") == "confirmed_empty":
+            print(f"ℹ {filename}: confirmed_empty; keeping {row_count} projection row(s)")
+        elif changed:
             print(f"ℹ {filename}: {pulled} row(s) marked pulled")
 
 
