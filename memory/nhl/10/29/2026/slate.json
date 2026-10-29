@@ -4,9 +4,9 @@
   "slate_date_iso": "2026-10-29",
   "timezone_basis": "ET",
   "schema_version": 2,
-  "frozen_at": "2026-10-29T07:09:38.844176+00:00",
+  "frozen_at": "2026-10-29T07:37:38.272351+00:00",
   "source": "nhl/projections.json",
-  "source_commit": "e9f0954c4e30",
+  "source_commit": "e7d675627e46",
   "props": [
     {
       "player": "Adam Fantilli",
@@ -61,8 +61,8 @@
       "start_time_utc": "2026-10-29T23:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T05:47:46+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Adam Lowry",
@@ -117,8 +117,8 @@
       "start_time_utc": "2026-10-30T02:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T06:15:31+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Adrian Kempe",
@@ -144,7 +144,34 @@
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-28T22:30:01+00:00",
       "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "source_commit": "e9f0954c4e30",
+      "superseded_at": "2026-10-29T07:37:38.268434+00:00"
+    },
+    {
+      "player": "Adrian Kempe",
+      "team": "LAK",
+      "opponent": "OTT",
+      "position": "F",
+      "stat": "Shots On Goal",
+      "line": 2.5,
+      "odds_type": "standard",
+      "recommendation": "UNDER",
+      "projection": 2.34,
+      "projection_source": "nhl/build_board.py",
+      "edge": -0.16,
+      "rating": 63.6,
+      "game_date_iso": "2026-10-29",
+      "games_played": 92,
+      "dvp_rank": 3,
+      "goalie_status": null,
+      "rank_eligible": true,
+      "projection_id": "16380900",
+      "projection_schema": 2,
+      "start_time_utc": "2026-10-30T02:00:00+00:00",
+      "start_time_source": "nhl_schedule",
+      "first_frozen_at": "2026-10-29T07:37:38+00:00",
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Alex DeBrincat",
@@ -256,8 +283,8 @@
       "start_time_utc": "2026-10-29T23:30:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T05:47:46+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Alex Iafallo",
@@ -312,8 +339,8 @@
       "start_time_utc": "2026-10-30T02:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T06:15:31+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Alex Laferriere",
@@ -338,9 +365,8 @@
       "start_time_utc": "2026-10-30T02:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-28T22:30:01+00:00",
-      "last_pregame_frozen_at": "2026-10-29T05:47:46+00:00",
-      "source_commit": "52a7788c7431",
-      "superseded_at": "2026-10-29T06:15:31.088200+00:00"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Alex Laferriere",
@@ -366,7 +392,8 @@
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T06:15:31+00:00",
       "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "source_commit": "e9f0954c4e30",
+      "superseded_at": "2026-10-29T07:37:38.268434+00:00"
     },
     {
       "player": "Alex Ovechkin",
@@ -391,8 +418,8 @@
       "start_time_utc": "2026-10-30T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T05:47:46+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Alex Ovechkin",
@@ -417,8 +444,8 @@
       "start_time_utc": "2026-10-30T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T04:52:57+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Alex Tuch",
@@ -443,8 +470,8 @@
       "start_time_utc": "2026-10-30T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T05:47:46+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Alex Tuch",
@@ -469,8 +496,8 @@
       "start_time_utc": "2026-10-30T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T04:52:57+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Alex Vlasic",
@@ -525,8 +552,8 @@
       "start_time_utc": "2026-10-30T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T05:47:46+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Anders Lee",
@@ -611,8 +638,8 @@
       "start_time_utc": "2026-10-29T23:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T04:52:57+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Andreas Englund",
@@ -667,8 +694,8 @@
       "start_time_utc": "2026-10-29T23:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T05:20:31+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Andrei Svechnikov",
@@ -723,8 +750,8 @@
       "start_time_utc": "2026-10-29T23:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T05:47:46+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Andrew Copp",
@@ -929,8 +956,8 @@
       "start_time_utc": "2026-10-29T23:30:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T05:20:31+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Anton Johansson",
@@ -986,7 +1013,34 @@
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-28T22:30:01+00:00",
       "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "source_commit": "e9f0954c4e30",
+      "superseded_at": "2026-10-29T07:37:38.268434+00:00"
+    },
+    {
+      "player": "Artemi Panarin",
+      "team": "LAK",
+      "opponent": "OTT",
+      "position": "F",
+      "stat": "Shots On Goal",
+      "line": 2.5,
+      "odds_type": "standard",
+      "recommendation": "UNDER",
+      "projection": 2.29,
+      "projection_source": "nhl/build_board.py",
+      "edge": -0.21,
+      "rating": 72.7,
+      "game_date_iso": "2026-10-29",
+      "games_played": 89,
+      "dvp_rank": 3,
+      "goalie_status": null,
+      "rank_eligible": true,
+      "projection_id": "16380901",
+      "projection_schema": 2,
+      "start_time_utc": "2026-10-30T02:00:00+00:00",
+      "start_time_source": "nhl_schedule",
+      "first_frozen_at": "2026-10-29T07:37:38+00:00",
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Arttu Hyry",
@@ -1011,8 +1065,8 @@
       "start_time_utc": "2026-10-30T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-28T22:02:43+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Artyom Levshunov",
@@ -1157,8 +1211,8 @@
       "start_time_utc": "2026-10-30T02:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-28T22:30:01+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Ben Chiarot",
@@ -1213,8 +1267,8 @@
       "start_time_utc": "2026-10-30T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T06:42:19+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Blake Lizotte",
@@ -1269,8 +1323,8 @@
       "start_time_utc": "2026-10-30T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T06:42:19+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Bo Horvat",
@@ -1295,8 +1349,8 @@
       "start_time_utc": "2026-10-30T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-28T22:30:01+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Brad Lambert",
@@ -1351,8 +1405,8 @@
       "start_time_utc": "2026-10-29T23:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-28T19:17:38+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Brandon Hagel",
@@ -1377,11 +1431,8 @@
       "start_time_utc": "2026-10-29T23:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T06:42:19+00:00",
-      "last_pregame_frozen_at": "2026-10-29T06:42:19+00:00",
-      "source_commit": "168a15f1d168",
-      "superseded_at": "2026-10-29T07:09:38.841371+00:00",
-      "removed": true,
-      "pp_status": "removed",
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46",
       "removed_reason": "pp_pull"
     },
     {
@@ -1437,8 +1488,8 @@
       "start_time_utc": "2026-10-29T23:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-28T19:17:38+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Brandt Clarke",
@@ -1464,7 +1515,34 @@
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-28T22:30:01+00:00",
       "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "source_commit": "e9f0954c4e30",
+      "superseded_at": "2026-10-29T07:37:38.268434+00:00"
+    },
+    {
+      "player": "Brandt Clarke",
+      "team": "LAK",
+      "opponent": "OTT",
+      "position": "D",
+      "stat": "Shots On Goal",
+      "line": 1.5,
+      "odds_type": "standard",
+      "recommendation": "UNDER",
+      "projection": 1.44,
+      "projection_source": "nhl/build_board.py",
+      "edge": -0.06,
+      "rating": 36.4,
+      "game_date_iso": "2026-10-29",
+      "games_played": 93,
+      "dvp_rank": 3,
+      "goalie_status": null,
+      "rank_eligible": true,
+      "projection_id": "16380902",
+      "projection_schema": 2,
+      "start_time_utc": "2026-10-30T02:00:00+00:00",
+      "start_time_source": "nhl_schedule",
+      "first_frozen_at": "2026-10-29T07:37:38+00:00",
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Brayden Point",
@@ -1489,8 +1567,8 @@
       "start_time_utc": "2026-10-29T23:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-28T19:17:38+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Brayden Point",
@@ -1545,8 +1623,8 @@
       "start_time_utc": "2026-10-29T23:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-28T19:17:38+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Brayden Schenn",
@@ -1571,8 +1649,34 @@
       "start_time_utc": "2026-10-30T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T06:42:19+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
+    },
+    {
+      "player": "Brock Boeser",
+      "team": "VAN",
+      "opponent": "SJS",
+      "position": "F",
+      "stat": "Points",
+      "line": 0.5,
+      "odds_type": "standard",
+      "recommendation": "OVER",
+      "projection": 0.69,
+      "projection_source": "nhl/build_board.py",
+      "edge": 0.19,
+      "rating": 64.3,
+      "game_date_iso": "2026-10-29",
+      "games_played": 89,
+      "dvp_rank": 28,
+      "goalie_status": null,
+      "rank_eligible": false,
+      "projection_id": "16380956",
+      "projection_schema": 2,
+      "start_time_utc": "2026-10-30T02:00:00+00:00",
+      "start_time_source": "nhl_schedule",
+      "first_frozen_at": "2026-10-29T07:37:38+00:00",
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Brock Boeser",
@@ -1597,8 +1701,8 @@
       "start_time_utc": "2026-10-30T02:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T04:25:37+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Carter Mazur",
@@ -1743,8 +1847,8 @@
       "start_time_utc": "2026-10-29T23:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T05:20:31+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Charlie Coyle",
@@ -1800,7 +1904,34 @@
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T05:47:46+00:00",
       "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "source_commit": "e9f0954c4e30",
+      "superseded_at": "2026-10-29T07:37:38.268434+00:00"
+    },
+    {
+      "player": "Charlie Coyle",
+      "team": "CBJ",
+      "opponent": "CAR",
+      "position": "F",
+      "stat": "Shots On Goal",
+      "line": 1.5,
+      "odds_type": "standard",
+      "recommendation": "OVER",
+      "projection": 1.62,
+      "projection_source": "nhl/build_board.py",
+      "edge": 0.12,
+      "rating": 40.0,
+      "game_date_iso": "2026-10-29",
+      "games_played": 92,
+      "dvp_rank": 1,
+      "goalie_status": null,
+      "rank_eligible": true,
+      "projection_id": "16380491",
+      "projection_schema": 2,
+      "start_time_utc": "2026-10-29T23:00:00+00:00",
+      "start_time_source": "nhl_schedule",
+      "first_frozen_at": "2026-10-29T07:37:38+00:00",
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Charlie McAvoy",
@@ -1825,8 +1956,8 @@
       "start_time_utc": "2026-10-30T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-28T22:30:01+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Charlie McAvoy",
@@ -1851,8 +1982,8 @@
       "start_time_utc": "2026-10-30T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-28T22:30:01+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Chris Kreider",
@@ -1877,8 +2008,8 @@
       "start_time_utc": "2026-10-30T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T06:42:19+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Claude Giroux",
@@ -1903,8 +2034,8 @@
       "start_time_utc": "2026-10-30T02:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T06:15:31+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Clayton Keller",
@@ -1929,8 +2060,8 @@
       "start_time_utc": "2026-10-29T23:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T06:42:19+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Clayton Keller",
@@ -1985,8 +2116,8 @@
       "start_time_utc": "2026-10-29T23:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T05:20:31+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Clayton Keller",
@@ -2038,8 +2169,8 @@
       "start_time_utc": "2026-10-30T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T06:42:19+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Cole Caufield",
@@ -2064,8 +2195,8 @@
       "start_time_utc": "2026-10-30T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-28T22:02:43+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Cole Hutson",
@@ -2090,8 +2221,8 @@
       "start_time_utc": "2026-10-30T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T06:15:31+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Cole Koepke",
@@ -2203,8 +2334,8 @@
       "start_time_utc": "2026-10-29T23:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-28T19:17:38+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Cole Sillinger",
@@ -2319,8 +2450,8 @@
       "start_time_utc": "2026-10-29T23:30:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T06:15:31+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Connor Bedard",
@@ -2345,8 +2476,8 @@
       "start_time_utc": "2026-10-29T23:30:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T05:20:31+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Connor Dewar",
@@ -2401,8 +2532,8 @@
       "start_time_utc": "2026-10-30T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T06:15:31+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Connor McMichael",
@@ -2427,8 +2558,8 @@
       "start_time_utc": "2026-10-30T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-28T22:30:01+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Conor Garland",
@@ -2540,8 +2671,8 @@
       "start_time_utc": "2026-10-30T02:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T06:15:31+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Damon Severson",
@@ -2656,8 +2787,8 @@
       "start_time_utc": "2026-10-30T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-28T22:30:01+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "David Pastrnak",
@@ -2682,8 +2813,8 @@
       "start_time_utc": "2026-10-30T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-28T22:30:01+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Dawson Mercer",
@@ -2918,8 +3049,8 @@
       "start_time_utc": "2026-10-30T02:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-28T22:30:01+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Dylan Cozens",
@@ -2944,8 +3075,8 @@
       "start_time_utc": "2026-10-30T02:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-28T22:30:01+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Dylan DeMelo",
@@ -3000,8 +3131,8 @@
       "start_time_utc": "2026-10-29T23:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T06:42:19+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Dylan Guenther",
@@ -3026,8 +3157,8 @@
       "start_time_utc": "2026-10-29T23:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T06:15:31+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Dylan Guenther",
@@ -3052,8 +3183,8 @@
       "start_time_utc": "2026-10-29T23:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T05:20:31+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Dylan Guenther",
@@ -3105,8 +3236,8 @@
       "start_time_utc": "2026-10-30T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-28T22:30:01+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Dylan Holloway",
@@ -3131,8 +3262,8 @@
       "start_time_utc": "2026-10-30T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T06:15:31+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Dylan Holloway",
@@ -3157,8 +3288,8 @@
       "start_time_utc": "2026-10-30T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-28T22:30:01+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Dylan Larkin",
@@ -3213,8 +3344,8 @@
       "start_time_utc": "2026-10-29T23:30:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T06:15:31+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Dylan Larkin",
@@ -3239,8 +3370,8 @@
       "start_time_utc": "2026-10-29T23:30:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T05:20:31+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Dylan Samberg",
@@ -3295,8 +3426,8 @@
       "start_time_utc": "2026-10-30T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T05:47:46+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Dylan Strome",
@@ -3321,8 +3452,8 @@
       "start_time_utc": "2026-10-30T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T05:47:46+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Dylan Strome",
@@ -3347,8 +3478,34 @@
       "start_time_utc": "2026-10-30T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T04:52:57+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
+    },
+    {
+      "player": "Egor Chinakhov",
+      "team": "PIT",
+      "opponent": "UTA",
+      "position": "F",
+      "stat": "Points",
+      "line": 1.5,
+      "odds_type": "demon",
+      "recommendation": "UNDER",
+      "projection": 0.59,
+      "projection_source": "nhl/build_board.py",
+      "edge": -0.91,
+      "rating": 0.0,
+      "game_date_iso": "2026-10-29",
+      "games_played": 80,
+      "dvp_rank": 11,
+      "goalie_status": null,
+      "rank_eligible": true,
+      "projection_id": "16380970",
+      "projection_schema": 2,
+      "start_time_utc": "2026-10-29T23:00:00+00:00",
+      "start_time_source": "nhl_schedule",
+      "first_frozen_at": "2026-10-29T07:37:38+00:00",
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Egor Chinakhov",
@@ -3404,7 +3561,34 @@
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T05:20:31+00:00",
       "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "source_commit": "e9f0954c4e30",
+      "superseded_at": "2026-10-29T07:37:38.268434+00:00"
+    },
+    {
+      "player": "Egor Chinakhov",
+      "team": "PIT",
+      "opponent": "UTA",
+      "position": "F",
+      "stat": "Shots On Goal",
+      "line": 4.5,
+      "odds_type": "demon",
+      "recommendation": "UNDER",
+      "projection": 1.82,
+      "projection_source": "nhl/build_board.py",
+      "edge": -2.68,
+      "rating": 0.0,
+      "game_date_iso": "2026-10-29",
+      "games_played": 80,
+      "dvp_rank": 6,
+      "goalie_status": null,
+      "rank_eligible": true,
+      "projection_id": "16380943",
+      "projection_schema": 2,
+      "start_time_utc": "2026-10-29T23:00:00+00:00",
+      "start_time_source": "nhl_schedule",
+      "first_frozen_at": "2026-10-29T07:37:38+00:00",
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Elias Lindholm",
@@ -3456,8 +3640,8 @@
       "start_time_utc": "2026-10-30T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T06:15:31+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Elias Lindholm",
@@ -3482,8 +3666,8 @@
       "start_time_utc": "2026-10-30T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-28T22:30:01+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Emil Heineman",
@@ -3508,8 +3692,8 @@
       "start_time_utc": "2026-10-30T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-28T22:30:01+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Emmitt Finnie",
@@ -3684,8 +3868,8 @@
       "start_time_utc": "2026-10-30T02:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T06:15:31+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Erik Haula",
@@ -3710,8 +3894,8 @@
       "start_time_utc": "2026-10-30T02:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T06:15:31+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Erik Karlsson",
@@ -3736,8 +3920,8 @@
       "start_time_utc": "2026-10-29T23:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T06:42:19+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Erik Karlsson",
@@ -3793,7 +3977,34 @@
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T05:20:31+00:00",
       "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "source_commit": "e9f0954c4e30",
+      "superseded_at": "2026-10-29T07:37:38.268434+00:00"
+    },
+    {
+      "player": "Erik Karlsson",
+      "team": "PIT",
+      "opponent": "UTA",
+      "position": "D",
+      "stat": "Shots On Goal",
+      "line": 4.5,
+      "odds_type": "demon",
+      "recommendation": "UNDER",
+      "projection": 1.82,
+      "projection_source": "nhl/build_board.py",
+      "edge": -2.68,
+      "rating": 0.0,
+      "game_date_iso": "2026-10-29",
+      "games_played": 87,
+      "dvp_rank": 6,
+      "goalie_status": null,
+      "rank_eligible": true,
+      "projection_id": "16380924",
+      "projection_schema": 2,
+      "start_time_utc": "2026-10-29T23:00:00+00:00",
+      "start_time_source": "nhl_schedule",
+      "first_frozen_at": "2026-10-29T07:37:38+00:00",
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Evgeni Malkin",
@@ -3818,8 +4029,8 @@
       "start_time_utc": "2026-10-29T23:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T07:09:38+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Evgeni Malkin",
@@ -3905,7 +4116,34 @@
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T05:20:31+00:00",
       "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "source_commit": "e9f0954c4e30",
+      "superseded_at": "2026-10-29T07:37:38.268434+00:00"
+    },
+    {
+      "player": "Evgeni Malkin",
+      "team": "PIT",
+      "opponent": "UTA",
+      "position": "F",
+      "stat": "Shots On Goal",
+      "line": 3.5,
+      "odds_type": "demon",
+      "recommendation": "UNDER",
+      "projection": 1.79,
+      "projection_source": "nhl/build_board.py",
+      "edge": -1.71,
+      "rating": 9.1,
+      "game_date_iso": "2026-10-29",
+      "games_played": 67,
+      "dvp_rank": 6,
+      "goalie_status": null,
+      "rank_eligible": true,
+      "projection_id": "16380929",
+      "projection_schema": 2,
+      "start_time_utc": "2026-10-29T23:00:00+00:00",
+      "start_time_source": "nhl_schedule",
+      "first_frozen_at": "2026-10-29T07:37:38+00:00",
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Filip Chytil",
@@ -3930,8 +4168,8 @@
       "start_time_utc": "2026-10-30T02:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T04:25:37+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Filip Forsberg",
@@ -3956,8 +4194,8 @@
       "start_time_utc": "2026-10-30T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T05:47:46+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Filip Forsberg",
@@ -3982,8 +4220,8 @@
       "start_time_utc": "2026-10-30T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T05:47:46+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Filip Forsberg",
@@ -4008,8 +4246,8 @@
       "start_time_utc": "2026-10-30T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T06:15:31+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Filip Forsberg",
@@ -4088,8 +4326,8 @@
       "start_time_utc": "2026-10-30T02:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T06:15:31+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Frank Vatrano",
@@ -4114,8 +4352,8 @@
       "start_time_utc": "2026-10-30T02:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-28T22:30:01+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Gabriel Vilardi",
@@ -4140,8 +4378,8 @@
       "start_time_utc": "2026-10-29T23:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-28T19:17:38+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Gabriel Vilardi",
@@ -4223,8 +4461,8 @@
       "start_time_utc": "2026-10-29T23:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-28T19:17:38+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30",
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46",
       "removed_reason": "pp_pull"
     },
     {
@@ -4400,8 +4638,8 @@
       "start_time_utc": "2026-10-30T02:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T04:25:37+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "J.J. Moser",
@@ -4516,8 +4754,8 @@
       "start_time_utc": "2026-10-30T02:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T06:15:31+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Jack Quinn",
@@ -4572,8 +4810,8 @@
       "start_time_utc": "2026-10-30T02:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T06:15:31+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Jackson Blake",
@@ -4598,8 +4836,8 @@
       "start_time_utc": "2026-10-29T23:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T05:20:31+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Jackson Blake",
@@ -4654,8 +4892,8 @@
       "start_time_utc": "2026-10-29T23:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T05:47:46+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Jackson LaCombe",
@@ -4680,8 +4918,8 @@
       "start_time_utc": "2026-10-30T02:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-28T22:30:01+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Jacob Trouba",
@@ -4706,8 +4944,8 @@
       "start_time_utc": "2026-10-30T02:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T04:25:37+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Jake Christiansen",
@@ -4763,7 +5001,8 @@
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T04:25:37+00:00",
       "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "source_commit": "e9f0954c4e30",
+      "superseded_at": "2026-10-29T07:37:38.268434+00:00"
     },
     {
       "player": "Jake DeBrusk",
@@ -4788,9 +5027,8 @@
       "start_time_utc": "2026-10-30T02:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T04:52:57+00:00",
-      "last_pregame_frozen_at": "2026-10-29T04:52:57+00:00",
-      "source_commit": "5797ebbcc4aa",
-      "superseded_at": "2026-10-29T05:20:31.633535+00:00"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Jake Guentzel",
@@ -4815,8 +5053,8 @@
       "start_time_utc": "2026-10-29T23:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-28T19:17:38+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Jake Guentzel",
@@ -4871,8 +5109,8 @@
       "start_time_utc": "2026-10-29T23:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-28T19:17:38+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Jake Guentzel",
@@ -4927,8 +5165,8 @@
       "start_time_utc": "2026-10-30T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-28T22:30:01+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30",
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46",
       "removed_reason": "superseded_dup"
     },
     {
@@ -4981,8 +5219,8 @@
       "start_time_utc": "2026-10-30T02:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-28T22:30:01+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Jakob Chychrun",
@@ -5007,8 +5245,8 @@
       "start_time_utc": "2026-10-30T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T05:47:46+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Jakob Chychrun",
@@ -5033,8 +5271,8 @@
       "start_time_utc": "2026-10-30T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T05:47:46+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Jakob Chychrun",
@@ -5059,8 +5297,8 @@
       "start_time_utc": "2026-10-30T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T04:52:57+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Jalen Chatfield",
@@ -5115,8 +5353,8 @@
       "start_time_utc": "2026-10-30T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T06:15:31+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Jason Robertson",
@@ -5141,8 +5379,8 @@
       "start_time_utc": "2026-10-30T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T06:42:19+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Jason Robertson",
@@ -5167,8 +5405,8 @@
       "start_time_utc": "2026-10-30T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-28T22:02:43+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Jesperi Kotkaniemi",
@@ -5253,8 +5491,8 @@
       "start_time_utc": "2026-10-30T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-28T22:30:01+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Jimmy Snuggerud",
@@ -5279,8 +5517,8 @@
       "start_time_utc": "2026-10-30T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-28T22:30:01+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Jimmy Snuggerud",
@@ -5332,8 +5570,8 @@
       "start_time_utc": "2026-10-30T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-28T22:30:01+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Joel Eriksson Ek",
@@ -5358,8 +5596,8 @@
       "start_time_utc": "2026-10-30T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T06:42:19+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Joel Eriksson Ek",
@@ -5411,8 +5649,8 @@
       "start_time_utc": "2026-10-30T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T04:52:57+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "John Carlson",
@@ -5464,8 +5702,8 @@
       "start_time_utc": "2026-10-29T23:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T04:52:57+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30",
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46",
       "removed_reason": "pp_pull"
     },
     {
@@ -5491,11 +5729,8 @@
       "start_time_utc": "2026-10-29T23:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T06:42:19+00:00",
-      "last_pregame_frozen_at": "2026-10-29T06:42:19+00:00",
-      "source_commit": "168a15f1d168",
-      "superseded_at": "2026-10-29T07:09:38.841371+00:00",
-      "removed": true,
-      "pp_status": "removed",
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46",
       "removed_reason": "pp_pull"
     },
     {
@@ -5521,8 +5756,34 @@
       "start_time_utc": "2026-10-29T23:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-28T19:17:38+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
+    },
+    {
+      "player": "Jonathan Lekkerimäki",
+      "team": "VAN",
+      "opponent": "SJS",
+      "position": "F",
+      "stat": "Points",
+      "line": 1.5,
+      "odds_type": "demon",
+      "recommendation": "UNDER",
+      "projection": 0.65,
+      "projection_source": "nhl/build_board.py",
+      "edge": -0.85,
+      "rating": 14.3,
+      "game_date_iso": "2026-10-29",
+      "games_played": 27,
+      "dvp_rank": 28,
+      "goalie_status": null,
+      "rank_eligible": true,
+      "projection_id": "16380949",
+      "projection_schema": 2,
+      "start_time_utc": "2026-10-30T02:00:00+00:00",
+      "start_time_source": "nhl_schedule",
+      "first_frozen_at": "2026-10-29T07:37:38+00:00",
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Jonathan Lekkerimäki",
@@ -5547,8 +5808,8 @@
       "start_time_utc": "2026-10-30T02:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T04:25:37+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Jonathan Marchessault",
@@ -5573,8 +5834,8 @@
       "start_time_utc": "2026-10-30T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T05:47:46+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Jonathan Marchessault",
@@ -5599,8 +5860,8 @@
       "start_time_utc": "2026-10-30T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T04:52:57+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Jordan Greenway",
@@ -5655,8 +5916,8 @@
       "start_time_utc": "2026-10-30T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T05:47:46+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Jordan Kyrou",
@@ -5681,8 +5942,8 @@
       "start_time_utc": "2026-10-30T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T04:52:57+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Jordan Martinook",
@@ -5737,8 +5998,8 @@
       "start_time_utc": "2026-10-30T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T06:42:19+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Juraj Slafkovský",
@@ -5763,8 +6024,8 @@
       "start_time_utc": "2026-10-30T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-28T22:02:43+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Justin Faulk",
@@ -5939,8 +6200,8 @@
       "start_time_utc": "2026-10-29T23:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T05:20:31+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Kent Johnson",
@@ -6052,8 +6313,8 @@
       "start_time_utc": "2026-10-29T23:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T06:42:19+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Kevin Korchinski",
@@ -6135,8 +6396,8 @@
       "start_time_utc": "2026-10-30T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T07:09:38+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Kirill Kaprizov",
@@ -6161,8 +6422,8 @@
       "start_time_utc": "2026-10-30T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-28T22:30:01+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Kris Letang",
@@ -6247,8 +6508,8 @@
       "start_time_utc": "2026-10-29T23:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-28T19:17:38+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Kyle Connor",
@@ -6303,8 +6564,8 @@
       "start_time_utc": "2026-10-29T23:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T05:20:31+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Kyle Connor",
@@ -6356,8 +6617,8 @@
       "start_time_utc": "2026-10-30T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T06:42:19+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Kyle Palmieri",
@@ -6382,8 +6643,8 @@
       "start_time_utc": "2026-10-30T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-28T22:30:01+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Lane Hutson",
@@ -6408,8 +6669,8 @@
       "start_time_utc": "2026-10-30T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T06:42:19+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Lane Hutson",
@@ -6434,8 +6695,8 @@
       "start_time_utc": "2026-10-30T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-28T22:02:43+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Lawson Crouse",
@@ -6490,8 +6751,8 @@
       "start_time_utc": "2026-10-30T02:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T06:15:31+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Leo Carlsson",
@@ -6516,8 +6777,8 @@
       "start_time_utc": "2026-10-30T02:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-28T22:30:01+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Liam O'Brien",
@@ -6572,8 +6833,8 @@
       "start_time_utc": "2026-10-29T23:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T06:42:19+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Logan Cooley",
@@ -6628,8 +6889,8 @@
       "start_time_utc": "2026-10-29T23:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T04:52:57+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Logan Stankoven",
@@ -6684,8 +6945,8 @@
       "start_time_utc": "2026-10-29T23:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T05:47:46+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Luca Del Bel Belluz",
@@ -6800,8 +7061,8 @@
       "start_time_utc": "2026-10-29T23:30:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T05:20:31+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "MacKenzie Weegar",
@@ -6826,8 +7087,8 @@
       "start_time_utc": "2026-10-29T23:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T06:42:19+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "MacKenzie Weegar",
@@ -6909,8 +7170,8 @@
       "start_time_utc": "2026-10-29T23:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T05:20:31+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Macklin Celebrini",
@@ -6992,8 +7253,34 @@
       "start_time_utc": "2026-10-30T02:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T05:20:31+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
+    },
+    {
+      "player": "Marco Rossi",
+      "team": "VAN",
+      "opponent": "SJS",
+      "position": "F",
+      "stat": "Points",
+      "line": 1.5,
+      "odds_type": "demon",
+      "recommendation": "UNDER",
+      "projection": 0.62,
+      "projection_source": "nhl/build_board.py",
+      "edge": -0.88,
+      "rating": 8.3,
+      "game_date_iso": "2026-10-29",
+      "games_played": 62,
+      "dvp_rank": 28,
+      "goalie_status": null,
+      "rank_eligible": true,
+      "projection_id": "16380948",
+      "projection_schema": 2,
+      "start_time_utc": "2026-10-30T02:00:00+00:00",
+      "start_time_source": "nhl_schedule",
+      "first_frozen_at": "2026-10-29T07:37:38+00:00",
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Mario Ferraro",
@@ -7078,8 +7365,8 @@
       "start_time_utc": "2026-10-29T23:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-28T19:17:38+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Mark Scheifele",
@@ -7134,8 +7421,8 @@
       "start_time_utc": "2026-10-29T23:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-28T19:17:38+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Mason Marchment",
@@ -7160,8 +7447,8 @@
       "start_time_utc": "2026-10-30T02:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T04:25:37+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Mason McTavish",
@@ -7186,8 +7473,8 @@
       "start_time_utc": "2026-10-30T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-28T22:30:01+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Mathieu Olivier",
@@ -7242,8 +7529,8 @@
       "start_time_utc": "2026-10-30T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T06:42:19+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Matt Boldy",
@@ -7268,8 +7555,8 @@
       "start_time_utc": "2026-10-30T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-28T22:30:01+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Matthew Knies",
@@ -7294,8 +7581,8 @@
       "start_time_utc": "2026-10-29T23:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T05:20:31+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Matthew Knies",
@@ -7350,8 +7637,8 @@
       "start_time_utc": "2026-10-29T23:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T05:47:46+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Matthew Schaefer",
@@ -7376,8 +7663,8 @@
       "start_time_utc": "2026-10-30T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T06:42:19+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Matthew Schaefer",
@@ -7402,8 +7689,8 @@
       "start_time_utc": "2026-10-30T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-28T22:30:01+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Matthew Wood",
@@ -7428,8 +7715,8 @@
       "start_time_utc": "2026-10-30T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T05:47:46+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Maxim Shabanov",
@@ -7454,8 +7741,8 @@
       "start_time_utc": "2026-10-30T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T06:42:19+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Michael Brandsegg-Nygård",
@@ -7600,8 +7887,8 @@
       "start_time_utc": "2026-10-30T02:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-28T22:30:01+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Mikhail Sergachev",
@@ -7626,8 +7913,8 @@
       "start_time_utc": "2026-10-29T23:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T06:42:19+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Mikhail Sergachev",
@@ -7682,8 +7969,8 @@
       "start_time_utc": "2026-10-29T23:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T04:52:57+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Mikko Rantanen",
@@ -7708,8 +7995,8 @@
       "start_time_utc": "2026-10-30T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T06:42:19+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Mikko Rantanen",
@@ -7734,8 +8021,8 @@
       "start_time_utc": "2026-10-30T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-28T22:02:43+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Miro Heiskanen",
@@ -7760,8 +8047,8 @@
       "start_time_utc": "2026-10-30T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T06:42:19+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Miro Heiskanen",
@@ -7786,8 +8073,8 @@
       "start_time_utc": "2026-10-30T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-28T22:02:43+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Morgan Barron",
@@ -7869,8 +8156,8 @@
       "start_time_utc": "2026-10-30T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T05:47:46+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Morgan Geekie",
@@ -7895,8 +8182,8 @@
       "start_time_utc": "2026-10-30T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-28T22:30:01+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Moritz Seider",
@@ -7921,8 +8208,8 @@
       "start_time_utc": "2026-10-29T23:30:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T06:15:31+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Moritz Seider",
@@ -7974,8 +8261,8 @@
       "start_time_utc": "2026-10-29T23:30:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T06:15:31+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Moritz Seider",
@@ -8000,8 +8287,8 @@
       "start_time_utc": "2026-10-29T23:30:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T05:20:31+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Nate Danielson",
@@ -8086,8 +8373,8 @@
       "start_time_utc": "2026-10-29T23:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-28T19:17:38+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Neal Pionk",
@@ -8169,8 +8456,8 @@
       "start_time_utc": "2026-10-29T23:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-28T19:17:38+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30",
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46",
       "removed_reason": "pp_pull"
     },
     {
@@ -8226,8 +8513,8 @@
       "start_time_utc": "2026-10-29T23:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T06:42:19+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Nick Schmaltz",
@@ -8282,8 +8569,8 @@
       "start_time_utc": "2026-10-29T23:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T04:52:57+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Nicolas Deslauriers",
@@ -8392,8 +8679,8 @@
       "start_time_utc": "2026-10-29T23:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T04:52:57+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30",
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46",
       "removed_reason": "pp_pull"
     },
     {
@@ -8449,8 +8736,8 @@
       "start_time_utc": "2026-10-29T23:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-28T19:17:38+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Nikolaj Ehlers",
@@ -8475,8 +8762,8 @@
       "start_time_utc": "2026-10-29T23:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T05:20:31+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Nikolaj Ehlers",
@@ -8531,8 +8818,8 @@
       "start_time_utc": "2026-10-29T23:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T05:47:46+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Noah Dobson",
@@ -8557,8 +8844,8 @@
       "start_time_utc": "2026-10-30T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-28T22:02:43+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Oliver Moore",
@@ -8613,8 +8900,8 @@
       "start_time_utc": "2026-10-30T02:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-28T22:30:01+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Patrick Kane",
@@ -8699,8 +8986,8 @@
       "start_time_utc": "2026-10-29T23:30:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T05:20:31+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Pavel Buchnevich",
@@ -8725,8 +9012,8 @@
       "start_time_utc": "2026-10-30T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T06:15:31+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Pavel Buchnevich",
@@ -8751,8 +9038,8 @@
       "start_time_utc": "2026-10-30T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-28T22:30:01+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Pavel Zacha",
@@ -8777,8 +9064,8 @@
       "start_time_utc": "2026-10-30T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-28T22:30:01+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Pavel Zacha",
@@ -8803,8 +9090,8 @@
       "start_time_utc": "2026-10-30T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-28T22:30:01+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Philip Broberg",
@@ -8829,8 +9116,8 @@
       "start_time_utc": "2026-10-30T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-28T22:30:01+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Philip Broberg",
@@ -8855,8 +9142,8 @@
       "start_time_utc": "2026-10-30T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T06:15:31+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Philip Broberg",
@@ -8908,8 +9195,8 @@
       "start_time_utc": "2026-10-30T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T06:15:31+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Pierre-Luc Dubois",
@@ -8934,8 +9221,8 @@
       "start_time_utc": "2026-10-30T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T05:47:46+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Pierre-Luc Dubois",
@@ -8960,8 +9247,8 @@
       "start_time_utc": "2026-10-30T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T05:47:46+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Pontus Holmberg",
@@ -9016,8 +9303,8 @@
       "start_time_utc": "2026-10-30T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T06:42:19+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Quinn Hughes",
@@ -9042,8 +9329,8 @@
       "start_time_utc": "2026-10-30T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-28T22:30:01+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Quinton Byfield",
@@ -9068,8 +9355,8 @@
       "start_time_utc": "2026-10-30T02:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-28T22:30:01+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Rickard Rakell",
@@ -9094,8 +9381,8 @@
       "start_time_utc": "2026-10-29T23:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T06:42:19+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Rickard Rakell",
@@ -9177,8 +9464,8 @@
       "start_time_utc": "2026-10-29T23:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T05:47:46+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Robert Thomas",
@@ -9203,8 +9490,8 @@
       "start_time_utc": "2026-10-30T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-28T22:30:01+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Robert Thomas",
@@ -9229,8 +9516,8 @@
       "start_time_utc": "2026-10-30T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-28T22:30:01+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Roman Josi",
@@ -9255,8 +9542,8 @@
       "start_time_utc": "2026-10-30T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T05:47:46+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Roman Josi",
@@ -9281,8 +9568,8 @@
       "start_time_utc": "2026-10-30T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T05:47:46+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Roman Josi",
@@ -9307,8 +9594,8 @@
       "start_time_utc": "2026-10-30T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T04:52:57+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Roman Kantserov",
@@ -9393,8 +9680,8 @@
       "start_time_utc": "2026-10-29T23:30:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T05:20:31+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Roope Hintz",
@@ -9419,8 +9706,8 @@
       "start_time_utc": "2026-10-30T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T06:42:19+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Ryan Donato",
@@ -9535,8 +9822,8 @@
       "start_time_utc": "2026-10-30T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T05:47:46+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Ryan Lomberg",
@@ -9621,8 +9908,8 @@
       "start_time_utc": "2026-10-30T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T06:42:19+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Ryan O'Reilly",
@@ -9674,8 +9961,8 @@
       "start_time_utc": "2026-10-30T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T05:47:46+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Ryan O'Reilly",
@@ -9700,8 +9987,8 @@
       "start_time_utc": "2026-10-30T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T04:52:57+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Sam Rinzel",
@@ -9756,8 +10043,8 @@
       "start_time_utc": "2026-10-29T23:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T05:20:31+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Sean Monahan",
@@ -9842,8 +10129,8 @@
       "start_time_utc": "2026-10-29T23:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T05:20:31+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Sebastian Aho",
@@ -9868,8 +10155,8 @@
       "start_time_utc": "2026-10-29T23:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T05:47:46+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Seth Jarvis",
@@ -9894,8 +10181,8 @@
       "start_time_utc": "2026-10-29T23:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T05:20:31+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Seth Jarvis",
@@ -9950,8 +10237,8 @@
       "start_time_utc": "2026-10-29T23:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T05:47:46+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Shane Pinto",
@@ -9976,8 +10263,8 @@
       "start_time_utc": "2026-10-30T02:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-28T22:30:01+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Shayne Gostisbehere",
@@ -10002,8 +10289,8 @@
       "start_time_utc": "2026-10-29T23:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T05:20:31+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Shayne Gostisbehere",
@@ -10088,8 +10375,8 @@
       "start_time_utc": "2026-10-29T23:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T05:47:46+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Sidney Crosby",
@@ -10114,8 +10401,8 @@
       "start_time_utc": "2026-10-29T23:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T06:42:19+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Sidney Crosby",
@@ -10171,7 +10458,34 @@
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T05:47:46+00:00",
       "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "source_commit": "e9f0954c4e30",
+      "superseded_at": "2026-10-29T07:37:38.268434+00:00"
+    },
+    {
+      "player": "Sidney Crosby",
+      "team": "PIT",
+      "opponent": "UTA",
+      "position": "F",
+      "stat": "Shots On Goal",
+      "line": 4.5,
+      "odds_type": "demon",
+      "recommendation": "UNDER",
+      "projection": 1.96,
+      "projection_source": "nhl/build_board.py",
+      "edge": -2.54,
+      "rating": 8.3,
+      "game_date_iso": "2026-10-29",
+      "games_played": 80,
+      "dvp_rank": 6,
+      "goalie_status": null,
+      "rank_eligible": true,
+      "projection_id": "16380944",
+      "projection_schema": 2,
+      "start_time_utc": "2026-10-29T23:00:00+00:00",
+      "start_time_source": "nhl_schedule",
+      "first_frozen_at": "2026-10-29T07:37:38+00:00",
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Sidney Crosby",
@@ -10280,8 +10594,8 @@
       "start_time_utc": "2026-10-30T02:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T06:15:31+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Stephen Halliday",
@@ -10306,8 +10620,8 @@
       "start_time_utc": "2026-10-30T02:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T06:15:31+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Steven Stamkos",
@@ -10332,8 +10646,8 @@
       "start_time_utc": "2026-10-30T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T05:47:46+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Steven Stamkos",
@@ -10358,8 +10672,8 @@
       "start_time_utc": "2026-10-30T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T05:47:46+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Steven Stamkos",
@@ -10384,8 +10698,8 @@
       "start_time_utc": "2026-10-30T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T04:52:57+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Tage Thompson",
@@ -10410,8 +10724,8 @@
       "start_time_utc": "2026-10-30T02:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-28T22:30:01+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Teuvo Teravainen",
@@ -10496,8 +10810,8 @@
       "start_time_utc": "2026-10-29T23:30:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T06:15:31+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Thomas Harley",
@@ -10522,8 +10836,8 @@
       "start_time_utc": "2026-10-30T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-28T22:02:43+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Tom Wilson",
@@ -10578,8 +10892,8 @@
       "start_time_utc": "2026-10-30T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T05:47:46+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Tom Wilson",
@@ -10604,8 +10918,8 @@
       "start_time_utc": "2026-10-30T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T04:52:57+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Tommy Novak",
@@ -10631,7 +10945,8 @@
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T06:42:19+00:00",
       "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "source_commit": "e9f0954c4e30",
+      "superseded_at": "2026-10-29T07:37:38.268434+00:00"
     },
     {
       "player": "Tommy Novak",
@@ -10662,6 +10977,32 @@
       "removed": true,
       "pp_status": "removed",
       "removed_reason": "pp_pull"
+    },
+    {
+      "player": "Tommy Novak",
+      "team": "PIT",
+      "opponent": "UTA",
+      "position": "F",
+      "stat": "Shots On Goal",
+      "line": 4.5,
+      "odds_type": "demon",
+      "recommendation": "UNDER",
+      "projection": 1.62,
+      "projection_source": "nhl/build_board.py",
+      "edge": -2.88,
+      "rating": 0.0,
+      "game_date_iso": "2026-10-29",
+      "games_played": 94,
+      "dvp_rank": 6,
+      "goalie_status": null,
+      "rank_eligible": true,
+      "projection_id": "16380936",
+      "projection_schema": 2,
+      "start_time_utc": "2026-10-29T23:00:00+00:00",
+      "start_time_source": "nhl_schedule",
+      "first_frozen_at": "2026-10-29T07:37:38+00:00",
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Tommy Novak",
@@ -10716,8 +11057,8 @@
       "start_time_utc": "2026-10-30T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-28T22:30:01+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Trevor Moore",
@@ -10742,8 +11083,8 @@
       "start_time_utc": "2026-10-30T02:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T06:15:31+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Tyler Bertuzzi",
@@ -10768,8 +11109,8 @@
       "start_time_utc": "2026-10-29T23:30:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T06:15:31+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Tyler Bertuzzi",
@@ -10824,8 +11165,8 @@
       "start_time_utc": "2026-10-29T23:30:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T07:09:38+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Tyler Bertuzzi",
@@ -10910,8 +11251,8 @@
       "start_time_utc": "2026-10-29T23:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T05:20:31+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Valeri Nichushkin",
@@ -10936,8 +11277,8 @@
       "start_time_utc": "2026-10-29T23:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T05:47:46+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Victor Hedman",
@@ -11022,8 +11363,8 @@
       "start_time_utc": "2026-10-29T23:30:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T06:15:31+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Viktor Arvidsson",
@@ -11049,7 +11390,34 @@
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T05:20:31+00:00",
       "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "source_commit": "e9f0954c4e30",
+      "superseded_at": "2026-10-29T07:37:38.268434+00:00"
+    },
+    {
+      "player": "Viktor Arvidsson",
+      "team": "DET",
+      "opponent": "CHI",
+      "position": "F",
+      "stat": "Shots On Goal",
+      "line": 6.5,
+      "odds_type": "demon",
+      "recommendation": "UNDER",
+      "projection": 3.19,
+      "projection_source": "nhl/build_board.py",
+      "edge": -3.31,
+      "rating": 0.0,
+      "game_date_iso": "2026-10-29",
+      "games_played": 81,
+      "dvp_rank": 29,
+      "goalie_status": null,
+      "rank_eligible": true,
+      "projection_id": "16380945",
+      "projection_schema": 2,
+      "start_time_utc": "2026-10-29T23:30:00+00:00",
+      "start_time_source": "nhl_schedule",
+      "first_frozen_at": "2026-10-29T07:37:38+00:00",
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Ville Koivunen",
@@ -11080,6 +11448,32 @@
       "removed": true,
       "pp_status": "removed",
       "removed_reason": "pp_pull"
+    },
+    {
+      "player": "Ville Koivunen",
+      "team": "PIT",
+      "opponent": "UTA",
+      "position": "F",
+      "stat": "Points",
+      "line": 1.5,
+      "odds_type": "demon",
+      "recommendation": "UNDER",
+      "projection": 0.33,
+      "projection_source": "nhl/build_board.py",
+      "edge": -1.17,
+      "rating": 0.0,
+      "game_date_iso": "2026-10-29",
+      "games_played": 49,
+      "dvp_rank": 11,
+      "goalie_status": null,
+      "rank_eligible": true,
+      "projection_id": "16380971",
+      "projection_schema": 2,
+      "start_time_utc": "2026-10-29T23:00:00+00:00",
+      "start_time_source": "nhl_schedule",
+      "first_frozen_at": "2026-10-29T07:37:38+00:00",
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Ville Koivunen",
@@ -11218,8 +11612,8 @@
       "start_time_utc": "2026-10-30T02:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T04:52:57+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "William Carrier",
@@ -11304,8 +11698,8 @@
       "start_time_utc": "2026-10-30T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T06:42:19+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Wyatt Johnston",
@@ -11360,8 +11754,8 @@
       "start_time_utc": "2026-10-30T00:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T04:52:57+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Wyatt Kaiser",
@@ -11416,8 +11810,8 @@
       "start_time_utc": "2026-10-30T02:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-28T22:30:01+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Zach Werenski",
@@ -11442,8 +11836,8 @@
       "start_time_utc": "2026-10-29T23:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T05:20:31+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     },
     {
       "player": "Zach Werenski",
@@ -11498,8 +11892,8 @@
       "start_time_utc": "2026-10-29T23:00:00+00:00",
       "start_time_source": "nhl_schedule",
       "first_frozen_at": "2026-10-29T05:47:46+00:00",
-      "last_pregame_frozen_at": "2026-10-29T07:09:38+00:00",
-      "source_commit": "e9f0954c4e30"
+      "last_pregame_frozen_at": "2026-10-29T07:37:38+00:00",
+      "source_commit": "e7d675627e46"
     }
   ]
 }
