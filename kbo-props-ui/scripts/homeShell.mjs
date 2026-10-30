@@ -18,6 +18,7 @@ const NAV = [
   ['/wnba-player-props', 'WNBA player props'],
   ['/nba-player-props', 'NBA player props'],
   ['/nhl-player-props', 'NHL player props'],
+  ['/results', 'Results'],
   ['/pricing', 'Pricing'],
   ['/policies', 'Plans & Policies'],
   ['/guides/start-here', 'Start Here'],
@@ -71,7 +72,7 @@ export function homeRootInner() {
       </section>
     </main>
     <footer>
-      <p><a href="${pageUrl('/guides/start-here')}">Start Here</a> · <a href="${pageUrl('/guides/cg-score')}">How CG Score works</a> · <a href="${pageUrl('/policies')}">Plans &amp; Policies</a> · <a href="${pageUrl('/terms')}">Terms</a> · <a href="${pageUrl('/privacy')}">Privacy</a> · <a href="${pageUrl('/responsible-gaming')}">Responsible Gaming</a> · <a href="${pageUrl('/states-not-available')}">Where CGPropz isn't available</a></p>
+      <p><a href="${pageUrl('/results')}">Results</a> · <a href="${pageUrl('/guides/start-here')}">Start Here</a> · <a href="${pageUrl('/guides/cg-score')}">How CG Score works</a> · <a href="${pageUrl('/policies')}">Plans &amp; Policies</a> · <a href="${pageUrl('/terms')}">Terms</a> · <a href="${pageUrl('/privacy')}">Privacy</a> · <a href="${pageUrl('/responsible-gaming')}">Responsible Gaming</a> · <a href="${pageUrl('/states-not-available')}">Where CGPropz isn't available</a></p>
       <p>${escapeHtml(STANDARD_LINE)}</p>
       <p>${escapeHtml(OPERATOR_DISCLAIMER)}</p>
       <p>${escapeHtml(AGE_LINE)}</p>

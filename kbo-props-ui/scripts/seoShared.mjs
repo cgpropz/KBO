@@ -5,6 +5,7 @@ import {
   AFFILIATION_LINE,
   AGE_LINE,
   GAMBLER_HELP_URL,
+  INDEPENDENCE_LINE,
   OPERATOR_DISCLAIMER,
   STANDARD_LINE,
 } from '../src/responsibleGambling.js';
@@ -110,6 +111,7 @@ const NAV = [
   ['/wnba-player-props', 'WNBA'],
   ['/nba-player-props', 'NBA'],
   ['/nhl-player-props', 'NHL'],
+  ['/results', 'Results'],
   ['/pricing', 'Pricing'],
   ['/guides/cg-score', 'CG Score'],
 ];
@@ -127,6 +129,7 @@ export function renderHeader() {
 const FOOTER_LINKS = [
   ['/guides/start-here', 'Start Here'],
   ['/guides/cg-score', 'How CG Score works'],
+  ['/results', 'Results'],
   ['/policies', 'Plans & Policies'],
   ['/terms', 'Terms'],
   ['/privacy', 'Privacy'],
@@ -149,6 +152,7 @@ export function renderFooter() {
       <p>${escapeHtml(OPERATOR_DISCLAIMER)}</p>
       <p>${escapeHtml(AGE_LINE)}</p>
       <p>${escapeHtml(AFFILIATION_LINE)}</p>
+      <p>${escapeHtml(INDEPENDENCE_LINE)}</p>
       <p><a href="${GAMBLER_HELP_URL}">ncpgambling.org</a></p>
       ${renderDataCredit()}
     </footer>`;

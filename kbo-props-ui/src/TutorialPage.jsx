@@ -31,7 +31,7 @@ const PAGE_GUIDES = [
     why: 'Treat this page as your execution screen once you have a short list from projections and matchup checks.',
     factors: [
       'Difference between model probability and book implied probability.',
-      'Line movement direction and speed before lock.',
+      'Line movement direction and speed before the game starts.',
       'Book-to-book price differences on the same market.',
       'Correlated outcomes that can inflate risk in one slip.',
       'Late lineup/news changes that alter role stability.',
@@ -94,7 +94,7 @@ const PAGE_GUIDES = [
       'CLV trend vs closing number across weeks.',
       'Performance by game context (home/away/weather tiers).',
       'Result distribution for correlated slips vs singles.',
-      'Profit decay patterns after line movement chases.',
+      'How results change after chasing a moved line.',
     ],
     workflow: [
       'Review tracker before building new slips to avoid repeating weak patterns.',
@@ -173,7 +173,7 @@ function SnapshotCard({ title, subtitle, id, screenshot }) {
           }
         }}
       />
-      <div className="tutorial-caption">Add PNG screenshot at {screenshot}. If missing, placeholder is shown.</div>
+      <div className="tutorial-caption">Add PNG screenshot at {screenshot}. If the image is missing, this note stays.</div>
     </div>
   )
 }

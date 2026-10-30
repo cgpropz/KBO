@@ -25,7 +25,7 @@ export default function LandingSportCard({ variant, sport, nbaOpen, onOpen }) {
       className={`${prefix}-sport-card${locked ? ' is-locked' : ''}`}
       style={{ '--accent': sport.accent, '--glow': sport.glow }}
       aria-disabled={locked || undefined}
-      aria-label={locked ? `${sport.name}, coming soon, locked` : undefined}
+      aria-label={locked ? `${sport.name}, All-Access, members` : undefined}
       data-sport={sport.id}
       data-nba-locked={sport.id === 'nba' ? String(locked) : undefined}
       data-nhl-locked={sport.id === 'nhl' ? 'false' : undefined}
@@ -59,7 +59,7 @@ export default function LandingSportCard({ variant, sport, nbaOpen, onOpen }) {
       {locked && (
         <span className="sport-card-lock">
           <LockIcon />
-          <span className="sport-card-lock-title">Coming soon</span>
+          <span className="sport-card-lock-title">All-Access</span>
           <span className="sport-card-lock-sub">Locked</span>
         </span>
       )}

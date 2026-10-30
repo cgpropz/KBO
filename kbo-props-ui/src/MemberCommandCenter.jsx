@@ -399,7 +399,7 @@ function useBoards(access, nbaOpen, selectedId, planPending, planFailed) {
 function emptyCopy(status, sport) {
   if (status === 'loading') return 'Loading your member board…';
   if (status === 'locked') return `${sport.name} isn't in your plan. Add it from Manage plan.`;
-  if (status === 'closed') return 'The NBA board opens soon. No lines are posted for members yet.';
+  if (status === 'closed') return 'No NBA lines are posted on your board right now.';
   if (status === 'error') return 'Couldn\'t load your member board';
   return `No standard ${sport.name} lines on the board right now.`;
 }
@@ -407,7 +407,7 @@ function emptyCopy(status, sport) {
 function sportStatus(sport, board, nbaOpen) {
   if (!board || board.status === 'loading') return 'Loading';
   if (board.status === 'locked') return 'Locked';
-  if (board.status === 'closed' || (sport.id === 'nba' && !nbaOpen)) return 'Opens soon';
+  if (board.status === 'closed' || (sport.id === 'nba' && !nbaOpen)) return 'All-Access';
   if (board.status === 'error') return 'Couldn\'t load · Retry';
   if (board.status === 'empty' || !board.count) return 'No lines';
   const games = board.games?.length ? `${board.games.length} game${board.games.length === 1 ? '' : 's'}` : null;

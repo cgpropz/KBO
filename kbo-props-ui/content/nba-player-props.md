@@ -29,9 +29,9 @@ The CGPropz NBA board lines up a model projection with each posted player prop s
 
 New to props? [Start here](/guides/start-here) for a ten-minute walkthrough of reading a board row.
 
-## NBA opening week 2026-27: schedule in ET
+## Opening week, already played
 
-All times ET. Source: the NBA's official 2026-27 schedule (cited at the bottom). Re-check on game day; tip-off times can change.
+These Oct 20–23 games are the start of the 2026-27 season. They are not today's slate. Today's props are on the NBA board. All times ET. Source: the NBA 2026-27 schedule (cited at the bottom).
 
 | Date | Matchup | Tip-off (ET) | TV |
 |---|---|---|---|

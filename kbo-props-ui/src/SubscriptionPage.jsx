@@ -416,10 +416,11 @@ function SubscriptionPage() {
             <div className="sub-card-header">
               <h3 className="sub-card-name">{tier.name}</h3>
               <div className="sub-card-price">
-                <span className="sub-price-amount">{tier.price}</span>
-                {tier.period && <span className="sub-price-period">{tier.period}</span>}
+                <span className="sub-price-amount">{tier.leadPrice || tier.price}</span>
+                {(tier.leadPeriod || tier.period) && <span className="sub-price-period">{tier.leadPeriod || tier.period}</span>}
               </div>
               <p className="sub-card-desc">{tier.description}</p>
+              {tier.leadNote ? <p className="sub-card-desc">{tier.leadNote}</p> : null}
             </div>
 
             <div className="sub-card-features">

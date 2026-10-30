@@ -59,7 +59,9 @@ test('the public landing has no reviews section', () => {
   assert.equal(landing.includes('data-c="reviews"'), false)
   assert.equal(/\bSAMPLE\b/.test(landing), false)
   assert.equal(/PLACEHOLDER/.test(landing), false)
-  assert.equal(/PrizePicks/.test(landing), false)
+  assert.match(landing, /PrizePicks and Underdog/)
+  assert.equal(landing.includes('/results/'), false)
+  assert.equal(landing.includes('<Results'), false)
 })
 
 test('the public landing features NFL on the hero, phone, and sport tabs', () => {

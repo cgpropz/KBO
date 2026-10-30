@@ -3,6 +3,7 @@
 
 export const AGE_LINE = '21+ only. Gambling problem? Call 1-800-GAMBLER.';
 export const AFFILIATION_LINE = 'CGPropz is not affiliated with PrizePicks or Underdog. For entertainment only.';
+export const INDEPENDENCE_LINE = 'CGPropz is independent and is not affiliated with, endorsed by, or sponsored by PrizePicks or Underdog. PrizePicks and Underdog are trademarks of their owners. Availability and minimum age vary by state. 21+. Gambling problem? Call 1-800-GAMBLER.';
 export const STANDARD_LINE = '21+ · Play responsibly · Entertainment only · 1-800-GAMBLER';
 export const OPERATOR_DISCLAIMER = 'CGPropz is not a sportsbook or operator; projections are estimates, not guarantees.';
 export const GAMBLER_HELP_URL = 'https://www.ncpgambling.org';

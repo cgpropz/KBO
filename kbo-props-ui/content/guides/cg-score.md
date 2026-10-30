@@ -88,7 +88,7 @@ Every CGPropz board shows standard lines only. Demon and goblin lines aren't on 
 - [NBA player props](/nba-player-props) {{URL PENDING GIT BOT}}
 - [NHL player props](/nhl-player-props) {{URL PENDING GIT BOT}}
 
-The [free top 3 on the homepage](/#free-top-3) {{URL PENDING GIT BOT}} shows CG Scores for three props a day in each sport with a free preview (the NFL free preview is off right now). All-Access shows the score on every graded prop on the board, alongside projections, hit rates, defense vs. position and the slip builder.
+The [free top 3 on the homepage](/#free-top-3) {{URL PENDING GIT BOT}} shows CG Scores for three props a day in each sport with a free preview. All-Access shows the score on every graded prop on the board, alongside projections, hit rates, defense vs. position and the slip builder.
 
 **[Get the full All-Access board →](/pricing)** {{URL PENDING GIT BOT}}
 

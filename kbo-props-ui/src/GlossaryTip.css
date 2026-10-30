@@ -1,0 +1,52 @@
+.glossary-tip {
+  position: relative;
+  display: inline-flex;
+  max-width: 100%;
+  vertical-align: middle;
+}
+
+.glossary-tip-btn {
+  appearance: none;
+  margin: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  padding: 0;
+  cursor: pointer;
+}
+
+.glossary-tip-btn.is-compact {
+  width: 16px;
+  height: 16px;
+  margin-left: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 50%;
+  color: #d4d4d8;
+  font-size: 10px;
+  font-weight: 800;
+  font-style: italic;
+  letter-spacing: 0;
+  line-height: 14px;
+  text-transform: none;
+  flex: none;
+}
+
+.glossary-tip-bubble {
+  position: fixed;
+  z-index: 40;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: #101612;
+  color: #e4e4e7;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+  text-align: left;
+  line-height: 1.4;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.45);
+  white-space: normal;
+}
