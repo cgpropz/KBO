@@ -10,9 +10,9 @@ const landing = readFileSync(new URL('../src/PublicLanding.jsx', import.meta.url
 const pricingPage = readFileSync(new URL('../src/SubscriptionPage.jsx', import.meta.url), 'utf8')
 const aboutHits = ['/about', 'About CGPropz', '>About<']
 
-test('first-visit nav keeps Free top 3 and hides Results while that page is off', () => {
+test('first-visit nav sends Results to the ledger page and Free top 3 to its section', () => {
   assert.equal(landing.includes('scrollTo(\'free-top-3\'); }}>Free top 3</a>'), true)
-  assert.equal(RESULTS_PAGE_PUBLIC, false)
+  assert.equal(RESULTS_PAGE_PUBLIC, true)
   assert.match(landing, /RESULTS_PAGE_PUBLIC \? <a href="\/results">Results<\/a> : null/)
   assert.equal(landing.includes('<Results'), false)
   const record = readFileSync(new URL('../src/PlayableRecord.jsx', import.meta.url), 'utf8')
@@ -21,7 +21,7 @@ test('first-visit nav keeps Free top 3 and hides Results while that page is off'
   assert.match(record, /RESULTS_PAGE_PUBLIC \? <> <a href="\/results">Full record<\/a>/)
   assert.match(landing, /INDEPENDENCE_LINE/)
   const pricing = renderPricingPage().html
-  assert.equal(pricing.includes('cgpropz.com/results'), false)
+  assert.match(pricing, /cgpropz\.com\/results">Results</)
   for (const phrase of aboutHits) assert.equal(landing.includes(phrase), false, phrase)
 })
 

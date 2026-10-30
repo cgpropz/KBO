@@ -96,7 +96,6 @@ function devMembershipPreview() {
 function previewCleanUrls() {
   const map = {
     '/pricing': '/pricing.html',
-    '/results': '/results.html',
     '/policies': '/policies.html',
     '/terms': '/terms.html',
     '/privacy': '/privacy.html',

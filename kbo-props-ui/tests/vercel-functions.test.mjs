@@ -69,6 +69,9 @@ test('public api urls are not swallowed by an SPA catch-all and keep their query
   const status = rewrites.find((rule) => rule.source === '/status.json')
   assert.equal(status?.destination, '/api/data?ds=board_status')
   assert.ok(rewrites.indexOf(status) < generic)
+  const results = rewrites.find((rule) => rule.source === '/results')
+  assert.equal(results?.destination, '/api/data?ds=results')
+  assert.ok(rewrites.indexOf(results) < generic)
   const hidden = config.redirects.filter((rule) => rule.source === '/results' || rule.source === '/results.html')
   if (RESULTS_PAGE_PUBLIC) {
     assert.deepEqual(hidden, [])
