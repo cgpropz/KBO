@@ -1,6 +1,3 @@
-import { readFileSync } from 'node:fs'
-import { dirname, join } from 'node:path'
-import { fileURLToPath } from 'node:url'
 import {
   BREAK_EVEN_PCT,
   SPORT_NAME,
@@ -15,11 +12,10 @@ import {
 import { INDEPENDENCE_LINE, STANDARD_LINE } from '../src/responsibleGambling.js'
 import { breadcrumbNode, escapeHtml, pageUrl, renderDocument } from './seoShared.mjs'
 
-const snapshotPath = join(dirname(fileURLToPath(import.meta.url)), '../api/_resultsSnapshot.json')
-
-export function loadResultsSnapshot(path = snapshotPath) {
-  return JSON.parse(readFileSync(path, 'utf8'))
-}
+export const RESULTS_TITLE = 'Results: Every Graded Pick | CGPropz'
+export const RESULTS_DESCRIPTION = 'Every graded CGPropz pick, wins and losses (W-L-P), by sport and market. Free and member records stay separate. 21+.'
+export const POSTED_TIME_NOTE = "Each pick's posted time is recorded by our pipeline when the board publishes and compared to the game's scheduled start; picks posted after start are excluded."
+export const RESULTS_DISCLAIMER = 'Past results do not guarantee future results. Projections are for informational and entertainment purposes only and are not betting advice or a guarantee of any outcome. 21+. Gambling problem? Call 1-800-GAMBLER.'
 
 function recordFrom(raw) {
   return finishRecord(raw)
@@ -192,21 +188,28 @@ document.querySelectorAll('[data-sport-tab]').forEach((button) => {
 })
 </script>`
 
-export function renderResultsPage(snapshot = loadResultsSnapshot()) {
-  const updated = new Date(snapshot.updatedAt)
-  const updatedLabel = updated.toLocaleString('en-US', {
-    weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZone: 'America/New_York',
-  })
+export function renderResultsPage(snapshot) {
+  const updatedLabel = snapshot.updatedAt
+    ? `${new Date(snapshot.updatedAt).toLocaleString('en-US', {
+      weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZone: 'America/New_York',
+    })} ET`
+    : '—'
+  const seasonLine = !snapshot.earliestSlate
+    ? 'No graded picks yet.'
+    : snapshot.seasonMatchesLast30
+      ? `Last 30 days matches this season record. The earliest graded slate is ${rangeLabel(snapshot.earliestSlate, snapshot.earliestSlate)}.`
+      : `The earliest graded slate is ${rangeLabel(snapshot.earliestSlate, snapshot.earliestSlate)}. Last 30 days is a shorter window than the season record.`
   const cards = SPORT_ORDER.map((sport) => sportCards(snapshot, sport)).join('')
   const markets = SPORT_ORDER.map((sport) => marketTable(snapshot, sport)).join('')
   const tabs = SPORT_ORDER.map((sport) => `<button type="button" data-sport-tab="${sport}" class="${sport === 'nfl' ? 'on' : ''}">${SPORT_NAME[sport]}</button>`).join('')
   const bodyHtml = `<style>${PAGE_STYLE}</style>
     <p class="kick">Results</p>
-    <h1>Every graded pick. <span class="grad">Hits and misses.</span></h1>
-    <p>Every pick graded in the Board QA ledger, by sport, market and tier. Nothing is filtered out of the totals: misses, pushes and voids stay on the record.</p>
+    <h1>Every graded pick. <span class="grad">Wins and losses (W-L-P).</span></h1>
+    <p>Every graded pick, wins and losses (W-L-P), by sport, market, and tier. Misses stay in the totals. Pushes count in W-L-P and not in the hit rate. Voids stay on the list and stay out of n.</p>
+    <p class="quiet">${escapeHtml(POSTED_TIME_NOTE)}</p>
     <div class="res-meta">
-      <span class="mpill"><b>RANGE</b> ${escapeHtml(rangeLabel(snapshot.earliestSlate, '2026-10-29'))}</span>
-      <span class="mpill"><b>UPDATED</b> ${escapeHtml(updatedLabel)} ET</span>
+      <span class="mpill"><b>RANGE</b> ${escapeHtml(rangeLabel(snapshot.earliestSlate, snapshot.latestSlate))}</span>
+      <span class="mpill"><b>UPDATED</b> ${escapeHtml(updatedLabel)}</span>
       <span class="mpill"><b>SOURCE</b> Board QA ledger</span>
     </div>
     <div class="ctl"><div class="tabs" role="tablist">${tabs}</div></div>
@@ -215,7 +218,7 @@ export function renderResultsPage(snapshot = loadResultsSnapshot()) {
     <section>
       <p class="kick">By sport</p>
       <h2>Season record by sport</h2>
-      <p class="quiet">Last 30 days matches this season record. The earliest graded slate is ${escapeHtml(rangeLabel(snapshot.earliestSlate, snapshot.earliestSlate))}.</p>
+      <p class="quiet">${escapeHtml(seasonLine)}</p>
       ${seasonTable(snapshot)}
     </section>
     <section>
@@ -245,18 +248,18 @@ export function renderResultsPage(snapshot = loadResultsSnapshot()) {
       <p class="quiet">${escapeHtml(snapshot.historyNote)}</p>
       ${historyTable(snapshot.history)}
     </section>
-    <p class="req">${escapeHtml('Past results do not guarantee future results. Projections are for informational and entertainment purposes only and are not betting advice or a guarantee of any outcome. 21+. Gambling problem? Call 1-800-GAMBLER.')}</p>
+    <p class="req">${escapeHtml(RESULTS_DISCLAIMER)}</p>
     <p class="req">${escapeHtml(INDEPENDENCE_LINE)}</p>
     <p class="req">${escapeHtml(STANDARD_LINE)}</p>
     ${PAGE_SCRIPT}`
   return {
     path: '/results',
     file: 'results.html',
-    title: 'Results: Every Graded Pick | CGPropz',
-    description: 'Every graded CGPropz pick, hits and misses, by sport and market. Free and member records stay separate. 21+.',
+    title: RESULTS_TITLE,
+    description: RESULTS_DESCRIPTION,
     html: renderDocument({
-      title: 'Results: Every Graded Pick | CGPropz',
-      description: 'Every graded CGPropz pick, hits and misses, by sport and market. Free and member records stay separate. 21+.',
+      title: RESULTS_TITLE,
+      description: RESULTS_DESCRIPTION,
       path: '/results',
       bodyHtml,
       schemas: [breadcrumbNode([{ name: 'Home', url: pageUrl('/') }, { name: 'Results', url: pageUrl('/results') }])],

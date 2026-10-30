@@ -27,6 +27,8 @@ import { NBA_FREE_PREVIEW_ENABLED } from '../src/nbaPreviewFlag.js';
 import { presentBoardPayload } from './_boardPayload.js';
 import { assembleSnapshotRows, snapshotChunkManifest } from './_snapshotChunks.js';
 import { clearMemberTierCache, lookupMemberTier } from './_memberTier.js';
+import { buildResultsModel } from '../src/resultsLedger.js';
+import { renderResultsPage } from '../scripts/resultsPage.mjs';
 
 export { assembleSnapshotRows, snapshotChunkManifest };
 
@@ -34,6 +36,7 @@ export { assembleSnapshotRows, snapshotChunkManifest };
 // edge never stores a paid board. Anonymous previews keep the public cache.
 export const PRIVATE_DATA_CACHE = 'private, max-age=30, stale-while-revalidate=60, stale-if-error=600';
 export const PUBLIC_DATA_CACHE = 's-maxage=60, stale-while-revalidate=300, stale-if-error=1800';
+export const RESULTS_CACHE = 'public, s-maxage=300, stale-while-revalidate=60';
 
 // Anonymous public previews (and fully public datasets) can sit on the edge.
 // A request with Authorization, or a full member snapshot, must not.
@@ -1189,6 +1192,7 @@ export async function handleDataRequest(req, res, client) {
   if (dsEarly === 'board_status') return handleBoardStatus(req, res, client);
   if (dsEarly === 'member_recap') return handleMemberRecap(req, res, client);
   if (dsEarly === 'playable_record') return handlePlayableRecord(req, res);
+  if (dsEarly === 'results') return handleResults(req, res, client);
 
   res.setHeader('Cache-Control', 'private, no-store, max-age=0');
   res.setHeader('Vary', 'Authorization');
@@ -1335,6 +1339,44 @@ async function liveKboBoard(client) {
     console.error(`[api/data] prizepicks_props read for matchup lockedCount failed: ${err?.message || err}`);
     return null;
   }
+}
+
+function sendRaw(res, status, body) {
+  res.statusCode = status;
+  res.body = body;
+  if (typeof res.end === 'function') res.end(body);
+  return res;
+}
+
+// Public /results. One function slot is already used by this file, so the
+// page is a query on /api/data rather than a new serverless file. The read
+// is board_reader_results_rows(), which is owned by board_reader, so the
+// ledger select runs as that role. Updated is the newest graded_at among
+// rows the page keeps.
+export async function handleResults(req, res, client) {
+  if (req.method !== 'GET') {
+    res.setHeader('Allow', 'GET');
+    res.setHeader('Cache-Control', 'no-store');
+    res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+    return sendRaw(res, 405, 'Method not allowed');
+  }
+  let rows;
+  try {
+    const db = client || getClient();
+    const { data, error } = await db.rpc('board_reader_results_rows');
+    if (error) throw error;
+    const parsed = typeof data === 'string' ? JSON.parse(data) : data;
+    rows = Array.isArray(parsed) ? parsed : [];
+  } catch (err) {
+    console.error('[api/data] results ledger read failed:', err?.message || err);
+    res.setHeader('Cache-Control', 'no-store');
+    res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+    return sendRaw(res, 503, 'Results are temporarily unavailable');
+  }
+  const html = renderResultsPage(buildResultsModel(rows)).html;
+  res.setHeader('Content-Type', 'text/html; charset=utf-8');
+  res.setHeader('Cache-Control', RESULTS_CACHE);
+  return sendRaw(res, 200, html);
 }
 
 export function _clearCache() {

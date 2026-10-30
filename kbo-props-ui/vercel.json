@@ -59,8 +59,6 @@
     }
   ],
   "redirects": [
-    { "source": "/results", "destination": "/", "statusCode": 307 },
-    { "source": "/results.html", "destination": "/", "statusCode": 307 },
     { "source": "/nfl", "destination": "/nfl-player-props", "statusCode": 301 },
     { "source": "/wnba", "destination": "/wnba-player-props", "statusCode": 301 },
     { "source": "/nba", "destination": "/nba-player-props", "statusCode": 301 },
@@ -92,7 +90,7 @@
     { "source": "/nhl-player-props", "destination": "/nhl-player-props.html" },
     { "source": "/guides", "destination": "/guides.html" },
     { "source": "/pricing", "destination": "/pricing.html" },
-    { "source": "/results", "destination": "/results.html" },
+    { "source": "/results", "destination": "/api/data?ds=results" },
     { "source": "/policies", "destination": "/policies.html" },
     { "source": "/terms", "destination": "/terms.html" },
     { "source": "/privacy", "destination": "/privacy.html" },

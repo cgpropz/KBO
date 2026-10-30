@@ -11,8 +11,6 @@ import { patchIndexHtml } from './homeShell.mjs';
 import { renderKboPage, renderSitemap, sitemapEntries } from './kboSeoPage.mjs';
 import { assertNoCurlyPlaceholders, listGuides } from './markdownGuide.mjs';
 import { renderCompliancePages, renderGuidePages, renderNotFoundPage, renderPoliciesPage, renderPricingPage, renderSportPages } from './publicPages.mjs';
-import { renderResultsPage } from './resultsPage.mjs';
-import { RESULTS_PAGE_PUBLIC } from '../src/resultsPublic.js';
 import { pageUrl, renderRobots } from './seoShared.mjs';
 
 const uiRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -55,11 +53,9 @@ export function writeSeoSite({
   const kboHub = join(publicDir, 'kbo-player-props.html');
   writeFileSync(kboHub, withDailyLinks(readFileSync(kboHub, 'utf8'), 'kbo', daily));
   writePage(publicDir, renderPricingPage());
-  if (RESULTS_PAGE_PUBLIC) writePage(publicDir, renderResultsPage());
-  else {
-    const hiddenResults = join(publicDir, 'results.html');
-    if (existsSync(hiddenResults)) unlinkSync(hiddenResults);
-  }
+  // /results is the live ledger read. A static file here would win over that rewrite.
+  const hiddenResults = join(publicDir, 'results.html');
+  if (existsSync(hiddenResults)) unlinkSync(hiddenResults);
   writePage(publicDir, renderPoliciesPage());
   for (const page of renderCompliancePages()) writePage(publicDir, page);
   const dailySports = new Set(DAILY_SPORTS.map((sport) => sport.id));
