@@ -3,7 +3,7 @@
 -- Draft site work, Oct 30, 2026. SELECT only. Not applied during the
 -- 6:00 AM–midnight ET board window.
 -- ============================================================================
--- The public /results page is the pre-lock standard ledger. board_reader
+-- The public /results page reads standard rows posted before the game started. board_reader
 -- had no SELECT (RLS is on; agent_reader and service_role already could read).
 -- Same pattern as 03/05/07/11: GRANT SELECT plus board_reader_select using (true).
 -- No INSERT/UPDATE/DELETE. anon and authenticated stay revoked.

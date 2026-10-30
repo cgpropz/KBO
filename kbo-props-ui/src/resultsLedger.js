@@ -1,5 +1,5 @@
 // Shapes the Board QA ledger snapshot for /results.
-// Rows are the latest pre-lock standard snapshot. A pulled line is Void.
+// Rows are the latest standard snapshot posted before the game started. A pulled line is Void.
 // Voids stay on the list and stay out of n. Pushes stay in W-L-P and out of the hit rate.
 
 export const BREAK_EVEN_PCT = 54.2

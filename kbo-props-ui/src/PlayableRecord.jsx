@@ -10,7 +10,7 @@ export default function PlayableRecord({ record = playableRecordFile, sport, sla
     return (
       <div className="pl-record-block">
         <p className="pl-record">{detail.line}</p>
-        <p className="pl-record-note">{detail.note} 54.2% is the break-even reference. <a href="/results">Full record</a></p>
+        <p className="pl-record-note">{detail.note} 54.2% is the reference break-even. Beating it does not mean every slip makes money. <a href="/results">Full record</a></p>
       </div>
     )
   }

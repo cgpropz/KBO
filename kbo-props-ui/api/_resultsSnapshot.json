@@ -1,10 +1,10 @@
 {
   "generatedAt": "2026-10-30T15:50:00Z",
   "source": "public.qa_pick_ledger",
-  "reader": "postgres select of the pre-lock standard query. board_reader grant is sql/security/13_board_reader_qa_pick_ledger.sql and was not applied during the board window.",
+  "reader": "postgres select of the standard rows posted before the game started. board_reader grant is sql/security/13_board_reader_qa_pick_ledger.sql.",
   "updatedAt": "2026-10-29T22:47:22Z",
   "earliestSlate": "2026-10-11",
-  "historyNote": "The table lists the newest graded rows in this snapshot. Totals count every graded pre-lock standard row.",
+  "historyNote": "The table lists the newest graded rows in this snapshot. Totals count every graded standard row posted before the game started.",
   "sports": {
     "kbo": {
       "free": {

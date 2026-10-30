@@ -247,7 +247,7 @@ export function renderPricingPage() {
       </div>
       <h2>What's included</h2>
       <ul>
-        ${ALL_ACCESS_FEATURES.map((feature) => `<li>${escapeHtml(feature)}${feature.startsWith('Slip builder') ? ' <span class="ph">CONFIRM FEATURE</span>' : ''}</li>`).join('\n        ')}
+        ${ALL_ACCESS_FEATURES.map((feature) => `<li>${escapeHtml(feature)}</li>`).join('\n        ')}
       </ul>
       <h2>Free</h2>
       <article class="plan">
@@ -264,7 +264,7 @@ export function renderPricingPage() {
         ${discord.map((card) => `<article class="plan"><h3>Discord Only · ${escapeHtml(card.cadence)}</h3><p class="price">${escapeHtml(card.price)} <span>${escapeHtml(card.period)}</span></p><ul>${card.features.map((feature) => `<li>${escapeHtml(feature)}</li>`).join('')}<li>Site boards not included</li></ul><p><a class="btn btn-primary" href="${pageUrl('/')}#pricing">Continue to checkout</a></p></article>`).join('\n')}
       </div>
       <h2>Auto-renewal</h2>
-      <p>${escapeHtml(autoRenewalStatement())} <span class="ph">[Founders price — confirm]</span></p>
+      <p>${escapeHtml(autoRenewalStatement())}</p>
       <h2>Boards</h2>
       <ul>
         <li><a href="${pageUrl('/kbo-player-props')}">KBO player props</a></li>

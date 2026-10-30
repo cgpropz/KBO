@@ -41,7 +41,7 @@ function card(name, blurb, record, start, end) {
     <div class="top"><span class="lab">${escapeHtml(name.label)}</span>${badge}</div>
     <p class="blurb">${escapeHtml(blurb)}</p>
     ${tiles(record)}
-    <p class="note">Dates <span class="mono">${escapeHtml(rangeLabel(start, end))}</span> · voids excluded from n · pushes shown, not counted as hits <span class="ph">[confirm]</span></p>
+    <p class="note">Dates <span class="mono">${escapeHtml(rangeLabel(start, end))}</span> · voids are left out of n · pushes count in W-L-P, not in the hit rate</p>
   </article>`
 }
 
@@ -227,7 +227,7 @@ export function renderResultsPage(snapshot = loadResultsSnapshot()) {
       <article class="card box">
         <p class="kick">What ${BREAK_EVEN_PCT}% means</p>
         <h3>The break-even reference</h3>
-        <p>${BREAK_EVEN_PCT}% is the hit rate needed to break even on <span class="ph">[entry type / payout — confirm]</span>. It is a reference line, not a target or a forecast.</p>
+        <p>${BREAK_EVEN_PCT}% is the reference break-even. It is a reference line, not a target or a forecast.</p>
         <p>Beating it over a season does not mean every slip makes money. Results vary slip to slip, and small samples swing.</p>
       </article>
       <article class="card box">
@@ -235,9 +235,8 @@ export function renderResultsPage(snapshot = loadResultsSnapshot()) {
         <h3>Definitions</h3>
         <p><b>HIT</b> Final stat lands on the posted side of the line.</p>
         <p><b>MISS</b> Final stat lands on the other side.</p>
-        <p><b>PUSH</b> Final stat equals the line exactly. Shown in W-L-P, not counted as a hit <span class="ph">[confirm]</span>.</p>
-        <p><b>VOID</b> Player inactive or line removed before the game. Listed, excluded from n <span class="ph">[confirm]</span>.</p>
-        <p>Only picks posted before lock count. Post times are verified by <span class="ph">[timestamp verification method — confirm]</span>.</p>
+        <p><b>Push:</b> the result landed exactly on the line; it counts in W-L-P but not in the hit rate.</p>
+        <p><b>Void:</b> the pick was cancelled or the player didn't play; it's left out of the record.</p>
       </article>
     </div>
     <section>
