@@ -14,7 +14,7 @@ const config = JSON.parse(readFileSync(join(uiRoot, 'vercel.json'), 'utf8'))
 
 const PUBLIC_PAGES = [
   ['/', 'CGPropz: Player Props Today for NBA, NFL, NHL, WNBA &amp; KBO', 'Every prop line, scored.'],
-  ['/pricing', 'All-Access Pricing: Plans for Every Board | CGPropz', 'All-Access pricing'],
+  ['/pricing', 'All-Access Pricing: Plans for Every Board | CGPropz', 'One subscription. Every sport.'],
   ['/policies', 'Plans &amp; Policies | CGPropz', 'Plans &amp; Policies'],
   ['/terms', 'Terms | CGPropz', 'Terms'],
   ['/privacy', 'Privacy | CGPropz', 'Privacy'],
@@ -271,7 +271,7 @@ test('http status, title, and h1 for known pages; 404 for unknown', async () => 
   assert.equal(builtHome.includes('Loading KBO Player Props'), false)
   const builtPricing = readFileSync(join(uiRoot, 'dist/pricing.html'), 'utf8')
   assert.match(builtPricing, /<title>All-Access Pricing: Plans for Every Board \| CGPropz<\/title>/)
-  assert.match(builtPricing, /<h1>All-Access pricing<\/h1>/)
+  assert.match(builtPricing, /<h1>One subscription\. Every sport\.<\/h1>/)
   const builtGuide = readFileSync(join(uiRoot, 'dist/guides/cg-score.html'), 'utf8')
   assert.match(builtGuide, /<h1>How CG Score Works<\/h1>/)
   const builtStart = readFileSync(join(uiRoot, 'dist/guides/start-here.html'), 'utf8')

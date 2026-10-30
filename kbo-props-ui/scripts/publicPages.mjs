@@ -5,7 +5,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { DISCORD_INVITE_URL } from '../src/discordInvite.js';
 import { landingFaqs } from '../src/landingFaq.js';
-import { discordPlanCards, TIERS } from '../src/pricingTiers.js';
+import { ALL_ACCESS_FEATURES, discordPlanCards, TIERS, WEEKLY_LEAD } from '../src/pricingTiers.js';
 import { autoRenewalStatement } from '../src/autoRenewal.js';
 import {
   AFFILIATION_LINE,
@@ -172,17 +172,54 @@ const SPORT_PAGES = [
   ['nhl', '/nhl-player-props', 'nhl-player-props.html'],
 ];
 
+function billingBullets(tier) {
+  if (tier.id === 'weekly') {
+    return [
+      `Billed weekly at ${tier.price}`,
+      `XWEEK first week ${tier.leadPrice} for new customers`,
+      'Cancel anytime; access runs to the end of the week',
+    ];
+  }
+  if (tier.id === 'combined') {
+    return [
+      `Billed monthly at ${tier.price}`,
+      'Save vs. paying weekly',
+      'Cancel anytime; access runs to the end of the month',
+    ];
+  }
+  if (tier.id === 'yearly') {
+    return [
+      `Billed once a year at ${tier.price}`,
+      'KBO, WNBA, NFL, NHL, and NBA',
+      'Cancel anytime; access runs to the end of the year',
+    ];
+  }
+  if (tier.id === 'lifetime') {
+    return [
+      `One-time payment of ${tier.price}`,
+      'No renewals',
+      'All future features included',
+    ];
+  }
+  return tier.features || [];
+}
+
 function planCard(tier) {
   const shownPrice = tier.leadPrice || tier.price;
   const shownPeriod = tier.leadPeriod || tier.period;
   const period = shownPeriod ? ` <span>${escapeHtml(shownPeriod)}</span>` : '';
-  const features = (tier.features || []).map((feature) => `<li>${escapeHtml(feature)}</li>`).join('');
-  const note = tier.leadNote ? `\n      <p>${escapeHtml(tier.leadNote)}</p>` : '';
-  return `<article class="plan">
+  const bullets = billingBullets(tier).map((feature) => `<li>${escapeHtml(feature)}</li>`).join('');
+  const offer = tier.id === 'weekly'
+    ? `<p class="offer">First week <b>${escapeHtml(WEEKLY_LEAD.price)}</b> with code XWEEK, then ${escapeHtml(tier.price)}/wk, cancel anytime.</p>`
+    : '';
+  const featured = tier.featured ? ' is-featured' : '';
+  return `<article class="plan${featured}">
       <h3>${escapeHtml(tier.name)}</h3>
       <p class="price">${escapeHtml(shownPrice)}${period}</p>
-      <p>${escapeHtml(tier.description || '')}</p>${note}
-      <ul>${features}</ul>
+      <p>${escapeHtml(tier.description || '')}</p>
+      ${offer}
+      <ul>${bullets}</ul>
+      <p><a class="btn btn-primary" href="${pageUrl('/')}#pricing">Continue to checkout</a></p>
     </article>`;
 }
 
@@ -202,26 +239,32 @@ export function renderPricingPage() {
   const discord = discordPlanCards();
   const bodyHtml = `
       <p class="lede">Plans</p>
-      <h1>All-Access pricing</h1>
-      <p>These are the published CGPropz plan prices. Checkout stays in the app, which opens the current Stripe session. All-Access covers the KBO, NFL, WNBA, NBA and NHL boards under one login.</p>
-      <h2>Auto-renewal</h2>
-      <p>${escapeHtml(autoRenewalStatement())}</p>
-      <div class="actions">
-        <a class="btn btn-primary" href="${pageUrl('/')}#pricing">Continue to checkout</a>
-        <a class="btn btn-ghost" href="${pageUrl('/policies')}">Plans &amp; Policies</a>
-        <a class="btn btn-ghost" href="${pageUrl('/guides/cg-score')}">How CG Score works</a>
-      </div>
+      <h1>One subscription. Every sport.</h1>
+      <p>All-Access covers the KBO, NFL, WNBA, NBA and NHL boards under one login. Checkout opens the current Stripe session.</p>
       <h2>All-Access</h2>
       <div class="plans">
         ${paid.map(planCard).join('\n')}
       </div>
+      <h2>What's included</h2>
+      <ul>
+        ${ALL_ACCESS_FEATURES.map((feature) => `<li>${escapeHtml(feature)}${feature.startsWith('Slip builder') ? ' <span class="ph">CONFIRM FEATURE</span>' : ''}</li>`).join('\n        ')}
+      </ul>
       <h2>Free</h2>
-      ${planCard(free)}
+      <article class="plan">
+        <h3>${escapeHtml(free.name)}</h3>
+        <p class="price">$0</p>
+        <p>${escapeHtml(free.description || '')}</p>
+        <ul>${(free.features || []).map((feature) => `<li>${escapeHtml(feature)}</li>`).join('')}</ul>
+        <p><a class="btn btn-ghost" href="${pageUrl('/')}#free-top-3">See today's free top 3</a></p>
+      </article>
       <h2>Discord Only</h2>
+      <p>Props in Discord, no site boards.</p>
       <p>${escapeHtml(landing.find((item) => item.q.startsWith('What is Discord')).a)}</p>
       <div class="plans">
-        ${discord.map((card) => `<article class="plan"><h3>Discord Only · ${escapeHtml(card.cadence)}</h3><p class="price">${escapeHtml(card.price)} <span>${escapeHtml(card.period)}</span></p><ul>${card.features.map((feature) => `<li>${escapeHtml(feature)}</li>`).join('')}</ul></article>`).join('\n')}
+        ${discord.map((card) => `<article class="plan"><h3>Discord Only · ${escapeHtml(card.cadence)}</h3><p class="price">${escapeHtml(card.price)} <span>${escapeHtml(card.period)}</span></p><ul>${card.features.map((feature) => `<li>${escapeHtml(feature)}</li>`).join('')}<li>Site boards not included</li></ul><p><a class="btn btn-primary" href="${pageUrl('/')}#pricing">Continue to checkout</a></p></article>`).join('\n')}
       </div>
+      <h2>Auto-renewal</h2>
+      <p>${escapeHtml(autoRenewalStatement())} <span class="ph">[Founders price — confirm]</span></p>
       <h2>Boards</h2>
       <ul>
         <li><a href="${pageUrl('/kbo-player-props')}">KBO player props</a></li>

@@ -9,13 +9,11 @@ const landing = readFileSync(new URL('../src/PublicLanding.jsx', import.meta.url
 const pricingPage = readFileSync(new URL('../src/SubscriptionPage.jsx', import.meta.url), 'utf8')
 const aboutHits = ['/about', 'About CGPropz', '>About<']
 
-test('first-visit nav sends Results to the slip row and Free top 3 to its section', () => {
+test('first-visit nav sends Results to the ledger page and Free top 3 to its section', () => {
   assert.equal(landing.includes('scrollTo(\'free-top-3\'); }}>Free top 3</a>'), true)
-  assert.equal(landing.includes('scrollTo(\'results\'); }}>Results</a>'), true)
-  assert.equal(landing.includes('}}>Results</a>'), true)
-  assert.equal(/scrollTo\('free-top-3'\); }}>Results</.test(landing), false)
-  assert.match(landing, /<Results \/>/)
-  assert.equal(/PrizePicks/.test(landing), false)
+  assert.match(landing, /href="\/results">Results</)
+  assert.equal(landing.includes('<Results'), false)
+  assert.match(landing, /INDEPENDENCE_LINE/)
   for (const phrase of aboutHits) assert.equal(landing.includes(phrase), false, phrase)
 })
 
@@ -38,7 +36,7 @@ test('weekly first-week price is the lead on every pricing surface, and renewal 
   assert.match(pricingPage, /tier\.leadPrice \|\| tier\.price/)
   const html = renderPricingPage().html
   assert.match(html, /<p class="price">\$4\.99 <span>first week<\/span><\/p>/)
-  assert.match(html, /Then \$9\.99\/week\. Code XWEEK is applied at checkout/)
+  assert.match(html, /First week <b>\$4\.99<\/b> with code XWEEK, then \$9\.99\/wk, cancel anytime\./)
   assert.match(autoRenewalStatement(), /Weekly All-Access renews automatically at \$9\.99 every week/)
   assert.match(html, /renews automatically at \$9\.99 every week/)
   const committed = readFileSync(new URL('../public/pricing.html', import.meta.url), 'utf8')

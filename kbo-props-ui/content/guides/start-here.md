@@ -25,7 +25,7 @@ New to player props? This page gets you from zero to your first informed pick in
 
 ## Quick links
 
-- **[Today's free top 3 →](/#free-top-3)** {{URL PENDING GIT BOT}}: three free props from today's board, on the homepage. (The NFL free preview is off right now.)
+- **[Today's free top 3 →](/#free-top-3)** {{URL PENDING GIT BOT}}: three free props from today's board, on the homepage.
 - **Highest hit rate today:** open a sport board and sort by the **L10** hit-rate pill: [KBO](/kbo-player-props) · [NFL](/nfl-player-props) {{URL PENDING GIT BOT}} · [WNBA](/wnba-player-props) {{URL PENDING GIT BOT}} · [NBA](/nba-player-props) {{URL PENDING GIT BOT}} · [NHL](/nhl-player-props) {{URL PENDING GIT BOT}}
 - **[How CG Score works →](/guides/cg-score)** {{URL PENDING GIT BOT}}
 - **Boards by sport:** [KBO](/kbo-player-props) · [NFL](/nfl-player-props) {{URL PENDING GIT BOT}} · [WNBA](/wnba-player-props) {{URL PENDING GIT BOT}} · [NBA](/nba-player-props) {{URL PENDING GIT BOT}} · [NHL](/nhl-player-props) {{URL PENDING GIT BOT}}
@@ -150,7 +150,7 @@ The free top 3 on the homepage shows three props a day in each sport with a free
 - **DVP (defense vs. position):** how an opponent has defended a given position, used as matchup context.
 - **Edge:** the gap between a projection and a line. On CGPropz, CG Score expresses it.
 - **Flex Play:** a PrizePicks lineup type that can still pay out with one or two misses, with a lower top payout.
-- **Free top 3:** three free props per sport from today's board, shown on the homepage. (NFL's free preview is off right now.)
+- **Free top 3:** three free props per sport from today's board, shown on the homepage.
 - **Game log:** a player's game-by-game stats.
 - **Goblin:** on PrizePicks, an easier projection (green icon) with a lower payout.
 - **H2H (head-to-head):** a hit rate against today's opponent only.

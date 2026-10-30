@@ -145,6 +145,9 @@
   font-size: 18px;
   line-height: 1.55;
 }
+.pl-books { max-width: 560px; margin: 8px 0 0; color: var(--muted); font-size: 14px; line-height: 1.45; }
+.pl-glossary { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 0; }
+.pl-glossary .glossary-tip-btn { border: 1px solid rgba(255,255,255,.16); border-radius: 999px; padding: 4px 10px; font-size: 12px; letter-spacing: 0.04em; }
 
 .pl-hero-offer {
   max-width: 540px;
@@ -253,7 +256,7 @@
 .pl-edges .pl-seg button { flex: none; padding: 6px 12px; }
 .pl-edge-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 58px 52px 56px;
+  grid-template-columns: minmax(0, 1fr) 58px 52px 56px 44px;
   gap: 8px;
   align-items: center;
   padding: 8px 14px;

@@ -1,5 +1,8 @@
 import { formatLineGap } from './lineEdges'
 import { XWEEK_PROMO_LINE } from './promoCopy'
+import GlossaryTip from './GlossaryTip'
+
+const CG_TIP = 'CG Score is projection vs line, adjusted for matchup. It is not a probability that the prop hits.'
 
 function sideLetter(side) {
   return side === 'UNDER' ? 'U' : side === 'OVER' ? 'O' : ''
@@ -66,6 +69,7 @@ export default function LineEdgesModule({
               <span>Line</span>
               <span>Proj</span>
               <span>Gap</span>
+              <span><GlossaryTip label="CG" text={CG_TIP} /></span>
             </div>
             {rows.map((row) => {
               const side = sideLetter(row.side)
@@ -80,6 +84,7 @@ export default function LineEdgesModule({
                   <span className="pl-num">{side}{side ? ' ' : ''}{fmt(row.line)}</span>
                   <span className="pl-num pl-proj">{fmt(row.projection)}</span>
                   <span className="pl-num pl-edge-gap">{formatLineGap(row.edge)}</span>
+                  <span className="pl-num pl-score">{fmt(row.score)}</span>
                 </div>
               )
             })}
