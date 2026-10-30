@@ -6,7 +6,9 @@ import { fitImage } from './fitImage';
 import { kickoffLabel } from './nfl/gameCardModel';
 import { teamLogoUrl } from './nfl/nflTeams';
 import { PageMenu, PageMenuButton, usePageMenu } from './PageMenu';
-import { STRIPE_LINKS } from './pricingTiers';
+import { STRIPE_LINKS, WEEKLY_LEAD } from './pricingTiers';
+import GlossaryTip from './GlossaryTip';
+import Results from './Results';
 import { HERO_LANDING_SPORT_ID, LANDING_SPORTS } from './landingSports';
 import { NFL_FREE_PREVIEW_ENABLED } from './nflPreviewFlag';
 import { publicFaqs } from './publicFaqs';
@@ -52,6 +54,12 @@ const fmtScore = (value) => {
   return n.toFixed(1);
 };
 
+const LINE_TIP = 'The posted number. O means the projection is over it. U means under.';
+const PROJ_TIP = 'The CGPropz projection for this prop. An estimate, not a guarantee.';
+const L10_TIP = 'How many of the last 10 games cleared this line.';
+const CG_TIP = 'CG Score is projection vs line, adjusted for matchup. It is not a probability that the prop hits.';
+const TIP_TIP = "Today's tip is one of the three highest CG Scores in this list.";
+
 function ordinal(value) {
   const n = Math.round(Number(value));
   if (!Number.isFinite(n)) return '—';
@@ -72,10 +80,10 @@ function BoardTable({ rows, showHitRate, sport, showKickoff = false, lanes = nul
     <div className="pl-table" role="table">
       <div className="pl-tr pl-th" role="row">
         <span>Player · prop</span>
-        <span>Line</span>
-        <span>Proj</span>
-        <span>L10</span>
-        <span>CG</span>
+        <span><GlossaryTip label="Line" text={LINE_TIP} /></span>
+        <span><GlossaryTip label="Proj" text={PROJ_TIP} /></span>
+        <span><GlossaryTip label="L10" text={L10_TIP} /></span>
+        <span><GlossaryTip label="CG" text={CG_TIP} /></span>
       </div>
       {rows.map((row, index) => {
         const lane = laneAt(index, lanes);
@@ -85,7 +93,11 @@ function BoardTable({ rows, showHitRate, sport, showKickoff = false, lanes = nul
           <span className="pl-player">
             <PlayerMark name={row.player} team={row.team} sport={sport} image={row.ppImageUrl} />
             <span>
-              <b>{row.player}<LaneMark lane={lane} /></b>
+              <span className="pl-name-line">
+                <b>{row.player}<LaneMark lane={lane} /></b>
+                {lane === 'tip' ? <GlossaryTip compact align="start" label="Today's tip" text={TIP_TIP} /> : null}
+                {lane === 'unproven' ? <GlossaryTip compact align="start" label="Unproven" text={UNPROVEN_RANK_NOTE} /> : null}
+              </span>
               <small>{row.team ? `${row.team} vs ${row.opponent || '—'}` : row.stat} · {row.stat}{showKickoff && kickoffText(row) ? ` · ${kickoffText(row)}` : ''}</small>
             </span>
           </span>
@@ -364,7 +376,8 @@ export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard, onSi
             <CheatsheetsNavLink />
             <a href="/nba-player-props">NBA</a>
             <a href="#matchup" onClick={(event) => { event.preventDefault(); scrollTo('matchup'); }}>Matchup sheets</a>
-            <a href="#free-top-3" onClick={(event) => { event.preventDefault(); scrollTo('free-top-3'); }}>Results</a>
+            <a href="#free-top-3" onClick={(event) => { event.preventDefault(); scrollTo('free-top-3'); }}>Free top 3</a>
+            <a href="#results" onClick={(event) => { event.preventDefault(); scrollTo('results'); }}>Results</a>
             <a href="/pricing">Pricing</a>
             <a href="#faq" onClick={(event) => { event.preventDefault(); scrollTo('faq'); }}>FAQ</a>
           </nav>
@@ -546,6 +559,8 @@ export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard, onSi
           </div>
         </section>
 
+        <Results />
+
         <section id="playable-record">
           <p className="pl-kick">Playable record</p>
           <h2>Last graded slate</h2>
@@ -573,8 +588,8 @@ export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard, onSi
           <div className="pl-prices">
             <article className="pl-price is-on">
               <p className="pl-kick">Weekly</p>
-              <p className="pl-amount">$4.99 <span>first week</span></p>
-              <p className="pl-price-note">Then $9.99/week. Code XWEEK is applied at checkout when it is valid for this buyer.</p>
+              <p className="pl-amount">{WEEKLY_LEAD.price} <span>{WEEKLY_LEAD.period}</span></p>
+              <p className="pl-price-note">{WEEKLY_LEAD.note}</p>
               <ul>
                 <li>KBO, WNBA, NFL, NBA, and NHL boards</li>
                 <li>CG Score on every standard line</li>

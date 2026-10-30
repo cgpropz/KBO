@@ -23,6 +23,15 @@ export const STRIPE_LINKS = {
 export const WEEKLY_PRICE_ID = 'price_1TtFErPwL0k9PEMvIrEJajK1';
 export const XWEEK_PROMOTION_CODE_ID = 'promo_1UKqOLPwL0k9PEMvJZQU5GKA';
 
+// What a first visit shows for Weekly. `price` on the tier stays the renewal
+// amount so auto-renewal copy does not drift. Checkout still charges the
+// $9.99 price and applies XWEEK only when the code is valid for that buyer.
+export const WEEKLY_LEAD = {
+  price: '$4.99',
+  period: 'first week',
+  note: 'Then $9.99/week. Code XWEEK is applied at checkout when it is valid for this buyer.',
+};
+
 // Every paid tier unlocks the same full toolkit — tiers differ only by
 // billing cadence/price, not by feature.
 export const ALL_ACCESS_FEATURES = [
@@ -41,6 +50,9 @@ export const TIERS = [
     name: 'Weekly All-Access',
     price: '$9.99',
     period: '/ week',
+    leadPrice: WEEKLY_LEAD.price,
+    leadPeriod: WEEKLY_LEAD.period,
+    leadNote: WEEKLY_LEAD.note,
     badge: 'START HERE',
     featured: true,
     description: 'Try everything, week to week',

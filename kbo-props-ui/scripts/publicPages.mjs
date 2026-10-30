@@ -173,12 +173,15 @@ const SPORT_PAGES = [
 ];
 
 function planCard(tier) {
-  const period = tier.period ? ` <span>${escapeHtml(tier.period)}</span>` : '';
+  const shownPrice = tier.leadPrice || tier.price;
+  const shownPeriod = tier.leadPeriod || tier.period;
+  const period = shownPeriod ? ` <span>${escapeHtml(shownPeriod)}</span>` : '';
   const features = (tier.features || []).map((feature) => `<li>${escapeHtml(feature)}</li>`).join('');
+  const note = tier.leadNote ? `\n      <p>${escapeHtml(tier.leadNote)}</p>` : '';
   return `<article class="plan">
       <h3>${escapeHtml(tier.name)}</h3>
-      <p class="price">${escapeHtml(tier.price)}${period}</p>
-      <p>${escapeHtml(tier.description || '')}</p>
+      <p class="price">${escapeHtml(shownPrice)}${period}</p>
+      <p>${escapeHtml(tier.description || '')}</p>${note}
       <ul>${features}</ul>
     </article>`;
 }
