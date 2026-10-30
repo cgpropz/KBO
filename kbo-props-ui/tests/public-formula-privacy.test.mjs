@@ -3,6 +3,7 @@ import test from 'node:test'
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import { join, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { INDEPENDENCE_LINE } from '../src/responsibleGambling.js'
 
 const root = fileURLToPath(new URL('..', import.meta.url))
 
@@ -43,8 +44,10 @@ function walk(dir, out, { suffixes = null } = {}) {
 
 function textForPhrase(path, text, phrase) {
   if (phrase !== 'minimum') return text
+  // The required independence line says "minimum age". That is not a line minimum.
+  let scan = text.replaceAll(INDEPENDENCE_LINE, '')
   // Intl.NumberFormat's option name is not a published line minimum.
-  let scan = text.replaceAll('minimumFractionDigits', '')
+  scan = scan.replaceAll('minimumFractionDigits', '')
   // PostHog's built-in event property name (lazy analytics chunk), not a line minimum.
   scan = scan.replaceAll('$session_past_minimum_duration', '')
   // The draft notes in cg-score.md tell the publisher not to print line minimums.
