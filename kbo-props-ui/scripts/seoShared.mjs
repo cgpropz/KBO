@@ -10,6 +10,7 @@ import {
   STANDARD_LINE,
 } from '../src/responsibleGambling.js';
 import { DATA_CREDIT_NAME, DATA_CREDIT_PREFIX, DATA_CREDIT_URL } from '../src/dataCredit.js';
+import { publicLinks } from '../src/resultsPublic.js';
 
 export const SITE = 'https://www.cgpropz.com';
 export const PUBLISHED_ON = '2026-10-11';
@@ -117,7 +118,7 @@ const NAV = [
 ];
 
 export function renderHeader() {
-  const links = NAV.map(([path, label]) => `<a href="${pageUrl(path)}">${label}</a>`).join('\n        ');
+  const links = publicLinks(NAV).map(([path, label]) => `<a href="${pageUrl(path)}">${label}</a>`).join('\n        ');
   return `<header>
       <a class="wordmark" href="${pageUrl('/')}">cg<span>propz</span></a>
       <nav aria-label="Primary">
@@ -143,7 +144,7 @@ export function renderDataCredit() {
 }
 
 export function renderFooter() {
-  const links = FOOTER_LINKS.map(([path, label]) => `<a href="${pageUrl(path)}">${escapeHtml(label)}</a>`).join('\n        ');
+  const links = publicLinks(FOOTER_LINKS).map(([path, label]) => `<a href="${pageUrl(path)}">${escapeHtml(label)}</a>`).join('\n        ');
   return `<footer class="site-footer">
       <p class="footer-links">
         ${links}

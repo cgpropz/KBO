@@ -1,4 +1,5 @@
 import { AFFILIATION_LINE, AGE_LINE, GAMBLER_HELP_URL, INDEPENDENCE_LINE, OPERATOR_DISCLAIMER, STANDARD_LINE } from './responsibleGambling.js';
+import { RESULTS_PAGE_PUBLIC } from './resultsPublic.js';
 import { DATA_CREDIT_NAME, DATA_CREDIT_PREFIX, DATA_CREDIT_URL } from './dataCredit.js';
 import './SiteFooter.css';
 
@@ -15,7 +16,7 @@ export function ResponsibleGamblingCopy() {
   return (
     <>
       <p className="site-footer-links">
-        <a href="/results">Results</a>
+        {RESULTS_PAGE_PUBLIC ? <a href="/results">Results</a> : null}
         <a href="/guides/start-here">Start Here</a>
         <a href="/guides/cg-score">How CG Score works</a>
         <a href="/policies">Plans & Policies</a>

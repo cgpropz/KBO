@@ -18,6 +18,7 @@ import leagueHandler, { LEAGUE_ACCESS } from '../api/league-access/[league].js'
 import checkoutHandler, { CHECKOUT_ACTIONS } from '../api/checkout/[action].js'
 import { routeParam } from '../api/_routeKey.js'
 import { HOBBY_FUNCTION_LIMIT, serverlessFunctionFiles } from '../scripts/check-function-limit.mjs'
+import { RESULTS_PAGE_PUBLIC } from '../src/resultsPublic.js'
 
 const uiRoot = fileURLToPath(new URL('..', import.meta.url))
 
@@ -68,6 +69,15 @@ test('public api urls are not swallowed by an SPA catch-all and keep their query
   const status = rewrites.find((rule) => rule.source === '/status.json')
   assert.equal(status?.destination, '/api/data?ds=board_status')
   assert.ok(rewrites.indexOf(status) < generic)
+  const hidden = config.redirects.filter((rule) => rule.source === '/results' || rule.source === '/results.html')
+  if (RESULTS_PAGE_PUBLIC) {
+    assert.deepEqual(hidden, [])
+  } else {
+    assert.deepEqual(hidden, [
+      { source: '/results', destination: '/', statusCode: 307 },
+      { source: '/results.html', destination: '/', statusCode: 307 },
+    ])
+  }
 })
 
 function mockRes() {
