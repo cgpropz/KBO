@@ -31,6 +31,7 @@ import LineEdgesModule from './LineEdgesModule';
 import PlayerMark from './PlayerMark';
 import { playerInitials } from './playerMark';
 import PlayableRecord from './PlayableRecord';
+import { RESULTS_PAGE_PUBLIC } from './resultsPublic.js';
 import './PublicLanding.css';
 
 // O / U for a row's side. A neutral row (CG exactly 50) has no side and no letter.
@@ -380,7 +381,7 @@ export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard, onSi
             <a href="/nba-player-props">NBA</a>
             <a href="#matchup" onClick={(event) => { event.preventDefault(); scrollTo('matchup'); }}>Matchup sheets</a>
             <a href="#free-top-3" onClick={(event) => { event.preventDefault(); scrollTo('free-top-3'); }}>Free top 3</a>
-            <a href="/results">Results</a>
+            {RESULTS_PAGE_PUBLIC ? <a href="/results">Results</a> : null}
             <a href="/pricing">Pricing</a>
             <a href="#faq" onClick={(event) => { event.preventDefault(); scrollTo('faq'); }}>FAQ</a>
           </nav>
@@ -671,7 +672,7 @@ export default function PublicLanding({ onGetStarted, onLogin, onOpenBoard, onSi
       <footer className="pl-footer">
         <a className="pl-wordmark" href="#top">cg<span>propz</span></a>
         <p className="pl-footer-links">
-          <a href="/results">Results</a>
+          {RESULTS_PAGE_PUBLIC ? <a href="/results">Results</a> : null}
           <a href="/guides/start-here">Start Here</a>
           <a href="/guides/cg-score">How CG Score works</a>
           <a href="/policies">Plans & Policies</a>

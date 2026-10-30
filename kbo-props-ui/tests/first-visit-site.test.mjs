@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import test from 'node:test'
+import { RESULTS_PAGE_PUBLIC } from '../src/resultsPublic.js'
 import { WEEKLY_LEAD, TIERS } from '../src/pricingTiers.js'
 import { autoRenewalStatement } from '../src/autoRenewal.js'
 import { renderPricingPage } from '../scripts/publicPages.mjs'
@@ -9,11 +10,18 @@ const landing = readFileSync(new URL('../src/PublicLanding.jsx', import.meta.url
 const pricingPage = readFileSync(new URL('../src/SubscriptionPage.jsx', import.meta.url), 'utf8')
 const aboutHits = ['/about', 'About CGPropz', '>About<']
 
-test('first-visit nav sends Results to the ledger page and Free top 3 to its section', () => {
+test('first-visit nav keeps Free top 3 and hides Results while that page is off', () => {
   assert.equal(landing.includes('scrollTo(\'free-top-3\'); }}>Free top 3</a>'), true)
-  assert.match(landing, /href="\/results">Results</)
+  assert.equal(RESULTS_PAGE_PUBLIC, false)
+  assert.match(landing, /RESULTS_PAGE_PUBLIC \? <a href="\/results">Results<\/a> : null/)
   assert.equal(landing.includes('<Results'), false)
+  const record = readFileSync(new URL('../src/PlayableRecord.jsx', import.meta.url), 'utf8')
+  assert.match(record, /54\.2% is the reference break-even/)
+  assert.match(record, /does not mean every slip makes money/)
+  assert.match(record, /RESULTS_PAGE_PUBLIC \? <> <a href="\/results">Full record<\/a>/)
   assert.match(landing, /INDEPENDENCE_LINE/)
+  const pricing = renderPricingPage().html
+  assert.equal(pricing.includes('cgpropz.com/results'), false)
   for (const phrase of aboutHits) assert.equal(landing.includes(phrase), false, phrase)
 })
 

@@ -11,6 +11,7 @@ import { UNPROVEN_RANK_NOTE } from '../src/freePreviewCopy.js';
 import { FREE_TOP3_END, FREE_TOP3_START } from './freeTop3Html.mjs';
 import { XWEEK_PROMO_LINE } from '../src/promoCopy.js';
 import { escapeHtml, jsonLdScript, organizationNode, pageUrl, renderDataCredit, websiteNode } from './seoShared.mjs';
+import { publicLinks } from '../src/resultsPublic.js';
 
 const NAV = [
   ['/kbo-player-props', 'KBO player props'],
@@ -47,7 +48,17 @@ const PRERENDER_CSS = `
 `;
 
 export function homeRootInner() {
-  const links = NAV.map(([path, label]) => `<a href="${pageUrl(path)}">${escapeHtml(label)}</a>`).join('\n        ');
+  const links = publicLinks(NAV).map(([path, label]) => `<a href="${pageUrl(path)}">${escapeHtml(label)}</a>`).join('\n        ');
+  const footerLinks = publicLinks([
+    ['/results', 'Results'],
+    ['/guides/start-here', 'Start Here'],
+    ['/guides/cg-score', 'How CG Score works'],
+    ['/policies', 'Plans & Policies'],
+    ['/terms', 'Terms'],
+    ['/privacy', 'Privacy'],
+    ['/responsible-gaming', 'Responsible Gaming'],
+    ['/states-not-available', "Where CGPropz isn't available"],
+  ]).map(([path, label]) => `<a href="${pageUrl(path)}">${escapeHtml(label)}</a>`).join(' · ');
   return `<div class="seo-prerender">
     <header>
       <a href="${pageUrl('/')}">cgpropz</a>
@@ -72,7 +83,7 @@ export function homeRootInner() {
       </section>
     </main>
     <footer>
-      <p><a href="${pageUrl('/results')}">Results</a> · <a href="${pageUrl('/guides/start-here')}">Start Here</a> · <a href="${pageUrl('/guides/cg-score')}">How CG Score works</a> · <a href="${pageUrl('/policies')}">Plans &amp; Policies</a> · <a href="${pageUrl('/terms')}">Terms</a> · <a href="${pageUrl('/privacy')}">Privacy</a> · <a href="${pageUrl('/responsible-gaming')}">Responsible Gaming</a> · <a href="${pageUrl('/states-not-available')}">Where CGPropz isn't available</a></p>
+      <p>${footerLinks}</p>
       <p>${escapeHtml(STANDARD_LINE)}</p>
       <p>${escapeHtml(OPERATOR_DISCLAIMER)}</p>
       <p>${escapeHtml(AGE_LINE)}</p>

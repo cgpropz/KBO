@@ -13,6 +13,7 @@ import {
   SITE,
   SPORT_PATHS,
 } from './seoShared.mjs';
+import { RESULTS_PAGE_PUBLIC } from '../src/resultsPublic.js';
 import {
   assertNoCurlyPlaceholders,
   hideUnresolved,
@@ -196,7 +197,7 @@ export function sitemapEntries({ kboLastmod = PUBLISHED_ON, guides = listGuides(
   const pages = [
     { loc: pageUrl('/'), lastmod: PUBLISHED_ON },
     { loc: pageUrl('/pricing'), lastmod: PUBLISHED_ON },
-    { loc: pageUrl('/results'), lastmod: PUBLISHED_ON },
+    ...(RESULTS_PAGE_PUBLIC ? [{ loc: pageUrl('/results'), lastmod: PUBLISHED_ON }] : []),
     { loc: pageUrl('/policies'), lastmod: PUBLISHED_ON },
     { loc: pageUrl('/terms'), lastmod: PUBLISHED_ON },
     { loc: pageUrl('/privacy'), lastmod: PUBLISHED_ON },
