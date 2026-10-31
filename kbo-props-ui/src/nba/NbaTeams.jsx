@@ -24,13 +24,40 @@ function dvpLabel(rankValue, maxTeams) {
   return { label, color, rank }
 }
 
-function DvpRow({ order, team, oppPts, dvpFactor, leagueAvg, color }) {
+function sampleText(row) {
+  const gp = Number(row?.gp)
+  if (!Number.isFinite(gp)) return ''
+  const weight = Number(row?.blendWeight)
+  if (Number.isFinite(weight)) return `${gp} GP · ${Math.round(weight * 100)}%`
+  return `${gp} GP`
+}
+
+export function dvpSeasonCaption(board) {
+  const through = board?.sourceThrough || ''
+  const season = board?.season || '2026-27'
+  const prior = board?.priorSeason || '2025-26'
+  const full = board?.blendFullGames || 18
+  const dated = through ? ` through ${through}` : ''
+  const teams = Array.isArray(board?.teams) ? board.teams : []
+  const blended = teams.some((team) => Number.isFinite(Number(team?.blendWeight)))
+  const rule = `This season's weight is team games played / ${full}.`
+  if (blended) return `${season} blended with ${prior}${dated}. ${rule}`
+  if (through && through < '2026-10-20') {
+    return `${season} blended with ${prior}. ${rule} Loaded snapshot is ${prior}${dated}.`
+  }
+  return `${season} blended with ${prior}${dated}. ${rule}`
+}
+
+function DvpRow({ order, team, oppPts, dvpFactor, leagueAvg, color, sample }) {
   const dvp = dvpLabel(dvpFactor, 30)
   const pct = Math.min(100, Math.max(0, (oppPts / (leagueAvg * 1.3)) * 100))
   return (
     <div className="nba-dvp-row">
       <span className="nba-dvp-order">{order}</span>
-      <span className="nba-dvp-team" style={{ color, background: `${color}15` }}>{team}</span>
+      <span className="nba-dvp-team" style={{ color, background: `${color}15` }}>
+        {team}
+        {sample ? <small>{sample}</small> : null}
+      </span>
       <div className="nba-dvp-bar">
         <div style={{ width: `${pct}%`, background: dvp.color }} />
       </div>
@@ -68,7 +95,7 @@ function DvpCard({ position, data, colors }) {
         ))}
       </div>
       {sorted.length === 0 ? (
-        <p className="nba-dvp-empty">No 2025-26 rankings yet.</p>
+        <p className="nba-dvp-empty">No rankings yet.</p>
       ) : (
         <>
           <div className="nba-dvp-columns">
@@ -85,6 +112,7 @@ function DvpCard({ position, data, colors }) {
               dvpFactor={row.dvpFactor}
               leagueAvg={leagueAvg}
               color={colors[row.team] || '#94a3b8'}
+              sample={sampleText(row)}
             />
           ))}
         </>
@@ -126,7 +154,6 @@ export default function NbaTeams() {
 
   const colors = Object.fromEntries(teams.map((team) => [team.abbr, team.color]))
   const active = NBA_DVP_POSITIONS.find((position) => position.id === activeId) || NBA_DVP_POSITIONS[0]
-  const sourceThrough = boards?.[active.id]?.sourceThrough
 
   return (
     <div className="fade-in">
@@ -134,7 +161,7 @@ export default function NbaTeams() {
         <h1 style={{ margin: '0 0 6px', fontSize: 28, fontWeight: 800, color: 'white' }}>Teams & DVP</h1>
         <p style={{ margin: 0, color: '#6b7280', fontSize: 13 }}>
           Defense vs position — higher OPP PTS is an easier matchup for that spot.
-          {sourceThrough ? ` 2025-26 regular season through ${sourceThrough}.` : ''}
+          {' '}{dvpSeasonCaption(boards?.[active.id])}
         </p>
       </div>
       {teams.length > 0 && (
@@ -158,7 +185,7 @@ export default function NbaTeams() {
           ))}
         </div>
       )}
-      {loading && <p style={{ color: '#6b7280' }}>Loading 2025-26 rankings...</p>}
+      {loading && <p style={{ color: '#6b7280' }}>Loading rankings...</p>}
       {error && <p style={{ color: '#ef4444' }}>Failed to load DVP: {error}.</p>}
       {boards && (
         <>

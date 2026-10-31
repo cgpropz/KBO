@@ -11,9 +11,12 @@ For each base stat except the fantasy overwrite:
 Per-minute rates use the last 3, 7, and 15 qualifying games. Average minutes
 are the last 10 qualifying games only. The DVP factor is opponent production
 divided by the league average for that column on the player's five-position
-table (PG/SG/SF/PF/C), clamped to 0.85-1.15. Fantasy is rebuilt from the
-projected counting stats. Combos are sums of those projections. Double-double
-and triple-double are weighted occurrence rates, not minutes times DVP.
+table (PG/SG/SF/PF/C), clamped to 0.85-1.15. Those tables are the blended
+defense from generate_nba_dvp.py: w * 2026-27 + (1 - w) * 2025-26, where w
+is the opponent's 2026-27 games divided by 18 and capped at 1. Fantasy is
+rebuilt from the projected counting stats. Combos are sums of those
+projections. Double-double and triple-double are weighted occurrence rates,
+not minutes times DVP.
 
 Qualifying logs are ESPN regular-season games with minutes > 0:
 

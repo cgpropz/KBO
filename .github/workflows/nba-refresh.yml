@@ -2,9 +2,10 @@ name: Refresh NBA Data
 
 # Python-only NBA refresh. There is no NBA Express backend.
 #
-# Refreshes ESPN rosters and 2025-26 regular-season box scores, rebuilds the
-# five-position DVP tables, pulls PrizePicks lines, fills projections, and
-# publishes the gitignored snapshots to Supabase. nba_public is not changed.
+# Refreshes ESPN rosters and regular-season box scores, rebuilds the
+# five-position DVP tables (2026-27 blended with 2025-26), pulls PrizePicks
+# lines, fills projections, and publishes the gitignored snapshots to
+# Supabase. nba_public is not changed.
 #
 # Paid JSON under kbo-props-ui/public/data/nba/ is published, never committed.
 # A 2026-27 box score file is committed only if the refresh script has written
