@@ -43,20 +43,24 @@ def _odds_from_row(alias: str) -> str:
     )
 
 
+def wager_expr(raw_sql: str) -> str:
+    """First non-blank wager token.
+
+    An empty or missing allowed_wager_types falls through. wagerTypes is
+    the last fallback. coalesce keeps '', so each key is nullif'd first.
+    """
+    keys = ("allowed_wager_types", "allowedWagerTypes", "wager_types", "wagerTypes")
+    parts = ",\n".join(f"             nullif(btrim({raw_sql}->>'{key}'), '')" for key in keys)
+    return f"lower(btrim(coalesce(\n{parts},\n             '')))"
+
+
 def wrap_side(proposed_sql: str, odds_sql: str, raw_sql: str) -> str:
     """SQL for gate_under around the sport's existing side expression.
 
     The proposed expression appears once, right after the sentinel, so a
     second pass does not wrap it again.
     """
-    wager = (
-        "lower(btrim(coalesce(\n"
-        f"             {raw_sql}->>'allowed_wager_types',\n"
-        f"             {raw_sql}->>'allowedWagerTypes',\n"
-        f"             {raw_sql}->>'wager_types',\n"
-        f"             {raw_sql}->>'wagerTypes',\n"
-        "             '')))"
-    )
+    wager = wager_expr(raw_sql)
     allows = f"({wager} ~ '(^|[^a-z])(under|less)([^a-z]|$)')"
     present = f"({wager} <> '')"
     return (
@@ -74,13 +78,7 @@ def stamp_sql(raw_sql: str) -> str:
     """jsonb raw plus canonical allowed_wager_types and projection_id."""
     return (
         f"({raw_sql} || jsonb_strip_nulls(jsonb_build_object(\n"
-        "           'allowed_wager_types', nullif(lower(btrim(coalesce(\n"
-        f"             {raw_sql}->>'allowed_wager_types',\n"
-        f"             {raw_sql}->>'allowedWagerTypes',\n"
-        f"             {raw_sql}->>'wager_types',\n"
-        f"             {raw_sql}->>'wagerTypes',\n"
-        "             ''\n"
-        "           ))), ''),\n"
+        f"           'allowed_wager_types', nullif({wager_expr(raw_sql)}, ''),\n"
         "           'projection_id', nullif(btrim(coalesce(\n"
         f"             {raw_sql}->>'projection_id',\n"
         f"             {raw_sql}->>'projectionId',\n"
@@ -234,7 +232,10 @@ with keyed as (
     actual,
     result,
     graded_at,
-    raw->>'allowed_wager_types' as allowed_wager_types,
+    coalesce(
+      nullif(btrim(raw->>'allowed_wager_types'), ''),
+      nullif(btrim(raw->>'wagerTypes'), '')
+    ) as allowed_wager_types,
     raw->>'projection_id' as projection_id
   from public.qa_pick_ledger
 ),

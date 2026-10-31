@@ -36,7 +36,10 @@ with keyed as (
     actual,
     result,
     graded_at,
-    raw->>'allowed_wager_types' as allowed_wager_types,
+    coalesce(
+      nullif(btrim(raw->>'allowed_wager_types'), ''),
+      nullif(btrim(raw->>'wagerTypes'), '')
+    ) as allowed_wager_types,
     raw->>'projection_id' as projection_id
   from public.qa_pick_ledger
 ),

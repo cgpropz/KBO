@@ -14,6 +14,7 @@ from pipeline.qa_ledger import (
     latest_prelock,
     normalize_wager_types,
     stamp_raw,
+    wager_from,
 )
 from pipeline.qa_ledger_sql import (
     ALL_LINES_SQL,
@@ -105,6 +106,24 @@ class RawStampTests(unittest.TestCase):
         raw = stamp_raw({"wager_types": "over", "projection_id": "1-Receptions", "id": "99"})
         self.assertEqual(raw["allowed_wager_types"], "over")
         self.assertEqual(raw["projection_id"], "1-Receptions")
+
+    def test_empty_or_missing_allowed_wager_types_falls_back_to_wager_types(self):
+        empty = stamp_raw({"allowed_wager_types": "", "wagerTypes": "over", "oddsType": "demon"})
+        self.assertEqual(empty["allowed_wager_types"], "over")
+        blank = stamp_raw({"allowed_wager_types": "  ", "wagerTypes": "under_or_over"})
+        self.assertEqual(blank["allowed_wager_types"], "under_or_over")
+        missing = stamp_raw({"wagerTypes": "over"})
+        self.assertEqual(missing["allowed_wager_types"], "over")
+        self.assertEqual(wager_from({"allowed_wager_types": "", "wagerTypes": "under_or_over"}), "under_or_over")
+        self.assertIsNone(wager_from({"allowed_wager_types": ""}))
+        # The fallback token is what the side gate sees.
+        self.assertEqual(
+            gate_under("under", "demon", wager_from({"allowed_wager_types": "", "wagerTypes": "under_or_over"})),
+            "under",
+        )
+        self.assertIsNone(
+            gate_under("under", "demon", wager_from({"allowed_wager_types": None, "wagerTypes": "over"})),
+        )
 
 
 def _row(**extra):
@@ -228,6 +247,12 @@ class UnappliedSqlTests(unittest.TestCase):
             self.assertGreaterEqual(text.lower().count("in ('demon', 'goblin')"), 4)
             self.assertIn("allowed_wager_types", text)
             self.assertIn("projection_id", text)
+            # Empty allowed_wager_types is nullif'd so coalesce reaches wagerTypes.
+            empty_key = "nullif(btrim(e->>'allowed_wager_types'), '')"
+            fallback = "e->>'wagerTypes'"
+            found = text.find(empty_key)
+            self.assertGreater(found, 0)
+            self.assertLess(found, text.find(fallback, found))
             patched, counts = patch_snapshot_sql(text)
             self.assertEqual(counts, {"sides": 0, "raws": 0})
             self.assertEqual(with_banner(patched), patched)

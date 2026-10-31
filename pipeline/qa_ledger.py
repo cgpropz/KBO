@@ -99,12 +99,22 @@ def projection_id_from(raw, explicit=None) -> str | None:
 
 
 def wager_from(raw, explicit=None) -> str | None:
+    """First non-blank wager token.
+
+    An empty or missing allowed_wager_types falls through to wagerTypes.
+    A whitespace-only value is empty and does not block the next key.
+    """
     source = raw if isinstance(raw, dict) else {}
-    if explicit is not None and _text(explicit).lower() not in _BLANK:
-        return normalize_wager_types(explicit)
+    if explicit is not None:
+        found = normalize_wager_types(explicit)
+        if found:
+            return found
     for key in ("allowed_wager_types", "allowedWagerTypes", "wager_types", "wagerTypes"):
-        if key in source and source.get(key) not in (None, ""):
-            return normalize_wager_types(source.get(key))
+        if key not in source:
+            continue
+        found = normalize_wager_types(source.get(key))
+        if found:
+            return found
     return None
 
 

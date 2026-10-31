@@ -182,21 +182,21 @@ nfl as (
          (select case
            when gated.side is distinct from 'under' then gated.side
            when lower(coalesce(nullif(btrim(coalesce(e->>'odds_type', e->>'oddsType', e->>'line_type', e->>'lineType')), ''), 'standard')) in ('demon', 'goblin') then case when (lower(btrim(coalesce(
-             e->>'allowed_wager_types',
-             e->>'allowedWagerTypes',
-             e->>'wager_types',
-             e->>'wagerTypes',
+             nullif(btrim(e->>'allowed_wager_types'), ''),
+             nullif(btrim(e->>'allowedWagerTypes'), ''),
+             nullif(btrim(e->>'wager_types'), ''),
+             nullif(btrim(e->>'wagerTypes'), ''),
              ''))) ~ '(^|[^a-z])(under|less)([^a-z]|$)') then 'under' else null end
            when (lower(btrim(coalesce(
-             e->>'allowed_wager_types',
-             e->>'allowedWagerTypes',
-             e->>'wager_types',
-             e->>'wagerTypes',
+             nullif(btrim(e->>'allowed_wager_types'), ''),
+             nullif(btrim(e->>'allowedWagerTypes'), ''),
+             nullif(btrim(e->>'wager_types'), ''),
+             nullif(btrim(e->>'wagerTypes'), ''),
              ''))) <> '') and not ((lower(btrim(coalesce(
-             e->>'allowed_wager_types',
-             e->>'allowedWagerTypes',
-             e->>'wager_types',
-             e->>'wagerTypes',
+             nullif(btrim(e->>'allowed_wager_types'), ''),
+             nullif(btrim(e->>'allowedWagerTypes'), ''),
+             nullif(btrim(e->>'wager_types'), ''),
+             nullif(btrim(e->>'wagerTypes'), ''),
              ''))) ~ '(^|[^a-z])(under|less)([^a-z]|$)')) then null
            else 'under'
          end
@@ -207,12 +207,11 @@ nfl as (
          false free_top3,   -- free preview has an NFL tab (Tv) but /api/data free tier returns data=[] for NFL (checked 2026-10-11 2:25 PM ET)
          start_time, updated_at published_at, 'nfl_projections' source_table, /* ledger-raw-stamp */ (e || jsonb_strip_nulls(jsonb_build_object(
            'allowed_wager_types', nullif(lower(btrim(coalesce(
-             e->>'allowed_wager_types',
-             e->>'allowedWagerTypes',
-             e->>'wager_types',
-             e->>'wagerTypes',
-             ''
-           ))), ''),
+             nullif(btrim(e->>'allowed_wager_types'), ''),
+             nullif(btrim(e->>'allowedWagerTypes'), ''),
+             nullif(btrim(e->>'wager_types'), ''),
+             nullif(btrim(e->>'wagerTypes'), ''),
+             ''))), ''),
            'projection_id', nullif(btrim(coalesce(
              e->>'projection_id',
              e->>'projectionId',
@@ -242,21 +241,21 @@ nhl as (
          (select case
            when gated.side is distinct from 'under' then gated.side
            when lower(coalesce(nullif(btrim(coalesce(e->>'odds_type', e->>'oddsType', e->>'line_type', e->>'lineType')), ''), 'standard')) in ('demon', 'goblin') then case when (lower(btrim(coalesce(
-             e->>'allowed_wager_types',
-             e->>'allowedWagerTypes',
-             e->>'wager_types',
-             e->>'wagerTypes',
+             nullif(btrim(e->>'allowed_wager_types'), ''),
+             nullif(btrim(e->>'allowedWagerTypes'), ''),
+             nullif(btrim(e->>'wager_types'), ''),
+             nullif(btrim(e->>'wagerTypes'), ''),
              ''))) ~ '(^|[^a-z])(under|less)([^a-z]|$)') then 'under' else null end
            when (lower(btrim(coalesce(
-             e->>'allowed_wager_types',
-             e->>'allowedWagerTypes',
-             e->>'wager_types',
-             e->>'wagerTypes',
+             nullif(btrim(e->>'allowed_wager_types'), ''),
+             nullif(btrim(e->>'allowedWagerTypes'), ''),
+             nullif(btrim(e->>'wager_types'), ''),
+             nullif(btrim(e->>'wagerTypes'), ''),
              ''))) <> '') and not ((lower(btrim(coalesce(
-             e->>'allowed_wager_types',
-             e->>'allowedWagerTypes',
-             e->>'wager_types',
-             e->>'wagerTypes',
+             nullif(btrim(e->>'allowed_wager_types'), ''),
+             nullif(btrim(e->>'allowedWagerTypes'), ''),
+             nullif(btrim(e->>'wager_types'), ''),
+             nullif(btrim(e->>'wagerTypes'), ''),
              ''))) ~ '(^|[^a-z])(under|less)([^a-z]|$)')) then null
            else 'under'
          end
@@ -267,12 +266,11 @@ nhl as (
          row_number() over (order by cg desc, ord) <= 3,
          start_time, updated_at, 'nhl_projections', /* ledger-raw-stamp */ (e || jsonb_strip_nulls(jsonb_build_object(
            'allowed_wager_types', nullif(lower(btrim(coalesce(
-             e->>'allowed_wager_types',
-             e->>'allowedWagerTypes',
-             e->>'wager_types',
-             e->>'wagerTypes',
-             ''
-           ))), ''),
+             nullif(btrim(e->>'allowed_wager_types'), ''),
+             nullif(btrim(e->>'allowedWagerTypes'), ''),
+             nullif(btrim(e->>'wager_types'), ''),
+             nullif(btrim(e->>'wagerTypes'), ''),
+             ''))), ''),
            'projection_id', nullif(btrim(coalesce(
              e->>'projection_id',
              e->>'projectionId',
@@ -346,21 +344,21 @@ wnba as (
          (select case
            when gated.side is distinct from 'under' then gated.side
            when lower(coalesce(nullif(btrim(ot), ''), 'standard')) in ('demon', 'goblin') then case when (lower(btrim(coalesce(
-             p->>'allowed_wager_types',
-             p->>'allowedWagerTypes',
-             p->>'wager_types',
-             p->>'wagerTypes',
+             nullif(btrim(p->>'allowed_wager_types'), ''),
+             nullif(btrim(p->>'allowedWagerTypes'), ''),
+             nullif(btrim(p->>'wager_types'), ''),
+             nullif(btrim(p->>'wagerTypes'), ''),
              ''))) ~ '(^|[^a-z])(under|less)([^a-z]|$)') then 'under' else null end
            when (lower(btrim(coalesce(
-             p->>'allowed_wager_types',
-             p->>'allowedWagerTypes',
-             p->>'wager_types',
-             p->>'wagerTypes',
+             nullif(btrim(p->>'allowed_wager_types'), ''),
+             nullif(btrim(p->>'allowedWagerTypes'), ''),
+             nullif(btrim(p->>'wager_types'), ''),
+             nullif(btrim(p->>'wagerTypes'), ''),
              ''))) <> '') and not ((lower(btrim(coalesce(
-             p->>'allowed_wager_types',
-             p->>'allowedWagerTypes',
-             p->>'wager_types',
-             p->>'wagerTypes',
+             nullif(btrim(p->>'allowed_wager_types'), ''),
+             nullif(btrim(p->>'allowedWagerTypes'), ''),
+             nullif(btrim(p->>'wager_types'), ''),
+             nullif(btrim(p->>'wagerTypes'), ''),
              ''))) ~ '(^|[^a-z])(under|less)([^a-z]|$)')) then null
            else 'under'
          end
@@ -372,12 +370,11 @@ wnba as (
            and row_number() over (partition by ot, (preview_score is null) order by preview_score desc, eo, po) <= 3,
          null::timestamptz, updated_at, 'wnba_projections_' || ot, /* ledger-raw-stamp */ (p || jsonb_build_object('_player', e->>'name', '_team', e->>'team') || jsonb_strip_nulls(jsonb_build_object(
            'allowed_wager_types', nullif(lower(btrim(coalesce(
-             p || jsonb_build_object('_player', e->>'name', '_team', e->>'team')->>'allowed_wager_types',
-             p || jsonb_build_object('_player', e->>'name', '_team', e->>'team')->>'allowedWagerTypes',
-             p || jsonb_build_object('_player', e->>'name', '_team', e->>'team')->>'wager_types',
-             p || jsonb_build_object('_player', e->>'name', '_team', e->>'team')->>'wagerTypes',
-             ''
-           ))), ''),
+             nullif(btrim(p || jsonb_build_object('_player', e->>'name', '_team', e->>'team')->>'allowed_wager_types'), ''),
+             nullif(btrim(p || jsonb_build_object('_player', e->>'name', '_team', e->>'team')->>'allowedWagerTypes'), ''),
+             nullif(btrim(p || jsonb_build_object('_player', e->>'name', '_team', e->>'team')->>'wager_types'), ''),
+             nullif(btrim(p || jsonb_build_object('_player', e->>'name', '_team', e->>'team')->>'wagerTypes'), ''),
+             ''))), ''),
            'projection_id', nullif(btrim(coalesce(
              p || jsonb_build_object('_player', e->>'name', '_team', e->>'team')->>'projection_id',
              p || jsonb_build_object('_player', e->>'name', '_team', e->>'team')->>'projectionId',
@@ -484,21 +481,21 @@ kbo as (
          (select case
            when gated.side is distinct from 'under' then gated.side
            when lower(coalesce(nullif(btrim(p->>'odds_type'), ''), 'standard')) in ('demon', 'goblin') then case when (lower(btrim(coalesce(
-             p->>'allowed_wager_types',
-             p->>'allowedWagerTypes',
-             p->>'wager_types',
-             p->>'wagerTypes',
+             nullif(btrim(p->>'allowed_wager_types'), ''),
+             nullif(btrim(p->>'allowedWagerTypes'), ''),
+             nullif(btrim(p->>'wager_types'), ''),
+             nullif(btrim(p->>'wagerTypes'), ''),
              ''))) ~ '(^|[^a-z])(under|less)([^a-z]|$)') then 'under' else null end
            when (lower(btrim(coalesce(
-             p->>'allowed_wager_types',
-             p->>'allowedWagerTypes',
-             p->>'wager_types',
-             p->>'wagerTypes',
+             nullif(btrim(p->>'allowed_wager_types'), ''),
+             nullif(btrim(p->>'allowedWagerTypes'), ''),
+             nullif(btrim(p->>'wager_types'), ''),
+             nullif(btrim(p->>'wagerTypes'), ''),
              ''))) <> '') and not ((lower(btrim(coalesce(
-             p->>'allowed_wager_types',
-             p->>'allowedWagerTypes',
-             p->>'wager_types',
-             p->>'wagerTypes',
+             nullif(btrim(p->>'allowed_wager_types'), ''),
+             nullif(btrim(p->>'allowedWagerTypes'), ''),
+             nullif(btrim(p->>'wager_types'), ''),
+             nullif(btrim(p->>'wagerTypes'), ''),
              ''))) ~ '(^|[^a-z])(under|less)([^a-z]|$)')) then null
            else 'under'
          end
@@ -510,12 +507,11 @@ kbo as (
          null::boolean,   -- KBO free top-3 is chosen server-side by /api/data (not reproducible from client JS); unknown
          start_time, published_at, 'prizepicks_props', /* ledger-raw-stamp */ (p || jsonb_build_object('_player', c->>'name') || jsonb_strip_nulls(jsonb_build_object(
            'allowed_wager_types', nullif(lower(btrim(coalesce(
-             p || jsonb_build_object('_player', c->>'name')->>'allowed_wager_types',
-             p || jsonb_build_object('_player', c->>'name')->>'allowedWagerTypes',
-             p || jsonb_build_object('_player', c->>'name')->>'wager_types',
-             p || jsonb_build_object('_player', c->>'name')->>'wagerTypes',
-             ''
-           ))), ''),
+             nullif(btrim(p || jsonb_build_object('_player', c->>'name')->>'allowed_wager_types'), ''),
+             nullif(btrim(p || jsonb_build_object('_player', c->>'name')->>'allowedWagerTypes'), ''),
+             nullif(btrim(p || jsonb_build_object('_player', c->>'name')->>'wager_types'), ''),
+             nullif(btrim(p || jsonb_build_object('_player', c->>'name')->>'wagerTypes'), ''),
+             ''))), ''),
            'projection_id', nullif(btrim(coalesce(
              p || jsonb_build_object('_player', c->>'name')->>'projection_id',
              p || jsonb_build_object('_player', c->>'name')->>'projectionId',
