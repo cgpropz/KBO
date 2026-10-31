@@ -80,6 +80,23 @@ def payload_from(rows):
 
 
 class FilterTests(unittest.TestCase):
+    def test_projection_id_and_allowed_wager_types_reach_the_prop(self):
+        row = projection("7", "NBA", "p1", "Jayson Tatum", stat="Points", odds="demon", line=32.5)
+        row["attributes"]["allowed_wager_types"] = "over"
+        # payload_from drops the top-level id; put it back on the feed row.
+        payload = payload_from([row])
+        payload["data"][0]["id"] = "16447477"
+        payload["data"][0]["attributes"]["allowed_wager_types"] = "over"
+        parsed, _report = pp.rows_from_payload(payload, now=FETCH)
+        self.assertEqual(parsed[0]["projection_id"], "16447477")
+        self.assertEqual(parsed[0]["allowed_wager_types"], "over")
+        boards, _match = pp.build_boards(parsed, [{
+            "athleteId": "1", "name": "Jayson Tatum", "team": "BOS", "position": "SF",
+        }], {})
+        prop = boards["demon"][0]["ppAllProps"][0]
+        self.assertEqual(prop["projection_id"], "16447477")
+        self.assertEqual(prop["allowed_wager_types"], "over")
+
     def test_nbap_nbaszn_and_combos_are_dropped_and_odds_types_split(self):
         rows = [
             projection("7", "NBA", "p1", "Jayson Tatum", stat="Points", odds="standard", line=27.5),

@@ -365,6 +365,8 @@ function rowsToLines(rows) {
     const gameDate = String(row.GameDate || '').trim() || null;
     const startTime = String(row.StartTime || '').trim() || null;
     const imageUrl = String(row['Image URL'] || row.image_url || row.imageUrl || '').trim();
+    const projectionId = String(row['Projection Id'] || row.projection_id || '').trim();
+    const wager = String(row['Allowed Wager Types'] || row.allowed_wager_types || '').trim().toLowerCase();
     if (imageUrl) lines[name].imageUrl = imageUrl;
     lines[name].__allProps[statLabel] = {
       line,
@@ -372,6 +374,8 @@ function rowsToLines(rows) {
       opponent: parseOpponentFromVersus(versus),
       gameDate,
       ...(startTime ? { start_time: startTime } : {}),
+      ...(projectionId ? { projection_id: projectionId } : {}),
+      ...(wager ? { allowed_wager_types: wager } : {}),
     };
 
     const statKey = PP_STAT_MAP[statLabel];
@@ -390,6 +394,8 @@ function rowsToLines(rows) {
         opponent: info?.opponent ?? null,
         gameDate: info?.gameDate ?? null,
         ...(info?.start_time ? { start_time: info.start_time } : {}),
+        ...(info?.projection_id ? { projection_id: info.projection_id } : {}),
+        ...(info?.allowed_wager_types ? { allowed_wager_types: info.allowed_wager_types } : {}),
       }))
       .sort((a, b) => a.stat.localeCompare(b.stat));
   });

@@ -88,6 +88,7 @@ class FetchTests(unittest.TestCase):
         self.assertEqual(len(frame), 1)
         self.assertEqual(list(frame.columns), [
             "Name", "League", "Team", "Stat", "Versus", "Prizepicks", "Odds Type", "Start Time", "Image URL",
+            "Projection Id", "Allowed Wager Types",
         ])
         self.assertEqual(calls[0]["params"]["league_id"], odds.KBO_LEAGUE_ID)
         self.assertEqual(sleeps, [5])
@@ -142,6 +143,20 @@ class FetchTests(unittest.TestCase):
         self.assertEqual(list(frame["Name"]), ["Fallback Arm"])
         self.assertTrue(all("league_id" in params for params in calls[:-1]))
         self.assertNotIn("league_id", calls[-1])
+
+    def test_projection_id_and_allowed_wager_types_are_columns(self):
+        payload = _kbo_payload()
+        payload["data"][0]["id"] = "16447477"
+        payload["data"][0]["attributes"]["allowed_wager_types"] = "over"
+        frame, source = odds.fetch_kbo_lines(
+            lambda *args, **kwargs: Response(200, payload),
+            sleep=lambda _seconds: None,
+            load_cached=lambda: odds.pd.DataFrame(),
+            log=lambda _line: None,
+        )
+        self.assertEqual(source, "fresh")
+        self.assertEqual(frame.iloc[0]["Projection Id"], "16447477")
+        self.assertEqual(frame.iloc[0]["Allowed Wager Types"], "over")
 
 
 if __name__ == "__main__":

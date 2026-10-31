@@ -42,6 +42,7 @@ from nhl.model import (
     rank_score,
 )
 from nhl.teams import name_to_abbr, team_abbr, team_name
+from pipeline.qa_ledger import normalize_wager_types
 from pipeline.prizepicks_seen import (
     collect_prizepicks_pages,
     flag_missing_seen_projections,
@@ -367,7 +368,7 @@ def prizepicks_cards(payload):
         odds = str(attrs.get("odds_type") or "").strip().lower()
         if odds not in ODDS_RANK:
             continue
-        rows.append({
+        card = {
             "id": str(item.get("id")),
             "player": name,
             "team": team,
@@ -380,7 +381,13 @@ def prizepicks_cards(payload):
             "start": attrs.get("start_time"),
             "removed": pulled is not None,
             "pp_status": pulled,
-        })
+        }
+        # Ledger raw keeps the PrizePicks projection id (the row id) and the
+        # wager token. A missing token stays off the card.
+        wager = normalize_wager_types(attrs.get("allowed_wager_types"))
+        if wager:
+            card["allowed_wager_types"] = wager
+        rows.append(card)
     return _one_card(rows)
 
 
@@ -1106,6 +1113,7 @@ def build(root: Path, out_dir: Path) -> int:
                     "rankEligible": eligible,
                     "goalieStatus": status,
                     "oddsType": card["oddsType"],
+                    **({"allowed_wager_types": card["allowed_wager_types"]} if card.get("allowed_wager_types") else {}),
                     "imageUrl": card["imageUrl"],
                     "dvpRank": dvp,
                     "gameday": game["date"],

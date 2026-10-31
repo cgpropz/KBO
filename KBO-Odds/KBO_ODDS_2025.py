@@ -89,6 +89,8 @@ def frame_from_payload(prizepicks):
         # start_time is an absolute timestamp from PrizePicks. The board cutoff
         # reads it when the official schedule has no matching game. It is not
         # a projection input.
+        wager = attrs.get("allowed_wager_types")
+        projection_id = ppdata.get("id")
         rows.append((
             name,
             player["league"],
@@ -99,10 +101,13 @@ def frame_from_payload(prizepicks):
             attrs.get("odds_type", "N/A"),
             attrs.get("start_time") or attrs.get("board_time") or "",
             player.get("image_url") or "",
+            "" if projection_id is None else str(projection_id).strip(),
+            "" if wager is None else str(wager).strip(),
         ))
 
     return pd.DataFrame(rows, columns=[
         "Name", "League", "Team", "Stat", "Versus", "Prizepicks", "Odds Type", "Start Time", "Image URL",
+        "Projection Id", "Allowed Wager Types",
     ])
 
 

@@ -50,6 +50,27 @@ def load_pitcher_aliases():
     except Exception:
         return {}
 
+def _pp_ledger_fields(source):
+    """PrizePicks projection id and allowed_wager_types for the board row.
+
+    The ledger snapshot copies these onto raw. Empty cells from an older
+    odds file stay off the prop.
+    """
+    if not isinstance(source, dict):
+        return {}
+    from pipeline.qa_ledger import stamp_raw
+    stamped = stamp_raw({
+        "allowed_wager_types": source.get("allowed_wager_types") or source.get("Allowed Wager Types"),
+        "projection_id": source.get("projection_id") or source.get("Projection Id"),
+    })
+    out = {}
+    if stamped.get("allowed_wager_types"):
+        out["allowed_wager_types"] = stamped["allowed_wager_types"]
+    if stamped.get("projection_id"):
+        out["projection_id"] = stamped["projection_id"]
+    return out
+
+
 def load_odds():
     path = os.path.join(BASE, "KBO-Odds", "KBO_odds_2025.csv")
     if not os.path.exists(path):
@@ -308,6 +329,7 @@ def build_pitcher_card(name, props, pitcher_logs_by_name, k_proj, k_proj_all, di
             "formula_mode": stat_proj.get("formula_mode"),
             "formula_source": _formula_source(stat_proj, proj_val),
         })
+        card["props"][-1].update(_pp_ledger_fields(p))
         _drop_unmodeled_rating(card["props"][-1])
 
     return card
@@ -421,6 +443,7 @@ def build_batter_card(name, props, batter_logs_by_name, b_proj, starters=None, p
             "formula_mode": proj.get("formula_mode"),
             "formula_source": _formula_source(proj, proj.get("projection")),
         })
+        card["props"][-1].update(_pp_ledger_fields(p))
         _drop_unmodeled_rating(card["props"][-1])
 
     return card
@@ -672,6 +695,7 @@ def main():
                 # only when the official schedule has no matching game.
                 "start_time": str(o.get("Start Time") or "").strip(),
                 "image_url": str(o.get("Image URL") or "").strip(),
+                **_pp_ledger_fields(o),
             })
 
     cards = []
@@ -908,6 +932,7 @@ def lines_only():
             "line": float(o["Prizepicks"]),
             "odds_type": o.get("Odds Type", "standard").strip().lower(),
             "image_url": str(o.get("Image URL") or "").strip(),
+            **_pp_ledger_fields(o),
         }
 
     updated = 0
@@ -930,6 +955,10 @@ def lines_only():
                     prop["line"] = new_line
                     prop["odds_type"] = new_ot
                     updated += 1
+                for field, value in _pp_ledger_fields(fresh[key]).items():
+                    if prop.get(field) != value:
+                        prop[field] = value
+                        updated += 1
 
     data["generated_at"] = __import__("datetime").datetime.now(
         __import__("datetime").timezone.utc

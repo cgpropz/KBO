@@ -42,6 +42,18 @@ def _payload(rows):
 
 
 class PrizePicksPullTests(unittest.TestCase):
+    def test_allowed_wager_types_and_the_projection_id_stay_on_the_card(self):
+        over_only = _projection("1", "Sidney Crosby", "Shots On Goal", "demon", 3.5)
+        over_only["id"] = "16447477"
+        over_only["attributes"]["allowed_wager_types"] = "over"
+        both = _projection("1", "Sidney Crosby", "Points", "demon", 1.5)
+        both["id"] = "16439528"
+        both["attributes"]["allowed_wager_types"] = "under_or_over"
+        cards = {card["prop"]: card for card in prizepicks_cards(_payload([over_only, both]))}
+        self.assertEqual(cards["Shots On Goal"]["id"], "16447477")
+        self.assertEqual(cards["Shots On Goal"]["allowed_wager_types"], "over")
+        self.assertEqual(cards["Points"]["allowed_wager_types"], "under_or_over")
+
     def test_a_missing_odds_type_is_not_filed_as_standard(self):
         missing = _projection("1", "Sidney Crosby", "Shots On Goal", "standard", 3.5)
         del missing["attributes"]["odds_type"]

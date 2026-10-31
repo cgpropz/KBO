@@ -507,6 +507,8 @@ def slate_records(payload):
             record['projection_id'] = chosen['projection_id']
         if chosen.get('wager_types'):
             record['wager_types'] = chosen['wager_types']
+            # Same token, under the key the ledger snapshot copies into raw.
+            record['allowed_wager_types'] = chosen['wager_types']
         pulled = prizepicks_pulled_status(chosen.get('status'))
         if pulled:
             # Keep the standard card. Do not promote a demon in its place.
