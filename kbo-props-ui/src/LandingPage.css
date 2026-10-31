@@ -48,9 +48,10 @@
 .lp-hero-bg {
   position: absolute;
   inset: 0;
-  background-image: url('/hero-stadium.jpg');
-  background-size: cover;
-  background-position: center 40%;
+  background-color: var(--cg-page-bg, #070a08);
+  background-image: var(--cg-page-image, none);
+  background-size: auto;
+  background-position: center top;
   background-repeat: no-repeat;
   z-index: 0;
 }

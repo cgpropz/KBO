@@ -9,7 +9,9 @@
   --bright: #7fff68;
   position: relative;
   min-height: 100vh;
-  background: #070a08;
+  background-color: var(--cg-page-bg, #070a08);
+  background-image: var(--cg-page-image, none);
+  background-repeat: no-repeat;
   color: var(--ink);
   font-family: Inter, "Inter Fallback", system-ui, sans-serif;
   overflow-x: clip;
@@ -20,7 +22,7 @@
   inset: 0 0 auto;
   height: 520px;
   pointer-events: none;
-  background: radial-gradient(50% 80% at 50% 0%, rgba(34, 197, 94, 0.18), transparent 70%);
+  background: none;
 }
 
 .pl-header,
