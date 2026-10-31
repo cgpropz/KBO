@@ -45,6 +45,8 @@ def load_snapshot_rows(odds_type='standard'):
                 'Odds Type': 'standard',
                 'GameDate': prop.get('gameDate', ''),
                 'StartTime': prop.get('start_time', ''),
+                'Projection Id': prop.get('projection_id') or '',
+                'Allowed Wager Types': prop.get('allowed_wager_types') or '',
             })
     return rows
 
@@ -145,6 +147,8 @@ def dfs_scraper(odds_type='standard'):
         attrs = ppdata.get('attributes', {})
         raw_start = attrs.get('start_time') or attrs.get('game_time') or attrs.get('scheduled_at') or ''
         game_date = parse_game_date(raw_start)
+        wager = attrs.get('allowed_wager_types')
+        projection_id = ppdata.get('id')
         ppinfo = {
             "name_id": PPid,
             "Stat": attrs.get('stat_type', 'N/A'),
@@ -153,6 +157,8 @@ def dfs_scraper(odds_type='standard'):
             "Odds Type": attrs.get('odds_type', 'N/A'),
             "GameDate": game_date,
             "StartTime": parse_start_time(raw_start),
+            "Projection Id": "" if projection_id is None else str(projection_id).strip(),
+            "Allowed Wager Types": "" if wager is None else str(wager).strip(),
         }
         pplist.append(ppinfo)
 
@@ -167,9 +173,9 @@ def dfs_scraper(odds_type='standard'):
         del element['name_id']
 
     df = pd.DataFrame([
-        (e['Name'], e['League'], e['Team'], e['Stat'], e['Versus'], e['Prizepicks'], e['Odds Type'], e.get('GameDate', ''), e.get('StartTime', ''), e.get('Image URL', ''))
+        (e['Name'], e['League'], e['Team'], e['Stat'], e['Versus'], e['Prizepicks'], e['Odds Type'], e.get('GameDate', ''), e.get('StartTime', ''), e.get('Image URL', ''), e.get('Projection Id', ''), e.get('Allowed Wager Types', ''))
         for e in pplist if e['League'] == 'WNBA' and '+' not in e['Name']
-    ], columns=['Name', 'League', 'Team', 'Stat', 'Versus', 'Prizepicks', 'Odds Type', 'GameDate', 'StartTime', 'Image URL'])
+    ], columns=['Name', 'League', 'Team', 'Stat', 'Versus', 'Prizepicks', 'Odds Type', 'GameDate', 'StartTime', 'Image URL', 'Projection Id', 'Allowed Wager Types'])
 
     if not df.empty:
         parsed_dates = pd.to_datetime(df['GameDate'], errors='coerce').dropna()

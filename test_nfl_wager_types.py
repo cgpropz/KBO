@@ -37,8 +37,11 @@ class WagerTypesTest(unittest.TestCase):
     def test_slate_records_keep_wager_types(self):
         rows = self._rows()
         self.assertEqual(rows['Two Way']['wager_types'], 'under_or_over')
+        self.assertEqual(rows['Two Way']['allowed_wager_types'], 'under_or_over')
         self.assertEqual(rows['Over Only']['wager_types'], 'over')
+        self.assertEqual(rows['Over Only']['allowed_wager_types'], 'over')
         self.assertNotIn('wager_types', rows['No Field'])
+        self.assertNotIn('allowed_wager_types', rows['No Field'])
 
     def test_list_form_is_joined(self):
         self.assertEqual(nfl._wager_types(['under', 'over']), 'under_or_over')

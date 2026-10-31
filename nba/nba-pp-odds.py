@@ -53,6 +53,12 @@ from zoneinfo import ZoneInfo
 
 import requests
 
+# `python nba/nba-pp-odds.py` puts nba/ on sys.path, not the repo root.
+_REPO_ROOT = Path(__file__).resolve().parents[1]
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
+from pipeline.qa_ledger import normalize_wager_types, projection_id_from
+
 PP_URL = "https://partner-api.prizepicks.com/projections"
 SLATE_TIMEZONE = ZoneInfo("America/New_York")
 ALLOWED_LEAGUE = "NBA"
@@ -648,7 +654,7 @@ def rows_from_payload(payload: dict, now: datetime | None = None) -> tuple[list[
             line = float(attrs.get("line_score"))
         except (TypeError, ValueError):
             continue
-        rows.append({
+        slate_row = {
             "name": name or "Unknown",
             "league": league,
             "team": canonical_team(player.get("team")),
@@ -662,7 +668,14 @@ def rows_from_payload(payload: dict, now: datetime | None = None) -> tuple[list[
             "opponent": parse_opponent(attrs.get("description")),
             "oddsType": classify_odds_type(attrs),
             "gameDate": parse_game_date(attrs.get("start_time") or attrs.get("board_time") or ""),
-        })
+        }
+        projection_id = projection_id_from(row)
+        if projection_id:
+            slate_row["projection_id"] = projection_id
+        wager = normalize_wager_types(attrs.get("allowed_wager_types"))
+        if wager:
+            slate_row["allowed_wager_types"] = wager
+        rows.append(slate_row)
     report["unmapped_stats"] = sorted(unmapped)
     print(
         f"Dropped {report['excluded_started']} lines whose start_time is at or before "
@@ -871,7 +884,7 @@ def build_boards(rows: list[dict], roster: list[dict], teams: dict | None = None
         if row.get("opponent") and not card["dvpOpponent"]:
             card["dvpOpponent"] = row["opponent"]
         standard_line = standard_lines.get((key, row.get("stat")))
-        card["ppAllProps"].append({
+        prop = {
             "stat": row.get("stat") or "",
             "statKey": row.get("statKey"),
             "line": row.get("line"),
@@ -881,7 +894,12 @@ def build_boards(rows: list[dict], roster: list[dict], teams: dict | None = None
             "projection": None,
             "rating": None,
             "standardLine": standard_line,
-        })
+        }
+        if row.get("projection_id"):
+            prop["projection_id"] = row["projection_id"]
+        if row.get("allowed_wager_types"):
+            prop["allowed_wager_types"] = row["allowed_wager_types"]
+        card["ppAllProps"].append(prop)
 
     snapshots = {}
     for odds_type, grouped in boards.items():
