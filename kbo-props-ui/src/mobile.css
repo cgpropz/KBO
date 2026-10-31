@@ -70,7 +70,9 @@
     max-width: var(--phone-screen, 100%);
     min-width: 0;
     overflow-x: clip;
-    background: #050506;
+    background-color: var(--cg-page-bg, #070a08);
+    background-image: var(--cg-page-image, none);
+    background-repeat: no-repeat;
   }
 
   #root,
@@ -353,10 +355,19 @@
     font-size: 16px !important;
   }
 
-  :is(.kbo-app-root, .nfl-root, .wnba-root, .cg-landing, .pl-landing, .auth-page) {
+  :is(.kbo-app-root, .nfl-root, .wnba-root, .cg-landing, .pl-landing, .hub, .cs-page) {
     max-width: 100%;
     min-width: 0;
-    background: #050506;
+    background-color: var(--cg-page-bg, #070a08);
+    background-image: var(--cg-page-image, none);
+    background-repeat: no-repeat;
+  }
+
+  .auth-page {
+    max-width: 100%;
+    min-width: 0;
+    background-color: #050506;
+    background-image: none;
   }
 
   :is(.kbo-app-nav, .nfl-nav, .wnba-nav, .pl-header, .cg-header) {
@@ -371,7 +382,7 @@
     min-height: 0 !important;
     margin: 0 !important;
     padding: env(safe-area-inset-top, 0px) 16px 0 !important;
-    background: #050506 !important;
+    background: var(--cg-page-bg, #070a08) !important;
     border: 0 !important;
     box-sizing: border-box;
   }

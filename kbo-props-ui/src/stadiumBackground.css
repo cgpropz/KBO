@@ -1,50 +1,42 @@
 /*
- * Night stadium photos, one per section.
- * NFL uses stadium-bg.webp. KBO uses kbo-stadium-bg.webp. NHL uses
- * nhl-arena-bg.webp. WNBA is unchanged.
- * The picture stays fixed while that section scrolls. Boards sit on a dark wash
- * that opens at the edges so the photo shows through. Tables and cards sit on a
- * solid dark panel so text stays readable. Heat-map and grade colors are inline
- * or their own classes — table cell fills here do not use !important, so those
- * scales stay put.
+ * Shared dark page surface. Tokens are --cg-page-bg and --cg-page-image on :root.
+ * Doubled classes beat the flat fills in each sport chunk, whichever loads last.
+ * The phone sheet is unlayered, so mobile.css repeats the same variables.
+ * Tables and cards sit on a solid dark panel. Heat-map and grade colors are
+ * inline or their own classes — table cell fills here do not use !important.
  */
 
-.nfl-root {
-  background-color: #07090d;
-  background-image:
-    linear-gradient(180deg, rgba(5, 8, 12, 0.4), rgba(4, 7, 11, 0.48)),
-    url('/stadium-bg.webp');
+.nfl-root.nfl-root,
+.kbo-app-root.kbo-app-root,
+.wnba-root.wnba-root,
+.pl-landing.pl-landing,
+.hub.hub,
+.cs-page.cs-page {
+  background-color: var(--cg-page-bg, #070a08);
+  background-image: var(--cg-page-image, none);
   background-repeat: no-repeat;
-  background-position: center center;
-  background-size: cover;
-  background-attachment: fixed;
+  background-attachment: scroll;
+  background-position: center top;
 }
 
-.nfl-nav {
-  background: rgba(5, 8, 12, 0.42);
-  backdrop-filter: blur(10px);
+.nfl-nav,
+.kbo-app-nav {
+  background: rgba(7, 10, 8, 0.92);
+  backdrop-filter: blur(12px);
 }
 
 .nfl-lines-table-wrap,
 .nfl-table-wrap,
 .nfl-edge-controls {
-  background: linear-gradient(
-    180deg,
-    rgba(6, 14, 16, 0.05) 0%,
-    rgba(6, 14, 16, 0.38) 28px,
-    rgba(6, 14, 16, 0.46) calc(100% - 40px),
-    rgba(6, 14, 16, 0.04) 100%
-  );
-  border-color: rgba(186, 206, 196, 0.2);
+  background: rgba(6, 11, 13, 0.94);
+  border-color: rgba(26, 60, 54, 0.95);
 }
 
 .nfl-lines-row:hover {
   background: rgba(255, 255, 255, 0.06);
 }
 
-/* Prop Lines and PP Odds sit on the bright field. Keep the photo on the page,
-   and give these tables the same dark solid surface so names, odds, and edges
-   stay readable. */
+/* Prop Lines and PP Odds: solid dark surface so names, odds, and edges stay readable. */
 .nfl-lines-page .nfl-lines-table-wrap {
   background: rgba(6, 11, 13, 0.94);
   border-color: rgba(26, 60, 54, 0.95);
@@ -69,33 +61,19 @@
 .nfl-edge-card,
 .nfl-notice,
 .nfl-player-summary {
-  background-color: rgba(8, 16, 18, 0.62);
+  background-color: rgba(8, 16, 18, 0.94);
 }
 
 .nfl-player-range-strip button:not(.active) {
-  background-color: rgba(8, 21, 19, 0.55);
+  background-color: rgba(8, 21, 19, 0.94);
 }
 
-/* ── KBO: same chrome as NFL, baseball photo only ── */
+/* ── KBO text and controls on the shared page surface ── */
 .kbo-app-root.kbo-app-root {
-  background-color: #07090d;
-  background-image:
-    linear-gradient(180deg, rgba(5, 8, 12, 0.4), rgba(4, 7, 11, 0.48)),
-    url('/kbo-stadium-bg.webp');
-  background-repeat: no-repeat;
-  background-position: center center;
-  background-size: cover;
-  background-attachment: fixed;
   color: #e8f4e6;
 }
 
-.kbo-app-nav {
-  background: rgba(5, 8, 12, 0.42);
-  backdrop-filter: blur(10px);
-}
-
-/* Page shells were opaque flat fills. Drop them so the stadium shows
-   around the board the way it does on NFL. */
+/* Page shells stay clear so the shared gradient shows around the board. */
 .kbo-app-root .so-container,
 .kbo-app-root .bp-container,
 .kbo-app-root .rk-container,
@@ -362,32 +340,12 @@
   color: #e8f4e6;
 }
 
-/* NHL arena. Higher specificity than .nfl-root so the football photo
-   and the flat fill do not cover this section. */
 .nhl-root.nfl-root {
-  background-color: #070b14;
-  background-image:
-    linear-gradient(180deg, rgba(5, 10, 22, 0.58) 0%, rgba(5, 10, 22, 0.34) 38%, rgba(4, 8, 18, 0.52) 100%),
-    url('/nhl-arena-bg.webp');
-  background-repeat: no-repeat;
-  background-position: center top;
-  background-size: cover;
-  background-attachment: fixed;
   color: #e7eef8;
 }
 
-@media (min-width: 768px) {
-  .nhl-root.nfl-root {
-    background-color: #050506;
-    background-image:
-      linear-gradient(180deg, rgba(5, 5, 6, 0) 0%, rgba(5, 5, 6, 0) 58%, rgba(5, 5, 6, 0.72) 78%, #050506 100%),
-      linear-gradient(180deg, rgba(5, 10, 22, 0.58) 0%, rgba(5, 10, 22, 0.34) 38%, rgba(4, 8, 18, 0.52) 100%),
-      url('/nhl-arena-bg.webp');
-  }
-}
-
 .nhl-root .nfl-nav {
-  background: rgba(6, 12, 24, 0.62);
+  background: rgba(7, 10, 8, 0.92);
   border-bottom-color: rgba(140, 186, 220, 0.22);
   backdrop-filter: blur(12px);
 }
